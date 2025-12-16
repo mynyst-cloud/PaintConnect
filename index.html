@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8" />
+  <script>
+    // Base44 tracking fix - voorkom crash door ontbrekende Core
+    window.Core = window.Core || {
+      identify: () => {},
+      track: () => {},
+      page: () => {},
+      reset: () => {}
+    };
+    window.base44Config = window.base44Config || {};
+  </script>
+  <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PaintConnect</title> <!-- bonus: eigen titel -->
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

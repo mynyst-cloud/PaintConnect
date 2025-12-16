@@ -1,0 +1,43 @@
+// src/api/entities.js
+// Compatibility layer - re-export from Supabase
+
+export {
+  Project,
+  MaterialRequest,
+  Damage,
+  ChatMessage,
+  User,
+  Company,
+  ReferralPoint,
+  Notification,
+  DailyUpdate,
+  HoursEntry,
+  MaterialsUsage,
+  MaterialUsage,              // ← NIEUW: alias zonder "s"
+  ClientInvitation,
+  GlobalSettings,
+  PendingCompany,
+  PlatformUpdate,
+  Supplier,
+  Material,
+  MaterialCategory,
+  TimeEntry,
+  ExtraCost,
+  PlanningEvent,
+  ColorAdvice,
+  DamageInteraction,
+  DailyUpdateInteraction,
+  PhotoReaction,
+  ReferralPeriod,
+  Lead,
+  OfferteOpmeting,
+  HelpdeskTicket,
+  HelpdeskReply,
+  PendingInvite,
+  Invoice,
+  Subscription,
+  TestLog,
+  AppError,
+  SupplierInvoice,
+  MaterialPriceApproval
+} from '@/lib/supabase'

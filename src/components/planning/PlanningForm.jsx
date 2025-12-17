@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { base44 } from "@/api/base44Client";
+import { geocodeAddress } from "@/api/functions";
 import ProjectsMap from "@/components/projects/ProjectsMap";
 
 const statusOptions = [
@@ -146,12 +147,12 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
     setAddressError(null);
 
     try {
-      const response = await base44.functions.invoke('geocodeAddress', { address: address.trim() });
+      const { data } = await geocodeAddress({ address: address.trim() });
 
-      if (response.data && response.data.latitude !== undefined && response.data.longitude !== undefined) {
+      if (data && data.latitude !== undefined && data.longitude !== undefined) {
         const coords = {
-          latitude: response.data.latitude,
-          longitude: response.data.longitude
+          latitude: data.latitude,
+          longitude: data.longitude
         };
 
         setGeocodeResult(coords);
@@ -164,7 +165,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
         }));
       } else {
         // Backend retourneerde geen coordinates, maar misschien wel een error boodschap
-        const errorMsg = response.data?.error || "Adres niet gevonden. Controleer de invoer.";
+        const errorMsg = data?.error || "Adres niet gevonden. Controleer de invoer.";
         setAddressError(errorMsg);
         setGeocodeResult(null);
         setShowMapPreview(false);

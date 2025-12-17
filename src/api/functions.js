@@ -1,18 +1,104 @@
 // src/api/functions.js
-// Tijdelijke placeholders voor functions die nog niet naar Supabase zijn gemigreerd
+// Client-side helpers & fallbacks voor (oude) backend functies
+
+import { functions as supabaseFunctions } from '@/lib/supabase'
+
+// Exporteer de ruwe Supabase functions client waar nodig
+export { supabaseFunctions as baseFunctions }
+
+// Google Maps Geocoding – gebruikt in o.a. Projecten, ProjectDetails & VoorraadBeheer
+// Verwachte shape in de app:
+// const { data } = await geocodeAddress({ address })
+// data: { latitude, longitude, formatted_address?, error? }
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+
+export const geocodeAddress = async ({ address }) => {
+  if (!address || typeof address !== 'string') {
+    return {
+      data: {
+        error: 'Geen geldig adres opgegeven.'
+      }
+    }
+  }
+
+  if (!GOOGLE_MAPS_API_KEY) {
+    console.error('VITE_GOOGLE_MAPS_API_KEY ontbreekt in de omgeving')
+    return {
+      data: {
+        error:
+          'Geocoding is niet geconfigureerd. Neem contact op met de beheerder (Google Maps API key ontbreekt).'
+      }
+    }
+  }
+
+  const encodedAddress = encodeURIComponent(address.trim())
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${GOOGLE_MAPS_API_KEY}`
+
+  try {
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      console.error('Google Geocoding HTTP error:', response.status, response.statusText)
+      return {
+        data: {
+          error: 'Kon adres niet opzoeken (netwerkfout). Probeer later opnieuw.'
+        }
+      }
+    }
+
+    const json = await response.json()
+
+    if (json.status !== 'OK' || !json.results || json.results.length === 0) {
+      console.warn('Google Geocoding geen resultaat:', json.status, json.error_message)
+      let errorMessage = 'Adres niet gevonden. Controleer of het adres correct is.'
+
+      if (json.status === 'ZERO_RESULTS') {
+        errorMessage = 'Adres niet gevonden. Controleer straat, huisnummer, postcode en stad.'
+      } else if (json.status === 'OVER_QUERY_LIMIT') {
+        errorMessage = 'Limiet voor adresopzoekingen bereikt. Probeer het later opnieuw.'
+      } else if (json.status === 'REQUEST_DENIED') {
+        errorMessage =
+          'Adresopzoeking geweigerd door Google. Controleer de API key configuratie.'
+      } else if (json.status === 'INVALID_REQUEST') {
+        errorMessage = 'Ongeldige adresaanvraag. Vul een volledig adres in.'
+      }
+
+      return {
+        data: {
+          error: errorMessage
+        }
+      }
+    }
+
+    const result = json.results[0]
+    const { lat, lng } = result.geometry.location
+
+    return {
+      data: {
+        latitude: lat,
+        longitude: lng,
+        formatted_address: result.formatted_address
+      }
+    }
+  } catch (error) {
+    console.error('Fout bij Google Geocoding:', error)
+    return {
+      data: {
+        error: 'Er ging iets mis bij het opzoeken van het adres. Probeer het opnieuw.'
+      }
+    }
+  }
+}
+
+// ====== PLACEHOLDERS VOOR OVERIGE (nog niet gemigreerde) FUNCTIONS ======
 
 const notImplemented = (name) => {
-  return (...args) => {
-    console.warn(`⚠️ Function "${name}" is nog niet gemigreerd naar Supabase`)
-    // Je kunt hier later de echte Supabase Edge Function aanroepen
+  return () => {
+    console.warn(`⚠️ Function "${name}" is nog niet gemigreerd naar Supabase/Edge Functions`)
     return Promise.reject(new Error(`${name} not implemented yet`))
   }
 }
 
-// Basis functions die al werken
-export { functions as baseFunctions } from '@/lib/supabase'
-
-// Alle oude functions als placeholder
 export const seedDummyProjects = async ({ companyId }) => {
   console.log('Seeding dummy projects voor company:', companyId)
   // Voeg hier later echte insert toe als je wilt
@@ -46,7 +132,6 @@ export const notifyHoursConfirmed = notImplemented('notifyHoursConfirmed')
 export const notifyMaterialsConfirmed = notImplemented('notifyMaterialsConfirmed')
 export const generatePostCalculationPDF = notImplemented('generatePostCalculationPDF')
 export const finalizeProject = notImplemented('finalizeProject')
-export const geocodeAddress = notImplemented('geocodeAddress')
 export const handleProjectUpdate = notImplemented('handleProjectUpdate')
 export const registerCompany = notImplemented('registerCompany')
 export const createCheckoutSession = notImplemented('createCheckoutSession')

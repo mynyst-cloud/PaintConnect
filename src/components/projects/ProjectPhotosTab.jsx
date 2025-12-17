@@ -6,7 +6,6 @@ import { Star, Trash2, Upload, Loader2, Camera, User, Calendar, Image as ImageIc
 import { format, parseISO, isValid } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { Project } from '@/api/entities';
-import { UploadFile } from '@/api/integrations';
 import { base44 } from '@/api/base44Client';
 import PhotoViewer from './PhotoViewer';
 

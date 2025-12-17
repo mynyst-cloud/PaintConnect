@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -7,17 +6,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UploadFile } from "@/api/integrations";
-import { X, Save, Loader2, UploadCloud, Image as ImageIcon, BarChart } from "lucide-react";
+import { X, Save, Loader2, UploadCloud, Image as ImageIcon } from "lucide-react";
 import { handleProjectUpdate } from '@/api/functions';
+import { supabase } from '@/lib/supabase';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo";
+
+// Supabase Storage upload functie
+async function uploadFileToSupabase(file) {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `project-photos/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from('project-uploads')
+      .upload(filePath, file);
+
+    if (error) throw error;
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('project-uploads')
+      .getPublicUrl(filePath);
+
+    return { file_url: publicUrl };
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+}
 
 export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCancel }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // NIEUW: Track hoeveel foto's er worden geüpload
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   
   const safeProjects = Array.isArray(projects) ? projects : [];
@@ -48,7 +70,7 @@ export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCan
         setUploadProgress({ current: i + 1, total: files.length });
         
         try {
-          const { file_url } = await UploadFile({ file });
+          const { file_url } = await uploadFileToSupabase(file);
           if (file_url) {
             uploadedUrls.push(file_url);
           }
@@ -73,7 +95,7 @@ export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCan
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
-      e.target.value = ""; // Reset input
+      e.target.value = "";
     }
   };
 
@@ -111,7 +133,6 @@ export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCan
         return;
       }
 
-      // Use the new backend function that handles both update creation AND notifications
       const { data, error: functionError } = await handleProjectUpdate({
         company_id: project.company_id,
         project_id: project.id,
@@ -128,7 +149,7 @@ export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCan
       }
 
       if (data?.success) {
-        onSubmit(data); // Call parent callback, pass data
+        onSubmit(data);
       } else {
         throw new Error('Update creation failed');
       }
@@ -191,7 +212,7 @@ export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCan
 
               <div className="flex items-center space-x-2">
                 <Switch id="visible_to_client" checked={formData.visible_to_client} onCheckedChange={(checked) => handleChange("visible_to_client", checked)}/>
-                <Label htmlFor="visible_to_client">Zichtbaar voor klant in portaal (let op: dit wordt momenteel niet gebruikt voor snelle updates)</Label>
+                <Label htmlFor="visible_to_client">Zichtbaar voor klant in portaal</Label>
               </div>
 
               <div className="space-y-4 border-t pt-4">

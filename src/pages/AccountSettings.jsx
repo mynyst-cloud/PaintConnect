@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Company, PendingInvite, Invoice, Subscription } from '@/api/entities';
 import { User } from '@/api/entities';
-// import { UploadFile } from "@/api/integrations"; // VERWIJDERD – Base44 afhankelijkheid
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';

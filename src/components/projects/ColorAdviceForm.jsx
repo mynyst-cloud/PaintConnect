@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Save, Loader2, Upload } from 'lucide-react';
 import { User } from '@/api/entities';
-import { UploadFile } from '@/api/integrations';
+import { uploadFileToSupabase } from '@/lib/uploadHelper';
 
 const colorTypes = ['RAL', 'NCS', 'HEX'];
 const statusOptions = ['concept', 'definitief', 'goedgekeurd_klant'];
@@ -62,7 +62,7 @@ export default function ColorAdviceForm({ advice, project, onSubmit, onCancel })
 
     setUploadingPhotos(true);
     try {
-      const uploadPromises = files.map(file => UploadFile({ file }));
+const uploadPromises = files.map(file => uploadFileToSupabase(file));
       const results = await Promise.all(uploadPromises);
       const newPhotoUrls = results.map(result => result.file_url);
       

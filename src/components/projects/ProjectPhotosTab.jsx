@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,41 +6,12 @@ import { Star, Trash2, Upload, Loader2, Camera, User, Calendar, Image as ImageIc
 import { format, parseISO, isValid } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { Project } from '@/api/entities';
-import { base44 } from '@/api/base44Client';
 import PhotoViewer from './PhotoViewer';
 
 const placeholderLogo = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 
 const PhotoCard = ({ photo, project, onSetCover, onDelete, onOpenViewer, isAdmin, index }) => {
     const isCover = project?.cover_photo_url === photo?.url;
-    const [signedUrl, setSignedUrl] = useState(null);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        const loadSignedUrl = async () => {
-            if (!photo?.url) return;
-            
-            if (photo.url.includes('/private/')) {
-                setIsLoading(true);
-                try {
-                    const result = await base44.integrations.Core.CreateFileSignedUrl({
-                        file_uri: photo.url,
-                        expires_in: 300
-                    });
-                    setSignedUrl(result?.signed_url || photo.url);
-                } catch (error) {
-                    console.error('Error creating signed URL:', error);
-                    setSignedUrl(photo.url);
-                } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                setSignedUrl(photo.url);
-            }
-        };
-        
-        loadSignedUrl();
-    }, [photo?.url]);
 
     const formatDate = (dateString) => {
         if (!dateString) return 'Onbekende datum';
@@ -78,18 +49,12 @@ const PhotoCard = ({ photo, project, onSetCover, onDelete, onOpenViewer, isAdmin
         >
             <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105">
                 <div className="relative aspect-square">
-                    {isLoading ? (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                        </div>
-                    ) : (
-                        <img
-                            src={signedUrl || photo.url}
-                            alt={`Projectfoto door ${getUploaderName()}`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                        />
-                    )}
+                    <img
+                        src={photo.url}
+                        alt={`Projectfoto door ${getUploaderName()}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     
                     {isCover && (
@@ -127,7 +92,6 @@ const PhotoCard = ({ photo, project, onSetCover, onDelete, onOpenViewer, isAdmin
                             </Button>
                         </div>
                     )}
-                    {/* Close the conditional rendering block for the image */}
                 </div>
                 
                 <CardContent className="p-3">
@@ -225,36 +189,9 @@ export default function ProjectPhotosTab({ project, relatedData, onDataRefresh, 
     }, [project, relatedData]);
 
     const handlePhotoUpload = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length === 0 || !project?.id) return;
-
-        setIsUploading(true);
-        try {
-            const uploadPromises = files.map(file => UploadFile({ file }));
-            const results = await Promise.all(uploadPromises);
-            const newUrls = results.map(res => res.file_url).filter(Boolean);
-
-            if (newUrls.length > 0) {
-                const updatedPhotoUrls = [...(project.photo_urls || []), ...newUrls];
-                await Project.update(project.id, {
-                    photo_urls: updatedPhotoUrls,
-                    cover_photo_url: project.cover_photo_url || newUrls[0],
-                    thumbnail_url: project.thumbnail_url || newUrls[0]
-                });
-
-                if (onDataRefresh) {
-                    await onDataRefresh({ 
-                        ...project, 
-                        photo_urls: updatedPhotoUrls 
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('Error uploading photos:', error);
-            alert('Fout bij uploaden van foto\'s');
-        } finally {
-            setIsUploading(false);
-        }
+        // Tijdelijk uitgeschakeld – komt later met Supabase Storage
+        alert('Foto upload is tijdelijk uitgeschakeld tijdens de migratie. Komt spoedig terug!');
+        e.target.value = "";
     };
 
     const handleSetCover = async (url) => {
@@ -353,7 +290,7 @@ export default function ProjectPhotosTab({ project, relatedData, onDataRefresh, 
                                 ) : (
                                     <>
                                         <Upload className="w-4 h-4 mr-2" />
-                                        Foto's Uploaden
+                                        Foto's Uploaden (tijdelijk uitgeschakeld)
                                     </>
                                 )}
                             </Button>
@@ -371,7 +308,7 @@ export default function ProjectPhotosTab({ project, relatedData, onDataRefresh, 
                         <label htmlFor="photo-upload">
                             <Button as="span" variant="outline" className="cursor-pointer">
                                 <Upload className="w-4 h-4 mr-2" />
-                                Upload eerste foto
+                                Upload eerste foto (tijdelijk uitgeschakeld)
                             </Button>
                         </label>
                     )}

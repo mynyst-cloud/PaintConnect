@@ -63,8 +63,13 @@ serve(async (req) => {
       throw paintersError
     }
 
+    console.log('Returning painters:', painters?.length || 0)
+    
     return new Response(
-      JSON.stringify(painters || []),
+      JSON.stringify({
+        success: true,
+        data: painters || []
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

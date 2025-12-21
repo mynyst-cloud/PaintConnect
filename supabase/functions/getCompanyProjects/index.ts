@@ -33,44 +33,65 @@ serve(async (req) => {
       throw new Error('Niet geautoriseerd')
     }
 
-    // Get request body (optional company_id)
-    const body = await req.json().catch(() => ({}))
+    // Get request body (safely parse JSON)
+    let body = {}
+    try {
+      const text = await req.text()
+      if (text && text.length > 0) {
+        body = JSON.parse(text)
+      }
+    } catch (e) {
+      console.log('No JSON body or empty body, continuing...')
+    }
     
     // Get user's company and check if painter
+    console.log('Fetching user data for user:', user.id)
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('company_id, company_role, email')
       .eq('id', user.id)
       .single()
 
-    if (userError || !userData?.company_id) {
-      throw new Error('Gebruiker heeft geen bedrijf')
+    if (userError) {
+      console.error('Error fetching user:', userError)
+      throw new Error(`Kon gebruiker niet ophalen: ${userError.message}`)
+    }
+    
+    if (!userData?.company_id) {
+      throw new Error('Gebruiker heeft geen bedrijf gekoppeld')
     }
 
     const company_id = body.company_id || userData.company_id
     const isPainter = userData.company_role === 'painter'
+    
+    console.log('Fetching projects for company:', company_id, 'isPainter:', isPainter)
 
     // Build query for active projects
     let query = supabase
       .from('projects')
-      .select('id, project_name, client_name, full_address, latitude, longitude, status, assigned_painters, expected_start_time')
-      .eq('company_id', userData.company_id)
+      .select('id, project_name, client_name, full_address, latitude, longitude, status, assigned_painters')
+      .eq('company_id', company_id)
       .in('status', ['in_uitvoering', 'planning', 'nieuw'])
       .order('project_name', { ascending: true })
 
     const { data: projects, error: projectsError } = await query
 
     if (projectsError) {
-      throw projectsError
+      console.error('Error fetching projects:', projectsError)
+      throw new Error(`Kon projecten niet ophalen: ${projectsError.message}`)
     }
+
+    console.log('Found projects:', projects?.length || 0)
 
     // Filter projects for painters - only show assigned projects
     let filteredProjects = projects || []
     if (isPainter && userData.email) {
+      const beforeFilter = filteredProjects.length
       filteredProjects = filteredProjects.filter(project => {
         const assignedPainters = project.assigned_painters || []
         return assignedPainters.includes(userData.email)
       })
+      console.log(`Filtered projects for painter: ${beforeFilter} -> ${filteredProjects.length}`)
     }
 
     return new Response(
@@ -86,8 +107,18 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('getCompanyProjects error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details
+    })
     return new Response(
-      JSON.stringify({ success: false, error: error.message, projects: [] }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Unknown error',
+        details: error.details,
+        projects: [] 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 

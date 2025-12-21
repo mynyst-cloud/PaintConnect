@@ -13,6 +13,9 @@ Ga naar je Supabase Dashboard → Settings → Edge Functions en stel de volgend
 ```bash
 # Via CLI:
 supabase secrets set GOOGLE_MAPS_API_KEY=<your-google-maps-api-key>
+supabase secrets set RESEND_API_KEY=<your-resend-api-key>
+supabase secrets set ONESIGNAL_APP_ID=<your-onesignal-app-id>
+supabase secrets set ONESIGNAL_REST_API_KEY=<your-onesignal-rest-api-key>
 ```
 
 Of via het Dashboard: Project Settings → Edge Functions → Secrets
@@ -39,6 +42,10 @@ supabase functions deploy exportTeamActivity
 supabase functions deploy sendClientInvitation
 supabase functions deploy getProjectStats
 supabase functions deploy getMaterialConsumption
+supabase functions deploy sendPushNotification
+supabase functions deploy checkInReminders
+supabase functions deploy invitePainter
+supabase functions deploy acceptInvitation
 ```
 
 ### Of via een enkele opdracht:

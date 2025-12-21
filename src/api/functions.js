@@ -161,45 +161,106 @@ export const createCustomerPortalSession = notImplemented('createCustomerPortalS
 
 // ====== INVITE FUNCTIONS ======
 
-export const invitePainter = async ({ email, company_id }) => {
+/**
+ * Invite a painter to join a company
+ * Sends email via Resend through Edge Function
+ */
+export const invitePainter = async (payload) => {
   try {
-    const { PendingInvite } = await import('@/lib/supabase')
-    const invite = await PendingInvite.create({
-      email,
-      company_id,
-      role: 'painter',
-      token: crypto.randomUUID(),
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    const { supabase } = await import('@/lib/supabase')
+    
+    // Call the Edge Function
+    const { data, error } = await supabase.functions.invoke('invitePainter', {
+      body: {
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email,
+        phoneNumber: payload.phoneNumber,
+        companyRole: payload.companyRole || 'painter',
+        isPainter: payload.isPainter !== false,
+        companyId: payload.companyId || payload.company_id,
+        homeAddress: payload.homeAddress
+      }
     })
-    return { success: true, invite }
+    
+    if (error) {
+      console.error('invitePainter Edge Function error:', error)
+      return { data: null, error: { error: error.message || 'Er ging iets mis' } }
+    }
+    
+    return { data, error: null }
   } catch (error) {
     console.error('invitePainter failed:', error)
-    return { success: false, error: error.message }
+    return { data: null, error: { error: error.message } }
   }
 }
 
+/**
+ * Get invite details by token
+ * Used on InviteAcceptance page to show invite info
+ */
 export const getInviteDetailsByToken = async ({ token }) => {
   try {
-    const { PendingInvite } = await import('@/lib/supabase')
-    const invites = await PendingInvite.filter({ token })
-    return { data: invites[0] || null }
+    const { PendingInvite, Company } = await import('@/lib/supabase')
+    const invites = await PendingInvite.filter({ token, status: 'pending' })
+    
+    if (!invites || invites.length === 0) {
+      return { data: { success: false, error: 'Uitnodiging niet gevonden of al gebruikt' } }
+    }
+    
+    const invite = invites[0]
+    
+    // Check if expired
+    if (new Date(invite.expires_at) < new Date()) {
+      return { data: { success: false, error: 'Deze uitnodiging is verlopen' } }
+    }
+    
+    // Get company name
+    let companyName = 'Onbekend bedrijf'
+    try {
+      const company = await Company.get(invite.company_id)
+      if (company) companyName = company.name
+    } catch (e) {
+      console.error('Could not fetch company:', e)
+    }
+    
+    return { 
+      data: { 
+        success: true, 
+        invite: {
+          ...invite,
+          company_name: companyName
+        }
+      } 
+    }
   } catch (error) {
     console.error('getInviteDetailsByToken failed:', error)
-    return { data: null, error: error.message }
+    return { data: { success: false, error: error.message } }
   }
 }
 
+/**
+ * Accept an invitation and join the company
+ * Called after user logs in
+ */
 export const acceptInvitation = async ({ token }) => {
   try {
-    const { PendingInvite } = await import('@/lib/supabase')
-    const invites = await PendingInvite.filter({ token })
-    if (invites[0]) {
-      await PendingInvite.update(invites[0].id, { status: 'accepted' })
-      return { success: true }
+    const { supabase } = await import('@/lib/supabase')
+    
+    // Call the Edge Function
+    const { data, error } = await supabase.functions.invoke('acceptInvitation', {
+      body: { token }
+    })
+    
+    if (error) {
+      console.error('acceptInvitation Edge Function error:', error)
+      return { data: { success: false, error: error.message || 'Er ging iets mis' } }
     }
-    return { success: false, error: 'Uitnodiging niet gevonden' }
+    
+    return { data }
   } catch (error) {
-    return { success: false, error: error.message }
+    console.error('acceptInvitation failed:', error)
+    return { data: { success: false, error: error.message } }
   }
 }
 

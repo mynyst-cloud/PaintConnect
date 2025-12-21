@@ -77,3 +77,4 @@ CREATE TRIGGER trigger_materials_usage_updated_date
 -- Notify PostgREST to reload schema
 NOTIFY pgrst, 'reload schema';
 
+

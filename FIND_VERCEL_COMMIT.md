@@ -65,3 +65,4 @@ vercel inspect [deployment-url]
 Stuur me de commit hash en ik help je om naar die exacte versie te switchen!
 
 
+

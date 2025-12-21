@@ -112,3 +112,4 @@ Resend pricing (2024):
 - Tokens verlopen na 7 dagen
 - E-mail matching bij acceptatie
 
+

@@ -43,3 +43,4 @@ WHERE status NOT IN ('nieuw', 'planning', 'in_uitvoering', 'afgerond', 'geannule
 OR status IS NULL
 LIMIT 10;
 
+

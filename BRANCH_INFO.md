@@ -42,3 +42,4 @@ Vercel is waarschijnlijk geconfigureerd om te deployen vanuit de `2025-12-20-0cu
 Overweeg om deze branch te mergen naar `main` of om `main` te updaten naar deze commit, zodat er geen verwarring meer is over welke branch de "production" versie is.
 
 
+

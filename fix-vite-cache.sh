@@ -38,3 +38,4 @@ find ~ -name ".vite" -type d -maxdepth 3 2>/dev/null | xargs rm -rf 2>/dev/null 
 echo "✅ Cleanup compleet!"
 echo ""
 
+

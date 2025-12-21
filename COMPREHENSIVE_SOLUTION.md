@@ -151,3 +151,4 @@ Zodra je de code hebt:
    - Vergelijk met https://paintcon.vercel.app
    - Ze moeten nu identiek zijn
 
+

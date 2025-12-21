@@ -48,7 +48,15 @@ export default function MagicLinkVerify() {
         // If we got an action link, use it to log in
         if (data.actionLink) {
           // #region agent log
-          console.log('[DEBUG HYP-D] Parsing actionLink, length:', data.actionLink?.length);
+          console.log('[DEBUG HYP-A] actionLink received:', data.actionLink?.substring(0, 100) + '...');
+          console.log('[DEBUG HYP-A] actionLink full URL parts:', { 
+            protocol: new URL(data.actionLink).protocol,
+            host: new URL(data.actionLink).host,
+            pathname: new URL(data.actionLink).pathname,
+            search: new URL(data.actionLink).search?.substring(0, 50),
+            hash: new URL(data.actionLink).hash?.substring(0, 50) || 'NO_HASH'
+          });
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:actionLink',message:'actionLink details',data:{actionLinkPreview: data.actionLink?.substring(0, 100), hasHash: !!new URL(data.actionLink).hash},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
           // #endregion
 
           // Extract the token parts from the action link and use them
@@ -57,7 +65,12 @@ export default function MagicLinkVerify() {
           const refreshToken = url.hash?.match(/refresh_token=([^&]+)/)?.[1];
 
           // #region agent log
-          console.log('[DEBUG HYP-D] Extracted tokens:', { hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken });
+          console.log('[DEBUG HYP-B] Token extraction result:', { 
+            hasAccessToken: !!accessToken, 
+            hasRefreshToken: !!refreshToken,
+            hashContent: url.hash?.substring(0, 30) || 'EMPTY'
+          });
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:tokenExtract',message:'Token extraction',data:{hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, hashContent: url.hash?.substring(0, 30)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
           // #endregion
 
           if (accessToken && refreshToken) {
@@ -68,7 +81,7 @@ export default function MagicLinkVerify() {
             });
 
             // #region agent log
-            console.log('[DEBUG HYP-D] setSession result:', { sessionError: sessionError?.message || null, success: !sessionError });
+            console.log('[DEBUG HYP-B] setSession result:', { sessionError: sessionError?.message || null, success: !sessionError });
             // #endregion
 
             if (!sessionError) {
@@ -81,14 +94,26 @@ export default function MagicLinkVerify() {
               }, 1500);
               return;
             }
+          } else {
+            // #region agent log
+            console.log('[DEBUG HYP-C] NO TOKENS FOUND - This is the bug! Will fall through to Google login or redirect without session');
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:noTokens',message:'BUG: No tokens in actionLink',data:{actionLinkType: 'supabase-verify-url', redirectTo: data.redirectTo},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
           }
         }
 
         // If action link didn't work, show success with Google login option
         if (data.requiresGoogleLogin) {
+          // #region agent log
+          console.log('[DEBUG HYP-C] Taking requiresGoogleLogin path');
+          // #endregion
           setStatus('success');
           setMessage('E-mail geverifieerd! Log in via Google om door te gaan.');
         } else {
+          // #region agent log
+          console.log('[DEBUG HYP-C] Taking redirect path WITHOUT session - redirectTo:', data.redirectTo);
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:fallbackRedirect',message:'REDIRECT WITHOUT SESSION',data:{redirectTo: data.redirectTo, userWillLoop: true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           setStatus('success');
           setMessage('Verificatie geslaagd! U wordt doorgestuurd...');
           setTimeout(() => {

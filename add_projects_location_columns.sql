@@ -23,3 +23,4 @@ WHERE table_name = 'projects'
 AND column_name IN ('latitude', 'longitude', 'expected_start_time', 'full_address')
 ORDER BY column_name;
 
+

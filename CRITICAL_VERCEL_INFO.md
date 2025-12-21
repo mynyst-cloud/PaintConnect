@@ -103,3 +103,4 @@ Als je de commit niet kunt vinden:
 **STUUR ME DE COMPLETE COMMIT SHA** (40 karakters) die je in Vercel ziet, dan kan ik je precies vertellen hoe je daar naartoe gaat!
 
 
+

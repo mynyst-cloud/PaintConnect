@@ -147,3 +147,4 @@ NOTIFY pgrst, 'reload schema';
 -- Done!
 SELECT 'Push notifications system tables created successfully!' as status;
 
+

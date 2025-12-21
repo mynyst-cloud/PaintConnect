@@ -87,3 +87,4 @@ Dit download de exacte source code zoals Vercel die heeft.
 - [ ] Vercel commit SHA vergeleken met lokale commit
 - [ ] Environment variables gecheckt
 
+

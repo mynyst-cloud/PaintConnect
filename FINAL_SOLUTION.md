@@ -63,3 +63,4 @@ npx vercel pull --yes --environment=production
 - Gebruik altijd preview voor development
 - Of maak een compleet nieuw browser profiel
 
+

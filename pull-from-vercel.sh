@@ -38,3 +38,4 @@ echo ""
 echo "Als er nieuwe wijzigingen zijn, zijn dit de uncommitted changes"
 echo "die op Vercel stonden maar niet in git."
 
+

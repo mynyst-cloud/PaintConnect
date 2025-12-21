@@ -90,3 +90,4 @@ NOTIFY pgrst, 'reload schema';
 
 SELECT 'pending_invites table updated successfully' as result;
 
+

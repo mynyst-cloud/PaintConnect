@@ -110,3 +110,4 @@ Als niets werkt, contact Vercel support:
 4. Check of die commit in GitHub staat
 5. Checkout die commit lokaal
 
+

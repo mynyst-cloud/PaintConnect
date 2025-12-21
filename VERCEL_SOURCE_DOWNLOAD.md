@@ -65,3 +65,4 @@ Als `vercel pull` niet werkt:
 2. Klik op "Build Logs"
 3. Check of er build-time wijzigingen zijn
 
+

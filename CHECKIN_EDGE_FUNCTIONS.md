@@ -383,3 +383,4 @@ supabase functions deploy getCompanyProjects
 supabase functions deploy getCompanyPainters
 ```
 
+

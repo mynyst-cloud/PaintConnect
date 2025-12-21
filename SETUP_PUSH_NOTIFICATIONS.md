@@ -157,3 +157,4 @@ curl -X POST https://hhnbxutsmnkypbwydebo.supabase.co/functions/v1/checkInRemind
 - Verifieer dat de cron service correct is geconfigureerd
 - Test de functie handmatig met curl
 
+

@@ -139,3 +139,4 @@ Als alles faalt:
 4. **Test lokaal: `npm run dev`**
 5. **Commit: `git add . && git commit -m "Add styled login page"`**
 
+

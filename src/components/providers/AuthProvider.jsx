@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import LoadingSpinner from '@/components/ui/LoadingSpinner'; // pas aan als je eigen spinner hebt
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import LoginPage from '@/components/auth/LoginPage';
 
 export const AuthContext = React.createContext({});
 
@@ -35,27 +36,17 @@ export default function AuthProvider({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoadingSpinner text="Laden..." />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white/80 font-medium">Laden...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <div className="text-center p-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">PaintConnect</h1>
-          <p className="text-gray-600 mb-8">Log in om toegang te krijgen tot je schildersbedrijf platform</p>
-          <button
-            onClick={login}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition"
-          >
-            Inloggen met Google
-          </button>
-        </div>
-      </div>
-    );
+    return <LoginPage />;
   }
 
   return (

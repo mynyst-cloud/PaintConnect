@@ -34,10 +34,22 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { company_id } = await req.json()
+    const body = await req.json().catch(() => ({}))
+    let company_id = body.company_id
     
+    // If no company_id provided, get it from the user
     if (!company_id) {
-      throw new Error('company_id is verplicht')
+      const { data: userData } = await supabase
+        .from('users')
+        .select('company_id')
+        .eq('id', user.id)
+        .single()
+      
+      company_id = userData?.company_id
+      
+      if (!company_id) {
+        throw new Error('Gebruiker heeft geen bedrijf')
+      }
     }
 
     // Get all users for the company

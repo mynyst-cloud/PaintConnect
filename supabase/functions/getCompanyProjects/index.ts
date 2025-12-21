@@ -33,6 +33,9 @@ serve(async (req) => {
       throw new Error('Niet geautoriseerd')
     }
 
+    // Get request body (optional company_id)
+    const body = await req.json().catch(() => ({}))
+    
     // Get user's company and check if painter
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -44,6 +47,7 @@ serve(async (req) => {
       throw new Error('Gebruiker heeft geen bedrijf')
     }
 
+    const company_id = body.company_id || userData.company_id
     const isPainter = userData.company_role === 'painter'
 
     // Build query for active projects

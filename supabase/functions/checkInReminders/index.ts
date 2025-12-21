@@ -184,6 +184,10 @@ serve(async (req) => {
 
       log(`[Project: ${project.project_name}] WITHIN check-in window!`)
 
+      // #region agent log - Hypothesis B: Check assigned emails
+      log(`[HYP-B] assigned_painters raw value: ${JSON.stringify(assignedEmails)}`)
+      // #endregion
+
       // Get user IDs from emails
       const { data: users, error: usersError } = await supabase
         .from('users')
@@ -195,6 +199,11 @@ serve(async (req) => {
         continue
       }
 
+      // #region agent log - Hypothesis B: Check if emails match
+      log(`[HYP-B] Query for emails: ${assignedEmails.join(', ')}`)
+      log(`[HYP-B] Users found: ${JSON.stringify(users?.map(u => ({ id: u.id, email: u.email })) || [])}`)
+      // #endregion
+
       if (!users || users.length === 0) {
         log(`[Project: ${project.project_name}] No users found for emails: ${assignedEmails.join(', ')}`)
         continue
@@ -203,6 +212,11 @@ serve(async (req) => {
       log(`[Project: ${project.project_name}] Found ${users.length} users`)
 
       const userIds = users.map(u => u.id)
+
+      // #region agent log - Hypothesis D: Check date format
+      log(`[HYP-D] today variable value: "${today}"`)
+      log(`[HYP-D] Query filter: check_in_time >= "${today}T00:00:00"`)
+      // #endregion
 
       // Check who already checked in today
       const { data: checkedIn } = await supabase
@@ -221,19 +235,32 @@ serve(async (req) => {
         continue
       }
 
+      // #region agent log - Hypothesis C: Check existing reminders
+      log(`[HYP-C] Checking for existing reminders with: project_id=${project.id}, type=check_in_reminder, sent_at >= ${today}T00:00:00`)
+      // #endregion
+
       // Check if we already sent a reminder today for this project
-      const { data: existingReminders } = await supabase
+      const { data: existingReminders, error: reminderError } = await supabase
         .from('push_notification_log')
-        .select('id')
+        .select('id, sent_at')
         .eq('project_id', project.id)
         .eq('notification_type', 'check_in_reminder')
         .gte('sent_at', `${today}T00:00:00`)
         .limit(1)
 
+      // #region agent log - Hypothesis C: Log existing reminders result
+      log(`[HYP-C] Existing reminders query error: ${JSON.stringify(reminderError)}`)
+      log(`[HYP-C] Existing reminders found: ${JSON.stringify(existingReminders)}`)
+      // #endregion
+
       if (existingReminders && existingReminders.length > 0) {
         log(`[Project: ${project.project_name}] Already sent check-in reminder today, skipping`)
         continue
       }
+
+      // #region agent log - Hypothesis A: Check push subscriptions
+      log(`[HYP-A] Looking for push_subscriptions for user_ids: ${notCheckedInUserIds.join(', ')}`)
+      // #endregion
 
       // Get push subscriptions
       const { data: subscriptions, error: subsError } = await supabase
@@ -241,6 +268,11 @@ serve(async (req) => {
         .select('onesignal_player_id, user_id')
         .in('user_id', notCheckedInUserIds)
         .eq('is_active', true)
+
+      // #region agent log - Hypothesis A: Log subscriptions result
+      log(`[HYP-A] Subscriptions query error: ${JSON.stringify(subsError)}`)
+      log(`[HYP-A] Subscriptions found: ${JSON.stringify(subscriptions)}`)
+      // #endregion
 
       if (subsError) {
         log(`[Project: ${project.project_name}] Error fetching subscriptions: ${JSON.stringify(subsError)}`)
@@ -254,7 +286,17 @@ serve(async (req) => {
       }
 
       const playerIds = subscriptions.map((s: any) => s.onesignal_player_id)
+      
+      // #region agent log - Hypothesis G: Log player IDs being used
+      log(`[HYP-G] Player IDs to send: ${JSON.stringify(playerIds)}`)
+      // #endregion
+
       log(`[Project: ${project.project_name}] Sending to player IDs: ${playerIds.join(', ')}`)
+
+      // #region agent log - Hypothesis H: Log OneSignal config
+      log(`[HYP-H] ONESIGNAL_APP_ID length: ${ONESIGNAL_APP_ID.length}`)
+      log(`[HYP-H] ONESIGNAL_REST_API_KEY length: ${ONESIGNAL_REST_API_KEY.length}`)
+      // #endregion
 
       // Send check-in reminder
       const result = await sendPush(
@@ -267,6 +309,10 @@ serve(async (req) => {
           url: `/dashboard?checkin=${project.id}`
         }
       )
+
+      // #region agent log - Hypothesis F: Log OneSignal API response
+      log(`[HYP-F] OneSignal API response: ${JSON.stringify(result)}`)
+      // #endregion
 
       // Log notifications
       for (const userId of notCheckedInUserIds) {

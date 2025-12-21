@@ -116,12 +116,13 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     }
   };
 
-  const handlePainterToggle = (painterId) => {
+  // Use email instead of ID for consistency with PlanningForm and Edge Functions
+  const handlePainterToggle = (painterEmail) => {
     setFormData(prev => ({
       ...prev,
-      assigned_painters: prev.assigned_painters.includes(painterId)
-        ? prev.assigned_painters.filter(id => id !== painterId)
-        : [...prev.assigned_painters, painterId]
+      assigned_painters: prev.assigned_painters.includes(painterEmail)
+        ? prev.assigned_painters.filter(email => email !== painterEmail)
+        : [...prev.assigned_painters, painterEmail]
     }));
   };
 
@@ -464,14 +465,14 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                   ) : availablePainters.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border rounded-lg bg-gray-50 dark:bg-slate-800/50">
                       {availablePainters.map((painter) => (
-                        <div key={painter.id} className="flex items-center space-x-3">
+                        <div key={painter.email} className="flex items-center space-x-3">
                           <Checkbox
-                            id={`painter-${painter.id}`}
-                            checked={formData.assigned_painters.includes(painter.id)}
-                            onCheckedChange={() => handlePainterToggle(painter.id)}
+                            id={`painter-${painter.email}`}
+                            checked={formData.assigned_painters.includes(painter.email)}
+                            onCheckedChange={() => handlePainterToggle(painter.email)}
                           />
                           <Label
-                            htmlFor={`painter-${painter.id}`}
+                            htmlFor={`painter-${painter.email}`}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                           >
                             {painter.full_name || painter.email}

@@ -27,6 +27,8 @@ import { usePWA } from '@/components/utils/usePWA';
 import TeamChatSidebar from '@/components/chat/TeamChatSidebar';
 import AISupportWidget from '@/components/support/AISupportWidget';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useFeatureAccess, TrialBanner } from '@/hooks/useFeatureAccess';
+import { USER_ROLES } from '@/config/roles';
 
 const paintConnectLogoLightUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 const paintConnectLogoDarkUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png';
@@ -607,35 +609,47 @@ function LayoutContent({ children }) {
     return <TrialExpiredModal companyName={company.name} trialEnd={company.trial_ends_at} />;
   }
 
-  const userCompanyRole = user?.company_role || 'painter';
+  const userCompanyRole = user?.company_role || USER_ROLES.PAINTER;
+  const isSuperAdmin = user?.role === 'admin'; // Platform super admin
+  const isCompanyAdmin = userCompanyRole === USER_ROLES.ADMIN;
+  const isPainter = userCompanyRole === USER_ROLES.PAINTER;
 
+  // Base menu items - available to all users
   const menuItems = [
-  { name: "Dashboard", icon: LayoutDashboard, href: createPageUrl("Dashboard") },
-  { name: "Planning", icon: Calendar, href: createPageUrl("Planning") },
-  { name: "Projecten", icon: Briefcase, href: createPageUrl("Projecten") },
-  { name: "Beschadigingen", icon: AlertTriangle, href: createPageUrl("Beschadigingen") },
-  { name: "Referrals", icon: Gift, href: createPageUrl("Referrals") }];
+    { name: "Dashboard", icon: LayoutDashboard, href: createPageUrl("Dashboard"), feature: 'page_dashboard' },
+    { name: "Planning", icon: Calendar, href: createPageUrl("Planning"), feature: 'page_planning' },
+    { name: "Projecten", icon: Briefcase, href: createPageUrl("Projecten"), feature: 'page_projects' },
+    { name: "Beschadigingen", icon: AlertTriangle, href: createPageUrl("Beschadigingen"), feature: 'page_damages' },
+    { name: "Referrals", icon: Gift, href: createPageUrl("Referrals"), feature: 'page_referrals' },
+  ];
 
+  // Inventory items - filtered based on role and subscription
+  const inventarisItems = isCompanyAdmin || isSuperAdmin ? [
+    { name: "Materialen", icon: Package, href: createPageUrl("Materialen"), feature: 'page_materials' },
+    { name: "MateriaalBeheer", icon: ClipboardList, href: createPageUrl("MateriaalBeheer"), feature: 'page_materiaalbeheer' },
+    { name: "VoorraadBeheer", icon: Warehouse, href: createPageUrl("VoorraadBeheer"), feature: 'page_voorraad' },
+  ] : [
+    { name: "Materialen", icon: Package, href: createPageUrl("Materialen"), feature: 'page_materials' },
+  ];
 
-  const inventarisItems = [
-  { name: "Materialen", icon: Package, href: createPageUrl("Materialen") },
-  { name: "MateriaalBeheer", icon: ClipboardList, href: createPageUrl("MateriaalBeheer") },
-  { name: "VoorraadBeheer", icon: Warehouse, href: createPageUrl("VoorraadBeheer") }];
+  // Calculation items - filtered based on role
+  const calculatiesItems = isCompanyAdmin || isSuperAdmin ? [
+    { name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator"), feature: 'page_verfcalculator' },
+    { name: "NaCalculatie", icon: Calculator, href: createPageUrl("NaCalculatie"), feature: 'page_nacalculatie' },
+    { name: "Offertes", icon: Briefcase, href: createPageUrl("OfferteLijst"), feature: 'page_offerte' },
+  ] : [
+    { name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator"), feature: 'page_verfcalculator' },
+  ];
 
-
-  const calculatiesItems = [
-    { name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator") },
-    { name: "NaCalculatie", icon: Calculator, href: createPageUrl("NaCalculatie") },
-    { name: "Offertes", icon: Briefcase, href: createPageUrl("OfferteLijst") }];
-
-
-  const beheerItems = [
-  { name: "Leads", icon: Users, href: createPageUrl("Leads") },
-  { name: "Klantportaal", icon: Building, href: createPageUrl("Klantportaal") },
-  { name: "TeamActiviteit", icon: Activity, href: createPageUrl("TeamActiviteit") },
-  { name: "Subscription", icon: CreditCard, href: createPageUrl("Subscription") },
-  { name: "Analytics", icon: BarChart3, href: createPageUrl("Analytics") },
-  { name: "AccountSettings", icon: Settings, href: createPageUrl("AccountSettings") }];
+  // Management items - only for admins, filtered by subscription tier
+  const beheerItems = isCompanyAdmin || isSuperAdmin ? [
+    { name: "Leads", icon: Users, href: createPageUrl("Leads"), feature: 'page_leads' },
+    { name: "Klantportaal", icon: Building, href: createPageUrl("Klantportaal"), feature: 'page_klantportaal' },
+    { name: "TeamActiviteit", icon: Activity, href: createPageUrl("TeamActiviteit"), feature: 'page_team_activiteit' },
+    { name: "Subscription", icon: CreditCard, href: createPageUrl("Subscription"), feature: 'page_subscription' },
+    { name: "Analytics", icon: BarChart3, href: createPageUrl("Analytics"), feature: 'page_analytics' },
+    { name: "AccountSettings", icon: Settings, href: createPageUrl("AccountSettings"), feature: 'page_accountsettings' },
+  ] : [];
 
 
   const systeemItems = [
@@ -705,7 +719,7 @@ function LayoutContent({ children }) {
           <div className="space-y-0.5 mb-3">
             {menuItems.map((item) => <NavLink key={item.name} item={item} />)}
             
-            {userCompanyRole === 'admin' ?
+            {(isCompanyAdmin || isSuperAdmin) ?
             <div className="mb-1">
                 <button
                 onClick={() => setIsInventarisExpanded(!isInventarisExpanded)}
@@ -736,7 +750,7 @@ function LayoutContent({ children }) {
             <NavLink item={{ name: "Materialen", icon: Package, href: createPageUrl("Materialen") }} />
             }
 
-            {userCompanyRole === 'admin' ?
+            {(isCompanyAdmin || isSuperAdmin) ?
             <div>
                 <button
                 onClick={() => setIsCalculatiesExpanded(!isCalculatiesExpanded)}
@@ -768,7 +782,7 @@ function LayoutContent({ children }) {
             }
           </div>
 
-          {userCompanyRole === 'admin' &&
+          {(isCompanyAdmin || isSuperAdmin) && beheerItems.length > 0 &&
           <div className="mb-3">
               <button
               onClick={() => setIsBeheerExpanded(!isBeheerExpanded)}
@@ -817,6 +831,9 @@ function LayoutContent({ children }) {
       </div>
 
       <div className="flex flex-col flex-1 overflow-x-hidden">
+        {/* Trial Banner */}
+        <TrialBanner />
+        
         {impersonatedCompany &&
         <div className="bg-indigo-600 text-white text-sm text-center py-2 px-4 flex items-center justify-center gap-4">
             <Eye className="w-5 h-5" />
@@ -931,13 +948,16 @@ function LayoutContent({ children }) {
         unreadNotifications={unreadNotifications}
         handleLogout={handleLogout}
         menuItems={menuItems}
-        inventarisItems={userCompanyRole === 'admin' ? inventarisItems : [{ name: "Materialen", icon: Package, href: createPageUrl("Materialen") }]}
-        calculatiesItems={userCompanyRole === 'admin' ? calculatiesItems : [{ name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator") }]}
-        beheerItems={userCompanyRole === 'admin' ? beheerItems : []}
+        inventarisItems={(isCompanyAdmin || isSuperAdmin) ? inventarisItems : [{ name: "Materialen", icon: Package, href: createPageUrl("Materialen") }]}
+        calculatiesItems={(isCompanyAdmin || isSuperAdmin) ? calculatiesItems : [{ name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator") }]}
+        beheerItems={(isCompanyAdmin || isSuperAdmin) ? beheerItems : []}
         systeemItems={systeemItems}
         company={company}
         paintConnectLogoUrl={paintConnectLogoUrl}
         isAdmin={isAdmin}
+        isSuperAdmin={isSuperAdmin}
+        isCompanyAdmin={isCompanyAdmin}
+        isPainter={isPainter}
         theme={resolvedTheme}
         setTheme={() => {}} />
 

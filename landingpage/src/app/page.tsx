@@ -303,24 +303,18 @@ function AppPreviewSection() {
   const screens = [
     {
       id: 0,
-      name: "Dashboard",
-      description: "Overzicht met snelle acties, recente projecten en dagelijkse updates",
-      image: "/app-dashboard.png",
-    },
-    {
-      id: 1,
       name: "Planning",
       description: "Week-overzicht met alle projecten en schilders in één oogopslag",
       image: "/app-planning.png",
     },
     {
-      id: 2,
+      id: 1,
       name: "Check-in",
       description: "GPS-verificatie bij aankomst op de werf - automatische tijdregistratie",
       image: "/app-checkin.png",
     },
     {
-      id: 3,
+      id: 2,
       name: "Projecten",
       description: "Bekijk al je projecten op de kaart met real-time status",
       image: "/app-map.png",

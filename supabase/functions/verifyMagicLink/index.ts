@@ -141,6 +141,120 @@ serve(async (req) => {
       isNewUser = true
     }
 
+    // ============================================
+    // AUTO-ACCEPT INVITE: Link user to company directly
+    // If redirect_to contains an invite token, accept it now
+    // ============================================
+    let companyLinked = false
+    let companyName = ''
+    
+    const redirectTo = magicLink.redirect_to || ''
+    const inviteTokenMatch = redirectTo.match(/[?&]token=([^&]+)/)
+    const inviteToken = inviteTokenMatch ? inviteTokenMatch[1] : null
+    
+    console.log('[AUTO-LINK] Checking for invite token in redirect:', { redirectTo, inviteToken: inviteToken?.substring(0, 8) })
+
+    if (inviteToken) {
+      // Get the invite details
+      const { data: invite, error: inviteError } = await supabase
+        .from('pending_invites')
+        .select('*')
+        .eq('token', inviteToken)
+        .eq('status', 'pending')
+        .single()
+
+      if (invite && !inviteError) {
+        console.log('[AUTO-LINK] Found pending invite for company:', invite.company_id)
+        
+        // Check if email matches
+        if (invite.email?.toLowerCase() === magicLink.email.toLowerCase()) {
+          // Get company details
+          const { data: company } = await supabase
+            .from('companies')
+            .select('id, name')
+            .eq('id', invite.company_id)
+            .single()
+
+          if (company) {
+            // Check if user already exists in users table
+            const { data: existingUserRecord } = await supabase
+              .from('users')
+              .select('id')
+              .eq('id', userId)
+              .single()
+
+            if (existingUserRecord) {
+              // Update existing user
+              const { error: updateError } = await supabase
+                .from('users')
+                .update({
+                  company_id: invite.company_id,
+                  current_company_id: invite.company_id,
+                  company_role: invite.company_role || 'painter',
+                  is_painter: invite.is_painter !== false,
+                  status: 'active',
+                  full_name: invite.full_name || magicLink.email.split('@')[0],
+                  phone: invite.phone_number || null,
+                  home_address: invite.home_address || null,
+                  updated_date: new Date().toISOString()
+                })
+                .eq('id', userId)
+
+              if (!updateError) {
+                companyLinked = true
+                companyName = company.name
+                console.log('[AUTO-LINK] Updated user, linked to company:', company.name)
+              } else {
+                console.error('[AUTO-LINK] Failed to update user:', updateError)
+              }
+            } else {
+              // Create new user record
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert({
+                  id: userId,
+                  email: magicLink.email,
+                  full_name: invite.full_name || magicLink.email.split('@')[0],
+                  phone: invite.phone_number || null,
+                  company_id: invite.company_id,
+                  current_company_id: invite.company_id,
+                  company_role: invite.company_role || 'painter',
+                  is_painter: invite.is_painter !== false,
+                  status: 'active',
+                  home_address: invite.home_address || null,
+                  created_date: new Date().toISOString()
+                })
+
+              if (!insertError) {
+                companyLinked = true
+                companyName = company.name
+                console.log('[AUTO-LINK] Created user record, linked to company:', company.name)
+              } else {
+                console.error('[AUTO-LINK] Failed to create user record:', insertError)
+              }
+            }
+
+            // Mark invite as accepted
+            if (companyLinked) {
+              await supabase
+                .from('pending_invites')
+                .update({
+                  status: 'accepted',
+                  accepted_at: new Date().toISOString()
+                })
+                .eq('id', invite.id)
+              
+              console.log('[AUTO-LINK] Marked invite as accepted')
+            }
+          }
+        } else {
+          console.log('[AUTO-LINK] Email mismatch:', { inviteEmail: invite.email, magicLinkEmail: magicLink.email })
+        }
+      } else {
+        console.log('[AUTO-LINK] No pending invite found for token')
+      }
+    }
+
     // Generate a session for the user
     // We use generateLink to create a magic link that auto-logs in
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
@@ -170,16 +284,37 @@ serve(async (req) => {
     // Extract the token from the generated link
     const actionLink = linkData.properties?.action_link
     
-    console.log(`Magic link verified for: ${magicLink.email}, isNewUser: ${isNewUser}`)
+    // If company was linked, redirect to Dashboard directly (no need for InviteAcceptance)
+    // Otherwise, use the original redirect_to
+    const finalRedirectTo = companyLinked ? '/Dashboard' : (magicLink.redirect_to || '/Dashboard')
+    
+    // Update the actionLink to use the new redirect
+    let finalActionLink = actionLink
+    if (companyLinked && actionLink) {
+      // Replace the redirect_to in the actionLink with /Dashboard
+      try {
+        const actionUrl = new URL(actionLink)
+        actionUrl.searchParams.set('redirect_to', 'https://paintcon.vercel.app/Dashboard')
+        finalActionLink = actionUrl.toString()
+      } catch (e) {
+        console.error('Failed to update actionLink redirect:', e)
+      }
+    }
+    
+    console.log(`Magic link verified for: ${magicLink.email}, isNewUser: ${isNewUser}, companyLinked: ${companyLinked}`)
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Inloggen geslaagd!',
+        message: companyLinked 
+          ? `Welkom bij ${companyName}! U bent nu onderdeel van het team.`
+          : 'Inloggen geslaagd!',
         email: magicLink.email,
         isNewUser,
-        redirectTo: magicLink.redirect_to || '/Dashboard',
-        actionLink // This link will auto-login the user
+        companyLinked,
+        companyName: companyName || null,
+        redirectTo: finalRedirectTo,
+        actionLink: finalActionLink // This link will auto-login the user
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )

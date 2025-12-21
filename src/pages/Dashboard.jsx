@@ -39,6 +39,7 @@ const LoadingSpinner = () => <div className="fixed inset-0 bg-black/50 flex item
 import CheckInButton from '@/components/checkin/CheckInButton';
 import CheckOutButton from '@/components/checkin/CheckOutButton';
 import TeamActivityFeed from '@/components/checkin/TeamActivityFeed';
+import PushNotificationPrompt from '@/components/notifications/PushNotificationPrompt';
 
 
 export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unreadMessages }) {
@@ -671,6 +672,11 @@ export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unrea
                   </div>
                 </div>
               ) : null}
+              
+              {/* Push Notification Prompt */}
+              <div className="mt-3">
+                <PushNotificationPrompt currentUser={currentUser} />
+              </div>
             </div>
 
             {currentUser && (

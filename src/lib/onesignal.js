@@ -19,9 +19,16 @@ export function isPushSupported() {
  * Initialize OneSignal SDK
  */
 export async function initOneSignal() {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Init called',data:{isInitialized,hasAppId:!!ONESIGNAL_APP_ID,appIdLength:ONESIGNAL_APP_ID?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  
   if (isInitialized) return true
   if (!ONESIGNAL_APP_ID) {
     console.warn('[OneSignal] No App ID configured')
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'NO APP ID!',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     return false
   }
   if (!isPushSupported()) {
@@ -119,12 +126,20 @@ export async function requestPushPermission() {
  * @returns {Promise<string|null>}
  */
 export async function getPlayerId() {
-  if (!isInitialized) return null
+  if (!isInitialized) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:getPlayerId',message:'Not initialized',data:{isInitialized},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
+    return null
+  }
 
   try {
     return await new Promise((resolve) => {
       window.OneSignalDeferred.push(async function(OneSignal) {
         const id = await OneSignal.User.PushSubscription.id
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:getPlayerId',message:'Got ID',data:{hasId:!!id,idLength:id?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
         resolve(id || null)
       })
     })

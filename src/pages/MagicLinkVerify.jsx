@@ -26,6 +26,7 @@ export default function MagicLinkVerify() {
         return;
       }
 
+      let responseData = null;
       try {
         // #region agent log
         console.log('[DEBUG HYP-A] Calling verifyMagicLink with token:', token.substring(0, 8));
@@ -35,6 +36,7 @@ export default function MagicLinkVerify() {
         const { data, error } = await supabase.functions.invoke('verifyMagicLink', {
           body: { token }
         });
+        responseData = data;
 
         // #region agent log
         console.log('[DEBUG HYP-A/C/D/E] verifyMagicLink response:', { hasData: !!data, success: data?.success, error: error?.message || data?.error, hasActionLink: !!data?.actionLink, requiresGoogle: data?.requiresGoogleLogin, fullData: data });
@@ -85,12 +87,25 @@ export default function MagicLinkVerify() {
 
       } catch (error) {
         // #region agent log
-        console.log('[DEBUG HYP-A] Verification FAILED:', { errorMessage: error?.message, errorName: error?.name });
+        console.log('[DEBUG HYP-A] Verification FAILED:', { 
+          errorMessage: error?.message, 
+          errorName: error?.name,
+          responseData: responseData
+        });
         // #endregion
 
         console.error('Verify error:', error);
         setStatus('error');
-        setMessage(error.message || 'Er is een fout opgetreden. Probeer opnieuw in te loggen.');
+        
+        // Show more detailed error message
+        let errorMsg = error.message || 'Er is een fout opgetreden. Probeer opnieuw in te loggen.';
+        if (responseData?.debug) {
+          console.log('[DEBUG] Error debug info:', responseData.debug);
+          if (responseData.debug.alreadyUsed) {
+            errorMsg = 'Deze link is al gebruikt. Vraag een nieuwe uitnodiging aan.';
+          }
+        }
+        setMessage(errorMsg);
       }
     };
 

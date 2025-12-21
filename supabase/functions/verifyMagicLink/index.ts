@@ -72,8 +72,24 @@ serve(async (req) => {
 
     if (findError || !magicLink) {
       console.error('Magic link not found:', findError)
+      
+      // Check if token exists but was already used
+      const alreadyUsed = allMatches?.some(m => m.used === true)
+      
       return new Response(
-        JSON.stringify({ success: false, error: 'Ongeldige of verlopen link', debug: { findError: findError?.message, code: findError?.code } }),
+        JSON.stringify({ 
+          success: false, 
+          error: alreadyUsed 
+            ? 'Deze link is al gebruikt. Vraag een nieuwe uitnodiging aan.' 
+            : 'Ongeldige of verlopen link', 
+          debug: { 
+            findError: findError?.message, 
+            code: findError?.code,
+            tokenExists: (allMatches?.length || 0) > 0,
+            alreadyUsed,
+            allMatchesCount: allMatches?.length || 0
+          } 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }

@@ -673,7 +673,7 @@ export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unrea
               ) : null}
             </div>
 
-            {currentUser && currentUser.is_painter === true && (
+            {currentUser && (
               <div className="flex flex-col gap-2 flex-shrink-0">
                 <CheckInButton currentUser={currentUser} onCheckInSuccess={() => loadDashboardData(true)} />
                 <CheckOutButton currentUser={currentUser} onCheckOutSuccess={() => loadDashboardData(true)} />

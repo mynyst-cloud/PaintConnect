@@ -43,21 +43,46 @@ function InviteAcceptanceContent() {
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
 
+    // #region agent log
+    console.log('[DEBUG HYP-A] InviteAcceptance loaded:', { 
+        fullUrl: window.location.href,
+        pathname: location.pathname,
+        search: location.search,
+        token: token ? token.substring(0, 8) + '...' : 'NO TOKEN',
+        hasToken: !!token
+    });
+    // #endregion
+
     useEffect(() => {
         const loadInviteData = async () => {
+            // #region agent log
+            console.log('[DEBUG HYP-B] loadInviteData called with token:', token ? token.substring(0, 8) + '...' : 'NO TOKEN');
+            // #endregion
+            
             if (!token) {
+                console.log('[DEBUG HYP-B] No token - setting error');
                 setError('Geen geldige uitnodigingstoken gevonden.');
                 return;
             }
 
             try {
                 const { data } = await getInviteDetailsByToken({ token });
+                // #region agent log
+                console.log('[DEBUG HYP-B] getInviteDetailsByToken response:', { 
+                    success: data?.success, 
+                    hasInvite: !!data?.invite,
+                    error: data?.error,
+                    companyName: data?.invite?.company_name
+                });
+                // #endregion
+                
                 if (data && data.success) {
                     setInviteData(data.invite);
                 } else {
                     setError(data.error || 'Uitnodiging niet gevonden of verlopen.');
                 }
             } catch (err) {
+                console.log('[DEBUG HYP-B] Error loading invite:', err);
                 setError('Er is een fout opgetreden bij het laden van de uitnodiging.');
             }
         };
@@ -65,9 +90,18 @@ function InviteAcceptanceContent() {
         const checkCurrentUser = async () => {
             try {
                 const user = await User.me();
+                // #region agent log
+                console.log('[DEBUG HYP-C] User found:', { 
+                    id: user?.id?.substring(0, 8), 
+                    email: user?.email,
+                    companyId: user?.company_id
+                });
+                // #endregion
                 setCurrentUser(user);
             } catch (err) {
-                // User not logged in, will need to login/register
+                // #region agent log
+                console.log('[DEBUG HYP-C] No user logged in:', err?.message);
+                // #endregion
                 setCurrentUser(null);
             }
         };
@@ -78,6 +112,18 @@ function InviteAcceptanceContent() {
 
     // AUTO-ACCEPT: When user is logged in and invite is valid, automatically accept
     useEffect(() => {
+        // #region agent log
+        console.log('[DEBUG HYP-D] Auto-accept useEffect triggered:', {
+            hasCurrentUser: !!currentUser,
+            hasInviteData: !!inviteData,
+            autoAcceptAttempted,
+            isLoading,
+            success,
+            hasError: !!error,
+            token: token ? token.substring(0, 8) + '...' : 'NO TOKEN'
+        });
+        // #endregion
+        
         const autoAccept = async () => {
             // Only auto-accept if:
             // 1. User is logged in
@@ -85,12 +131,25 @@ function InviteAcceptanceContent() {
             // 3. We haven't already tried
             // 4. Not already in loading/success state
             if (currentUser && inviteData && !autoAcceptAttempted && !isLoading && !success && !error) {
-                console.log('[AUTO-ACCEPT] User is logged in, automatically accepting invitation...');
+                // #region agent log
+                console.log('[DEBUG HYP-D] AUTO-ACCEPT CONDITIONS MET! Calling acceptInvitation...');
+                console.log('[DEBUG HYP-D] User email:', currentUser?.email, 'Invite email:', inviteData?.email);
+                // #endregion
+                
                 setAutoAcceptAttempted(true);
                 setIsLoading(true);
 
                 try {
+                    // #region agent log
+                    console.log('[DEBUG HYP-E] Calling acceptInvitation with token:', token);
+                    // #endregion
+                    
                     const { data } = await acceptInvitation({ token });
+                    
+                    // #region agent log
+                    console.log('[DEBUG HYP-E] acceptInvitation response:', data);
+                    // #endregion
+                    
                     if (data && data.success) {
                         console.log('[AUTO-ACCEPT] Success! Redirecting to Dashboard...');
                         setSuccess(true);
@@ -102,11 +161,17 @@ function InviteAcceptanceContent() {
                         setError(data.error || 'Er is een fout opgetreden bij het accepteren van de uitnodiging.');
                     }
                 } catch (err) {
-                    console.error('[AUTO-ACCEPT] Error:', err);
+                    // #region agent log
+                    console.error('[DEBUG HYP-E] acceptInvitation ERROR:', err);
+                    // #endregion
                     setError('Er is een onverwachte fout opgetreden. Probeer het opnieuw.');
                 } finally {
                     setIsLoading(false);
                 }
+            } else {
+                // #region agent log
+                console.log('[DEBUG HYP-D] Auto-accept conditions NOT met, skipping');
+                // #endregion
             }
         };
 

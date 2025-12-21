@@ -41,8 +41,9 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 
 export default function TeamActiviteit() {
   // Feature access - TeamActiviteit is admin only
-  const { isPainter, isLoading: featureLoading } = useFeatureAccess();
+  const { isPainter, isSuperAdmin, isLoading: featureLoading } = useFeatureAccess();
   const [showAccessModal, setShowAccessModal] = useState(false);
+  const modalDismissedRef = useRef(false); // Track if user manually closed the modal
   
   const [records, setRecords] = useState([]);
   const [stats, setStats] = useState(null);
@@ -199,10 +200,20 @@ export default function TeamActiviteit() {
 
   // Role check - show modal for painters (must be before any conditional returns!)
   useEffect(() => {
+    // Never show for super admins or if user already dismissed it
+    if (modalDismissedRef.current) return;
+    if (isSuperAdmin && isSuperAdmin()) return;
+    
     if (!featureLoading && isPainter()) {
       setShowAccessModal(true);
     }
-  }, [featureLoading, isPainter]);
+  }, [featureLoading, isPainter, isSuperAdmin]);
+  
+  // Handler to close modal and remember dismissal
+  const handleCloseAccessModal = () => {
+    modalDismissedRef.current = true;
+    setShowAccessModal(false);
+  };
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -421,7 +432,7 @@ export default function TeamActiviteit() {
         </div>
         <UpgradeModal
           isOpen={showAccessModal}
-          onClose={() => setShowAccessModal(false)}
+          onClose={handleCloseAccessModal}
           featureName="Team Activiteit"
           requiredTier="starter"
         />

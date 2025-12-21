@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_1Qbyn6pYoAuR7Ij6K29ei6MOcurA",
+  "orgId": "team_kP7jxhZsUw5z4yKWQb9y4vt8",
+  "projectName": "paintcon",
+  "settings": {
+    "createdAt": 1765974186834,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

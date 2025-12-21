@@ -19,16 +19,9 @@ export function isPushSupported() {
  * Initialize OneSignal SDK
  */
 export async function initOneSignal() {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Init called',data:{isInitialized,hasAppId:!!ONESIGNAL_APP_ID,appIdLength:ONESIGNAL_APP_ID?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
-  
   if (isInitialized) return true
   if (!ONESIGNAL_APP_ID) {
     console.warn('[OneSignal] No App ID configured')
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'NO APP ID!',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     return false
   }
   if (!isPushSupported()) {
@@ -46,18 +39,8 @@ export async function initOneSignal() {
         const script = document.createElement('script')
         script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
         script.defer = true
-        script.onload = () => {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Script loaded',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
-          resolve()
-        }
-        script.onerror = (err) => {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Script error',data:{err:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
-          reject(err)
-        }
+        script.onload = resolve
+        script.onerror = reject
         document.head.appendChild(script)
       })
     }
@@ -65,9 +48,6 @@ export async function initOneSignal() {
     // Initialize OneSignal
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Init timeout',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
         reject(new Error('OneSignal init timeout'))
       }, 10000)
       
@@ -84,14 +64,8 @@ export async function initOneSignal() {
               disable: true
             }
           })
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'SDK initialized',data:{appId:ONESIGNAL_APP_ID?.substring(0,8)+'...'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
           resolve()
         } catch (initError) {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'SDK init error',data:{error:initError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-          // #endregion
           reject(initError)
         }
       })
@@ -99,15 +73,9 @@ export async function initOneSignal() {
 
     isInitialized = true
     console.log('[OneSignal] Initialized successfully')
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Fully initialized',data:{isInitialized:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     return true
   } catch (error) {
     console.error('[OneSignal] Initialization error:', error)
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Init failed',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     return false
   }
 }
@@ -139,9 +107,6 @@ export async function requestPushPermission() {
     const initResult = await initOneSignal()
     if (!initResult) {
       console.error('[OneSignal] Failed to initialize before permission request')
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'Init failed',data:{isInitialized,hasDeferred:!!window.OneSignalDeferred},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-      // #endregion
       return false
     }
   }
@@ -149,9 +114,6 @@ export async function requestPushPermission() {
   // Extra check: ensure OneSignalDeferred exists
   if (!window.OneSignalDeferred) {
     console.error('[OneSignal] OneSignalDeferred not available')
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'No OneSignalDeferred',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     return false
   }
 
@@ -159,17 +121,11 @@ export async function requestPushPermission() {
     return await new Promise((resolve) => {
       window.OneSignalDeferred.push(async function(OneSignal) {
         const result = await OneSignal.Notifications.requestPermission()
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'Permission result',data:{result},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
         resolve(result)
       })
     })
   } catch (error) {
     console.error('[OneSignal] Permission request error:', error)
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'Permission error',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
     return false
   }
 }
@@ -180,9 +136,6 @@ export async function requestPushPermission() {
  */
 export async function getPlayerId() {
   if (!isInitialized) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:getPlayerId',message:'Not initialized',data:{isInitialized},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     return null
   }
 
@@ -190,9 +143,6 @@ export async function getPlayerId() {
     return await new Promise((resolve) => {
       window.OneSignalDeferred.push(async function(OneSignal) {
         const id = await OneSignal.User.PushSubscription.id
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:getPlayerId',message:'Got ID',data:{hasId:!!id,idLength:id?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
         resolve(id || null)
       })
     })
@@ -300,4 +250,3 @@ export default {
   removeTag,
   logoutOneSignal
 }
-

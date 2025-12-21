@@ -34,27 +34,13 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
   useEffect(() => {
     const supported = isPushSupported()
     setIsSupported(supported)
-    console.log('[Push] Supported:', supported)
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:useEffect',message:'Init check',data:{supported,currentUser:!!currentUser,userEmail:currentUser?.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     
     if (!supported) return
     
     const init = async () => {
-      const initResult = await initOneSignal()
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:init',message:'OneSignal init result',data:{initResult},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'AE'})}).catch(()=>{});
-      // #endregion
-      
+      await initOneSignal()
       const state = await getPushPermissionState()
-      console.log('[Push] Permission state:', state)
       setPermissionState(state)
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:init',message:'Permission state',data:{state,willAutoRegister:state===true&&!!currentUser},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       
       // Als al toegestaan, registreer de gebruiker
       if (state === true && currentUser) {
@@ -67,10 +53,6 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
 
   const registerUser = async () => {
     if (!currentUser) return
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:registerUser',message:'Starting registration',data:{userId:currentUser.id,email:currentUser.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     
     try {
       await setExternalUserId(currentUser.id, currentUser.email)
@@ -86,36 +68,24 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
       // Sla player ID op in database
       const playerId = await getPlayerId()
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:registerUser',message:'Got player ID',data:{playerId,hasPlayerId:!!playerId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
-      
       if (playerId) {
         // Check of al bestaat
-        const { data: existing, error: selectError } = await supabase
+        const { data: existing } = await supabase
           .from('push_subscriptions')
           .select('id')
           .eq('user_id', currentUser.id)
           .eq('onesignal_player_id', playerId)
           .maybeSingle()
         
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:registerUser',message:'Supabase check',data:{existing:!!existing,selectError:selectError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-        // #endregion
-        
         if (existing) {
           // Update bestaande
-          const { error: updateError } = await supabase.from('push_subscriptions').update({
+          await supabase.from('push_subscriptions').update({
             last_active: new Date().toISOString(),
             is_active: true
           }).eq('id', existing.id)
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:registerUser',message:'Updated existing',data:{updateError:updateError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-          // #endregion
         } else {
           // Insert nieuwe
-          const { error: insertError } = await supabase.from('push_subscriptions').insert({
+          await supabase.from('push_subscriptions').insert({
             user_id: currentUser.id,
             user_email: currentUser.email,
             onesignal_player_id: playerId,
@@ -123,17 +93,10 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
             last_active: new Date().toISOString(),
             is_active: true
           })
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:registerUser',message:'Inserted new',data:{insertError:insertError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-          // #endregion
         }
       }
     } catch (error) {
       console.error('[Push] Registration error:', error)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:registerUser',message:'Registration error',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-      // #endregion
     }
   }
 
@@ -163,17 +126,8 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
     localStorage.setItem('pushPromptDismissed', Date.now().toString())
   }
 
-  // Debug log
-  console.log('[Push] Render check:', { isSupported, permissionState, dismissed })
-  
-  // #region agent log
-  const localDismissed = localStorage.getItem('pushPromptDismissed');
-  fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'PushNotificationPrompt.jsx:render',message:'Render decision',data:{isSupported,permissionState,dismissed,localDismissed,willHide:!isSupported||permissionState===true||dismissed},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'CD'})}).catch(()=>{});
-  // #endregion
-
   // Niet tonen als niet ondersteund of al toegestaan
   if (!isSupported || permissionState === true || dismissed) {
-    console.log('[Push] Banner hidden:', { isSupported, permissionState, dismissed })
     return null
   }
 
@@ -285,7 +239,3 @@ export function PushNotificationBadge({ currentUser }) {
 
   return <PushNotificationPrompt currentUser={currentUser} compact />
 }
-
-
-
-

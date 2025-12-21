@@ -67,9 +67,10 @@ serve(async (req) => {
     console.log('Fetching projects for company:', company_id, 'isPainter:', isPainter)
 
     // Build query for active projects
+    // Try with all fields first, fallback to minimal if needed
     let query = supabase
       .from('projects')
-      .select('id, project_name, client_name, full_address, latitude, longitude, status, assigned_painters')
+      .select('*')
       .eq('company_id', company_id)
       .in('status', ['in_uitvoering', 'planning', 'nieuw'])
       .order('project_name', { ascending: true })
@@ -78,7 +79,9 @@ serve(async (req) => {
 
     if (projectsError) {
       console.error('Error fetching projects:', projectsError)
-      throw new Error(`Kon projecten niet ophalen: ${projectsError.message}`)
+      console.error('Error code:', projectsError.code)
+      console.error('Error details:', projectsError.details)
+      throw new Error(`Kon projecten niet ophalen: ${projectsError.message} (${projectsError.code})`)
     }
 
     console.log('Found projects:', projects?.length || 0)

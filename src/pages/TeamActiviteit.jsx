@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -129,7 +129,11 @@ export default function TeamActiviteit() {
     }
   };
 
-  const loadTeamActivity = useCallback(async (user = currentUser, comp = company) => {
+  // Use ref to track current pagination to avoid infinite loops
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
+
+  const loadTeamActivity = useCallback(async (user = currentUser, comp = company, page = null) => {
     if (!user || !comp) {
       console.log('[TeamActiviteit] Missing user or company data, skipping load');
       return;
@@ -138,11 +142,12 @@ export default function TeamActiviteit() {
     setIsLoading(true);
     try {
       const companyId = comp.id || user.company_id || user.current_company_id;
+      const currentPage = page ?? paginationRef.current.page;
       
       const response = await base44.functions.invoke('getTeamActivity', {
         company_id: companyId,
-        page: pagination.page,
-        limit: pagination.limit,
+        page: currentPage,
+        limit: paginationRef.current.limit,
         filters: {
           ...filters,
           project_id: filters.project_id || undefined,
@@ -153,15 +158,18 @@ export default function TeamActiviteit() {
           long_distance: filters.long_distance ? true : undefined,
           slow_traffic: filters.slow_traffic ? true : undefined
         },
-        compute_stats: pagination.page === 1
+        compute_stats: currentPage === 1
       });
 
       if (response.data) {
         setRecords(response.data.records || []);
-        setPagination(prev => ({
-          ...prev,
-          total: response.data.pagination.total
-        }));
+        
+        // Only update total if it changed to prevent re-renders
+        const newTotal = response.data.pagination?.total ?? 0;
+        setPagination(prev => {
+          if (prev.total === newTotal) return prev;
+          return { ...prev, total: newTotal };
+        });
         
         if (response.data.stats) {
           setStats(response.data.stats);
@@ -173,13 +181,21 @@ export default function TeamActiviteit() {
     } finally {
       setIsLoading(false);
     }
-  }, [pagination.page, pagination.limit, filters, currentUser, company]);
+  }, [filters, currentUser, company]);
 
+  // Load data when filters or user/company change
   useEffect(() => {
     if (currentUser && company) {
-      loadTeamActivity();
+      loadTeamActivity(currentUser, company, 1);
     }
-  }, [pagination.page, filters, currentUser, company, loadTeamActivity]);
+  }, [filters, currentUser, company, loadTeamActivity]);
+  
+  // Handle pagination changes separately
+  useEffect(() => {
+    if (currentUser && company && pagination.page > 1) {
+      loadTeamActivity(currentUser, company, pagination.page);
+    }
+  }, [pagination.page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));

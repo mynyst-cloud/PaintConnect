@@ -33,6 +33,12 @@ supabase functions deploy getCompanyProjects
 supabase functions deploy checkIn
 supabase functions deploy checkOut
 supabase functions deploy logAppError
+supabase functions deploy updateCheckInRecord
+supabase functions deploy deleteCheckInRecord
+supabase functions deploy exportTeamActivity
+supabase functions deploy sendClientInvitation
+supabase functions deploy getProjectStats
+supabase functions deploy getMaterialConsumption
 ```
 
 ### Of via een enkele opdracht:
@@ -84,4 +90,10 @@ Voer `add_check_in_records.sql` uit in de Supabase SQL Editor.
 | `checkIn` | Registreert een check-in met GPS en reisberekening |
 | `checkOut` | Registreert een check-out met gewerkte tijd |
 | `logAppError` | Logt app errors naar database |
+| `updateCheckInRecord` | Update een check-in record (admin/owner) |
+| `deleteCheckInRecord` | Verwijder een check-in record (admin only) |
+| `exportTeamActivity` | Exporteer team activiteit als CSV |
+| `sendClientInvitation` | Stuur klant uitnodiging email |
+| `getProjectStats` | Haal project statistieken op |
+| `getMaterialConsumption` | Haal materiaal verbruik rapport op |
 

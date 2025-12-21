@@ -916,6 +916,83 @@ function FeaturesSection() {
   );
 }
 
+// Desktop Dashboard Section
+function DesktopDashboardSection() {
+  return (
+    <section className="py-20 md:py-28 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <span className="text-[var(--color-emerald-600)] font-semibold text-sm uppercase tracking-wider">
+            Dashboard Preview
+          </span>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--color-gray-900)] mt-3 mb-4">
+            Alles overzichtelijk op één scherm
+          </h2>
+          <p className="text-lg text-[var(--color-gray-600)] max-w-2xl mx-auto">
+            Bekijk je recente projecten, snelle acties, meldingen en teamactiviteit in één duidelijk overzicht
+          </p>
+        </div>
+
+        {/* Dashboard Screenshot */}
+        <div className="relative max-w-6xl mx-auto">
+          {/* Glow effect */}
+          <div className="absolute -inset-4 bg-gradient-to-r from-[var(--color-emerald-500)]/20 via-blue-500/20 to-[var(--color-orange-500)]/20 rounded-2xl blur-2xl opacity-50" />
+          
+          {/* Screenshot Container */}
+          <div className="relative bg-[var(--color-gray-50)] rounded-xl p-4 md:p-6 shadow-2xl border border-[var(--color-gray-200)]">
+            <div className="rounded-lg overflow-hidden border border-[var(--color-gray-300)] shadow-inner">
+              <img
+                src="/app-dashboard.png"
+                alt="PaintConnect Dashboard - Overzicht met recente projecten, snelle acties en meldingen"
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+
+          {/* Feature highlights */}
+          <div className="grid md:grid-cols-3 gap-6 mt-12">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-[var(--color-emerald-100)] rounded-lg flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-6 h-6 text-[var(--color-emerald-600)]" />
+              </div>
+              <h3 className="font-semibold text-[var(--color-gray-900)] mb-2">
+                Recente Projecten
+              </h3>
+              <p className="text-sm text-[var(--color-gray-600)]">
+                Zie direct alle projecten met voortgang en foto's
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-12 h-12 bg-[var(--color-orange-100)] rounded-lg flex items-center justify-center mx-auto mb-4">
+                <Bell className="w-6 h-6 text-[var(--color-orange-600)]" />
+              </div>
+              <h3 className="font-semibold text-[var(--color-gray-900)] mb-2">
+                Meldingen & Updates
+              </h3>
+              <p className="text-sm text-[var(--color-gray-600)]">
+                Blijf op de hoogte van belangrijke gebeurtenissen
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="font-semibold text-[var(--color-gray-900)] mb-2">
+                Snelle Acties
+              </h3>
+              <p className="text-sm text-[var(--color-gray-600)]">
+                Eén klik voor de meest gebruikte acties
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // Legislation 2027 Section - SEO Content
 function Legislation2027Section() {
   return (
@@ -1983,6 +2060,7 @@ export default function Home() {
       <HeroSection />
       <AppPreviewSection />
       <FeaturesSection />
+      <DesktopDashboardSection />
       <Legislation2027Section />
       <HowItWorksSection />
       <PricingSection />

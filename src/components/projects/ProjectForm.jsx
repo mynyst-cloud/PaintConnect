@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { X, Save, Calendar as CalendarIcon, Upload, Loader2, User } from "lucide-react";
+import { X, Save, Calendar as CalendarIcon, Upload, Loader2, User, Clock } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 import { UploadFile } from "@/api/integrations";
@@ -54,7 +54,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     thumbnail_url: "",
     cover_photo_url: "",
     calendar_color: "blue",
-    quote_price: ""
+    quote_price: "",
+    work_start_time: "08:00",
+    work_end_time: "17:00"
   });
 
   const [availablePainters, setAvailablePainters] = useState([]);
@@ -81,7 +83,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
         thumbnail_url: project.thumbnail_url || "",
         cover_photo_url: project.cover_photo_url || "",
         calendar_color: project.calendar_color || "blue",
-        quote_price: project.quote_price || ""
+        quote_price: project.quote_price || "",
+        work_start_time: project.work_start_time?.slice(0, 5) || "08:00",
+        work_end_time: project.work_end_time?.slice(0, 5) || "17:00"
       });
     }
     loadUsers();
@@ -213,7 +217,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : null,
       quote_price: formData.quote_price ? parseFloat(formData.quote_price) : null,
       notes: formData.notes?.trim() || null,
-      description: formData.description?.trim() || null
+      description: formData.description?.trim() || null,
+      work_start_time: formData.work_start_time ? `${formData.work_start_time}:00` : '08:00:00',
+      work_end_time: formData.work_end_time ? `${formData.work_end_time}:00` : '17:00:00'
     };
 
     await onSubmit(submitData);
@@ -402,6 +408,39 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Werktijden voor check-in reminders */}
+                <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-900/20 space-y-3">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    Werktijden (voor herinneringen)
+                  </Label>
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
+                    Schilders krijgen een push melding bij aanvang en einde werkdag
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="work_start_time">Starttijd</Label>
+                      <Input
+                        id="work_start_time"
+                        type="time"
+                        value={formData.work_start_time}
+                        onChange={(e) => handleChange("work_start_time", e.target.value)}
+                        className="font-mono"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="work_end_time">Eindtijd</Label>
+                      <Input
+                        id="work_end_time"
+                        type="time"
+                        value={formData.work_end_time}
+                        onChange={(e) => handleChange("work_end_time", e.target.value)}
+                        className="font-mono"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

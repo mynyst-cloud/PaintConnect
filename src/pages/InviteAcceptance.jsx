@@ -122,16 +122,25 @@ function InviteAcceptanceContent() {
 
     // Handle Magic Link login
     const handleMagicLink = async () => {
-        if (!inviteData?.email) return;
+        // #region agent log
+        console.log('[DEBUG] handleMagicLink called, inviteData:', { email: inviteData?.email, hasInviteData: !!inviteData });
+        // #endregion
+        
+        if (!inviteData?.email) {
+            console.log('[DEBUG] No email in inviteData, returning early');
+            return;
+        }
         
         setIsLoading(true);
         try {
+            console.log('[DEBUG] Calling sendMagicLink with email:', inviteData.email);
             const { data, error } = await supabase.functions.invoke('sendMagicLink', {
                 body: {
                     email: inviteData.email,
                     redirectTo: window.location.pathname + window.location.search
                 }
             });
+            console.log('[DEBUG] sendMagicLink response:', { data, error: error?.message });
             
             if (error) throw error;
             if (data?.error) throw new Error(data.error);

@@ -6,6 +6,18 @@
  */
 
 // ============================================
+// SUPER ADMIN EMAIL
+// ============================================
+export const SUPER_ADMIN_EMAIL = 'mynysteven@gmail.com';
+
+/**
+ * Check if user is Super Admin by email
+ */
+export function isSuperAdminByEmail(email) {
+  return email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+}
+
+// ============================================
 // USER ROLES
 // ============================================
 export const USER_ROLES = {

@@ -15,6 +15,8 @@ import {
   checkLimit as checkTierLimit,
   isTrial,
   getUpgradeSuggestions,
+  SUPER_ADMIN_EMAIL,
+  isSuperAdminByEmail,
 } from '@/config/roles';
 
 const FeatureAccessContext = createContext(null);
@@ -143,7 +145,10 @@ export function FeatureAccessProvider({ children }) {
 
   // Check if a feature is enabled
   const hasFeature = useCallback((featureKey) => {
-    // Super admin always has access
+    // Super admin always has access - check by email first
+    if (isSuperAdminByEmail(currentUser?.email)) return true;
+    
+    // Super admin check via role
     if (currentUser?.company_role === USER_ROLES.SUPER_ADMIN) return true;
     
     // If no features loaded yet, use config-based check
@@ -198,6 +203,9 @@ export function FeatureAccessProvider({ children }) {
 
   // Check if user is super admin
   const isSuperAdmin = useCallback(() => {
+    // Check by email first (mynysteven@gmail.com)
+    if (isSuperAdminByEmail(currentUser?.email)) return true;
+    // Then check by role
     return currentUser?.company_role === USER_ROLES.SUPER_ADMIN;
   }, [currentUser]);
 

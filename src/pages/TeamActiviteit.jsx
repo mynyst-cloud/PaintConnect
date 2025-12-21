@@ -31,6 +31,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import UpgradeModal from '@/components/ui/UpgradeModal';
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -41,6 +42,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 export default function TeamActiviteit() {
   // Feature access - TeamActiviteit is admin only
   const { isPainter, isLoading: featureLoading } = useFeatureAccess();
+  const [showAccessModal, setShowAccessModal] = useState(false);
   
   const [records, setRecords] = useState([]);
   const [stats, setStats] = useState(null);
@@ -379,21 +381,35 @@ export default function TeamActiviteit() {
   }
 
   // Role check - TeamActiviteit is only for admins
+  useEffect(() => {
+    if (!featureLoading && isPainter()) {
+      setShowAccessModal(true);
+    }
+  }, [featureLoading, isPainter]);
+
   if (isPainter()) {
     return (
-      <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
-        <div className="max-w-md mx-auto mt-12 sm:mt-24 text-center">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-gray-400" />
+      <>
+        <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
+          <div className="max-w-md mx-auto mt-12 sm:mt-24 text-center">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-gray-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Geen toegang
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Team Activiteit is alleen beschikbaar voor beheerders.
+            </p>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Geen toegang
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Team Activiteit is alleen beschikbaar voor beheerders.
-          </p>
         </div>
-      </div>
+        <UpgradeModal
+          isOpen={showAccessModal}
+          onClose={() => setShowAccessModal(false)}
+          featureName="Team Activiteit"
+          requiredTier="starter"
+        />
+      </>
     );
   }
 

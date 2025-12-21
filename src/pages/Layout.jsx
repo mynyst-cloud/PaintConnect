@@ -28,7 +28,9 @@ import TeamChatSidebar from '@/components/chat/TeamChatSidebar';
 import AISupportWidget from '@/components/support/AISupportWidget';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useFeatureAccess, TrialBanner } from '@/hooks/useFeatureAccess';
-import { USER_ROLES } from '@/config/roles';
+import { USER_ROLES, isSuperAdminByEmail } from '@/config/roles';
+import UpgradeModal from '@/components/ui/UpgradeModal';
+import { Lock } from 'lucide-react';
 
 const paintConnectLogoLightUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 const paintConnectLogoDarkUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png';
@@ -195,6 +197,10 @@ function LayoutContent({ children }) {
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   const [showTeamChatSidebar, setShowTeamChatSidebar] = useState(false);
   const previousUnreadCount = useRef(0);
+  
+  // Upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalProps, setUpgradeModalProps] = useState({ featureName: '', requiredTier: 'professional' });
 
   usePWA();
 
@@ -610,9 +616,36 @@ function LayoutContent({ children }) {
   }
 
   const userCompanyRole = user?.company_role || USER_ROLES.PAINTER;
-  const isSuperAdmin = user?.role === 'admin'; // Platform super admin
+  const isSuperAdmin = user?.role === 'admin' || isSuperAdminByEmail(user?.email); // Platform super admin
   const isCompanyAdmin = userCompanyRole === USER_ROLES.ADMIN;
   const isPainter = userCompanyRole === USER_ROLES.PAINTER;
+  
+  // Get subscription tier for feature checks
+  const subscriptionTier = company?.subscription_tier || 'starter';
+  const isProfessionalOrHigher = ['professional', 'enterprise'].includes(subscriptionTier);
+  
+  // Helper to check if user has access to a feature
+  const hasAccessToFeature = (item) => {
+    // Super admin always has access
+    if (isSuperAdmin) return true;
+    
+    // Check role requirement
+    if (item.requiredRole === 'admin' && isPainter) return false;
+    
+    // Check tier requirement
+    if (item.requiredTier === 'professional' && !isProfessionalOrHigher) return false;
+    if (item.requiredTier === 'enterprise' && subscriptionTier !== 'enterprise') return false;
+    
+    return true;
+  };
+  
+  // Handle restricted feature click - show upgrade modal
+  const handleRestrictedClick = (item) => {
+    const featureName = item.name;
+    const requiredTier = item.requiredTier || 'professional';
+    setUpgradeModalProps({ featureName, requiredTier });
+    setShowUpgradeModal(true);
+  };
 
   // Base menu items - available to all users
   const menuItems = [
@@ -623,33 +656,29 @@ function LayoutContent({ children }) {
     { name: "Referrals", icon: Gift, href: createPageUrl("Referrals"), feature: 'page_referrals' },
   ];
 
-  // Inventory items - filtered based on role and subscription
-  const inventarisItems = isCompanyAdmin || isSuperAdmin ? [
+  // ALL Inventory items - always visible, access controlled via modal
+  const inventarisItems = [
     { name: "Materialen", icon: Package, href: createPageUrl("Materialen"), feature: 'page_materials' },
-    { name: "MateriaalBeheer", icon: ClipboardList, href: createPageUrl("MateriaalBeheer"), feature: 'page_materiaalbeheer' },
-    { name: "VoorraadBeheer", icon: Warehouse, href: createPageUrl("VoorraadBeheer"), feature: 'page_voorraad' },
-  ] : [
-    { name: "Materialen", icon: Package, href: createPageUrl("Materialen"), feature: 'page_materials' },
+    { name: "MateriaalBeheer", icon: ClipboardList, href: createPageUrl("MateriaalBeheer"), feature: 'page_materiaalbeheer', requiredRole: 'admin' },
+    { name: "VoorraadBeheer", icon: Warehouse, href: createPageUrl("VoorraadBeheer"), feature: 'page_voorraad', requiredRole: 'admin', requiredTier: 'professional' },
   ];
 
-  // Calculation items - filtered based on role
-  const calculatiesItems = isCompanyAdmin || isSuperAdmin ? [
+  // ALL Calculation items - always visible
+  const calculatiesItems = [
     { name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator"), feature: 'page_verfcalculator' },
-    { name: "NaCalculatie", icon: Calculator, href: createPageUrl("NaCalculatie"), feature: 'page_nacalculatie' },
-    { name: "Offertes", icon: Briefcase, href: createPageUrl("OfferteLijst"), feature: 'page_offerte' },
-  ] : [
-    { name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator"), feature: 'page_verfcalculator' },
+    { name: "NaCalculatie", icon: Calculator, href: createPageUrl("NaCalculatie"), feature: 'page_nacalculatie', requiredRole: 'admin' },
+    { name: "Offertes", icon: Briefcase, href: createPageUrl("OfferteLijst"), feature: 'page_offerte', requiredRole: 'admin' },
   ];
 
-  // Management items - only for admins, filtered by subscription tier
-  const beheerItems = isCompanyAdmin || isSuperAdmin ? [
-    { name: "Leads", icon: Users, href: createPageUrl("Leads"), feature: 'page_leads' },
-    { name: "Klantportaal", icon: Building, href: createPageUrl("Klantportaal"), feature: 'page_klantportaal' },
-    { name: "TeamActiviteit", icon: Activity, href: createPageUrl("TeamActiviteit"), feature: 'page_team_activiteit' },
+  // ALL Management items - always visible, access controlled
+  const beheerItems = [
+    { name: "Leads", icon: Users, href: createPageUrl("Leads"), feature: 'page_leads', requiredRole: 'admin' },
+    { name: "Klantportaal", icon: Building, href: createPageUrl("Klantportaal"), feature: 'page_klantportaal', requiredRole: 'admin', requiredTier: 'professional' },
+    { name: "TeamActiviteit", icon: Activity, href: createPageUrl("TeamActiviteit"), feature: 'page_team_activiteit', requiredRole: 'admin' },
     { name: "Subscription", icon: CreditCard, href: createPageUrl("Subscription"), feature: 'page_subscription' },
-    { name: "Analytics", icon: BarChart3, href: createPageUrl("Analytics"), feature: 'page_analytics' },
+    { name: "Analytics", icon: BarChart3, href: createPageUrl("Analytics"), feature: 'page_analytics', requiredRole: 'admin', requiredTier: 'professional' },
     { name: "AccountSettings", icon: Settings, href: createPageUrl("AccountSettings"), feature: 'page_accountsettings' },
-  ] : [];
+  ];
 
 
   const systeemItems = [
@@ -662,17 +691,43 @@ function LayoutContent({ children }) {
     systeemItems.unshift({ name: "Super Admin", icon: Power, href: createPageUrl("SuperAdmin") });
   }
 
-  const NavLink = ({ item }) =>
-  <Link
-    to={item.href}
-    className={`flex items-center px-2 py-1.5 text-sm font-medium rounded-lg transition-colors ${currentPageName.toLowerCase() === item.name.toLowerCase().replace(/\s/g, '') ?
-    'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' :
-    'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'}`
-    }
-    onClick={() => setSidebarOpen(false)}>
-      <item.icon className={`mr-2 h-4 w-4 ${currentPageName.toLowerCase() === item.name.toLowerCase().replace(/\s/g, '') ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-500'}`} />
-      {item.name}
-    </Link>;
+  const NavLink = ({ item }) => {
+    const hasAccess = hasAccessToFeature(item);
+    const isActive = currentPageName.toLowerCase() === item.name.toLowerCase().replace(/\s/g, '');
+    
+    const handleClick = (e) => {
+      if (!hasAccess) {
+        e.preventDefault();
+        handleRestrictedClick(item);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    
+    return (
+      <Link
+        to={hasAccess ? item.href : '#'}
+        onClick={handleClick}
+        className={`flex items-center px-2 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+          !hasAccess 
+            ? 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer'
+            : isActive
+              ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+        }`}
+      >
+        <item.icon className={`mr-2 h-4 w-4 ${
+          !hasAccess 
+            ? 'text-gray-300 dark:text-gray-600' 
+            : isActive 
+              ? 'text-emerald-600 dark:text-emerald-400' 
+              : 'text-gray-400 dark:text-gray-500'
+        }`} />
+        {item.name}
+        {!hasAccess && <Lock className="ml-auto h-3 w-3 text-gray-400 dark:text-gray-500" />}
+      </Link>
+    );
+  };
 
   const ActionButton = ({ item }) =>
   <button
@@ -719,7 +774,7 @@ function LayoutContent({ children }) {
           <div className="space-y-0.5 mb-3">
             {menuItems.map((item) => <NavLink key={item.name} item={item} />)}
             
-            {(isCompanyAdmin || isSuperAdmin) ?
+            {/* Inventaris section - always visible for all users */}
             <div className="mb-1">
                 <button
                 onClick={() => setIsInventarisExpanded(!isInventarisExpanded)}
@@ -745,12 +800,9 @@ function LayoutContent({ children }) {
                     </motion.div>
                 }
                 </AnimatePresence>
-              </div> :
+              </div>
 
-            <NavLink item={{ name: "Materialen", icon: Package, href: createPageUrl("Materialen") }} />
-            }
-
-            {(isCompanyAdmin || isSuperAdmin) ?
+            {/* Calculaties section - always visible for all users */}
             <div>
                 <button
                 onClick={() => setIsCalculatiesExpanded(!isCalculatiesExpanded)}
@@ -776,13 +828,10 @@ function LayoutContent({ children }) {
                     </motion.div>
                 }
                 </AnimatePresence>
-              </div> :
-
-            <NavLink item={{ name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator") }} />
-            }
+              </div>
           </div>
 
-          {(isCompanyAdmin || isSuperAdmin) && beheerItems.length > 0 &&
+          {/* Beheer section - always visible for all users */}
           <div className="mb-3">
               <button
               onClick={() => setIsBeheerExpanded(!isBeheerExpanded)}
@@ -806,7 +855,6 @@ function LayoutContent({ children }) {
               }
               </AnimatePresence>
             </div>
-          }
 
           <h3 className="px-2 text-[10px] font-semibold text-orange-600 dark:text-orange-400 uppercase tracking-wider mb-1">Systeem</h3>
           <div className="space-y-0.5">
@@ -948,9 +996,9 @@ function LayoutContent({ children }) {
         unreadNotifications={unreadNotifications}
         handleLogout={handleLogout}
         menuItems={menuItems}
-        inventarisItems={(isCompanyAdmin || isSuperAdmin) ? inventarisItems : [{ name: "Materialen", icon: Package, href: createPageUrl("Materialen") }]}
-        calculatiesItems={(isCompanyAdmin || isSuperAdmin) ? calculatiesItems : [{ name: "Verfcalculator", icon: Calculator, href: createPageUrl("Verfcalculator") }]}
-        beheerItems={(isCompanyAdmin || isSuperAdmin) ? beheerItems : []}
+        inventarisItems={inventarisItems}
+        calculatiesItems={calculatiesItems}
+        beheerItems={beheerItems}
         systeemItems={systeemItems}
         company={company}
         paintConnectLogoUrl={paintConnectLogoUrl}
@@ -958,6 +1006,8 @@ function LayoutContent({ children }) {
         isSuperAdmin={isSuperAdmin}
         isCompanyAdmin={isCompanyAdmin}
         isPainter={isPainter}
+        hasAccessToFeature={hasAccessToFeature}
+        onRestrictedClick={handleRestrictedClick}
         theme={resolvedTheme}
         setTheme={() => {}} />
 
@@ -981,6 +1031,15 @@ function LayoutContent({ children }) {
       <PWAInstallPrompt />
 
       {user && <AISupportWidget currentUser={user} />}
+      
+      {/* Upgrade Modal for restricted features */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName={upgradeModalProps.featureName}
+        requiredTier={upgradeModalProps.requiredTier}
+        currentTier={subscriptionTier}
+      />
     </div>);
 
 }

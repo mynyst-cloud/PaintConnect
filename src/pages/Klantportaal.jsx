@@ -10,6 +10,7 @@ import { LogOut, Loader2, Search, Building, Eye, ArrowLeft } from 'lucide-react'
 import { getClientPortalData } from '@/api/functions';
 import { ClientInvitation, Project, User } from '@/api/entities';
 import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
+import UpgradeModal from '@/components/ui/UpgradeModal';
 
 const logoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 
@@ -31,6 +32,7 @@ export default function Klantportaal() {
     
     // Feature access
     const { hasFeature, isLoading: featureLoading, isAdmin } = useFeatureAccess();
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -191,16 +193,30 @@ export default function Klantportaal() {
 
     // Permission check for admin view - Klantportaal management requires Professional+
     // Note: Client view (with JWT) is always accessible
+    useEffect(() => {
+        if (!featureLoading && isAdminView && !hasFeature('page_klantportaal')) {
+            setShowUpgradeModal(true);
+        }
+    }, [featureLoading, isAdminView, hasFeature]);
+
     if (isAdminView && !hasFeature('page_klantportaal')) {
         return (
-            <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
-                <div className="max-w-2xl mx-auto mt-12 sm:mt-24">
-                    <UpgradePrompt 
-                        feature="page_klantportaal" 
-                        message="Het Klantportaal is alleen beschikbaar voor Professional en Enterprise abonnementen. Upgrade om klanten uit te nodigen en projectvoortgang te delen."
-                    />
+            <>
+                <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
+                    <div className="max-w-2xl mx-auto mt-12 sm:mt-24">
+                        <UpgradePrompt 
+                            feature="page_klantportaal" 
+                            message="Het Klantportaal is alleen beschikbaar voor Professional en Enterprise abonnementen. Upgrade om klanten uit te nodigen en projectvoortgang te delen."
+                        />
+                    </div>
                 </div>
-            </div>
+                <UpgradeModal
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    featureName="Klantportaal"
+                    requiredTier="professional"
+                />
+            </>
         );
     }
 

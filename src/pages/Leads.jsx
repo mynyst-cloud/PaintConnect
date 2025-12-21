@@ -12,6 +12,7 @@ import { createPageUrl } from '@/components/utils';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { USER_ROLES } from '@/config/roles';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import UpgradeModal from '@/components/ui/UpgradeModal';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
@@ -22,6 +23,7 @@ export default function LeadsPage() {
   
   // Feature access - Leads is admin only
   const { isAdmin, isPainter, isLoading: featureLoading } = useFeatureAccess();
+  const [showAccessModal, setShowAccessModal] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -160,21 +162,35 @@ export default function LeadsPage() {
   }
 
   // Role check - Leads is only for admins
+  useEffect(() => {
+    if (!featureLoading && isPainter()) {
+      setShowAccessModal(true);
+    }
+  }, [featureLoading, isPainter]);
+
   if (isPainter()) {
     return (
-      <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
-        <div className="max-w-md mx-auto mt-12 sm:mt-24 text-center">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-gray-400" />
+      <>
+        <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
+          <div className="max-w-md mx-auto mt-12 sm:mt-24 text-center">
+            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-gray-400" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Geen toegang
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Leads is alleen beschikbaar voor beheerders.
+            </p>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Geen toegang
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Deze pagina is alleen beschikbaar voor beheerders.
-          </p>
         </div>
-      </div>
+        <UpgradeModal
+          isOpen={showAccessModal}
+          onClose={() => setShowAccessModal(false)}
+          featureName="Leads beheren"
+          requiredTier="starter"
+        />
+      </>
     );
   }
 

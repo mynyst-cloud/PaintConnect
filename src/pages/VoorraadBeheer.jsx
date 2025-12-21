@@ -34,9 +34,11 @@ import { formatCurrency } from '@/components/utils';
 import { geocodeAddress } from '@/api/functions';
 import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import UpgradeModal from '@/components/ui/UpgradeModal';
 
 export default function VoorraadBeheer() {
   const { hasFeature, isLoading: featureLoading } = useFeatureAccess();
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
   const [batches, setBatches] = useState([]);
   const [movements, setMovements] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -333,16 +335,30 @@ export default function VoorraadBeheer() {
   }
 
   // Permission check - VoorraadBeheer is only for Professional+ subscriptions
+  React.useEffect(() => {
+    if (!featureLoading && !hasFeature('page_voorraad')) {
+      setShowUpgradeModal(true);
+    }
+  }, [featureLoading, hasFeature]);
+
   if (!hasFeature('page_voorraad')) {
     return (
-      <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
-        <div className="max-w-2xl mx-auto mt-12 sm:mt-24">
-          <UpgradePrompt 
-            feature="page_voorraad" 
-            message="VoorraadBeheer is alleen beschikbaar voor Professional en Enterprise abonnementen. Upgrade om uw voorraad en locaties te beheren."
-          />
+      <>
+        <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
+          <div className="max-w-2xl mx-auto mt-12 sm:mt-24">
+            <UpgradePrompt 
+              feature="page_voorraad" 
+              message="VoorraadBeheer is alleen beschikbaar voor Professional en Enterprise abonnementen. Upgrade om uw voorraad en locaties te beheren."
+            />
+          </div>
         </div>
-      </div>
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          featureName="VoorraadBeheer"
+          requiredTier="professional"
+        />
+      </>
     );
   }
 

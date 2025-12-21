@@ -40,6 +40,8 @@ export default function MagicLinkVerify() {
 
         // #region agent log
         console.log('[DEBUG HYP-A/C/D/E] verifyMagicLink response:', { hasData: !!data, success: data?.success, error: error?.message || data?.error, hasActionLink: !!data?.actionLink, requiresGoogle: data?.requiresGoogleLogin, fullData: data });
+        console.log('[DEBUG AUTO-LINK] Company linking debug:', data?.autoLinkDebug);
+        console.log('[DEBUG AUTO-LINK] Company linked?', data?.companyLinked, 'Company name:', data?.companyName);
         // #endregion
 
         if (error) throw error;

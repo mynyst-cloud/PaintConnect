@@ -147,15 +147,30 @@ serve(async (req) => {
     // ============================================
     let companyLinked = false
     let companyName = ''
+    let autoLinkDebug: any = { step: 'start' }
     
     const redirectTo = magicLink.redirect_to || ''
     const inviteTokenMatch = redirectTo.match(/[?&]token=([^&]+)/)
     const inviteToken = inviteTokenMatch ? inviteTokenMatch[1] : null
     
     console.log('[AUTO-LINK] Checking for invite token in redirect:', { redirectTo, inviteToken: inviteToken?.substring(0, 8) })
+    autoLinkDebug.redirectTo = redirectTo
+    autoLinkDebug.inviteToken = inviteToken?.substring(0, 8)
 
     if (inviteToken) {
-      // Get the invite details
+      autoLinkDebug.step = 'looking_for_invite'
+      
+      // Get the invite details - also check for ANY status to debug
+      const { data: allInvites, error: allInvitesError } = await supabase
+        .from('pending_invites')
+        .select('*')
+        .eq('token', inviteToken)
+      
+      console.log('[AUTO-LINK] All invites with this token:', { count: allInvites?.length, statuses: allInvites?.map(i => i.status) })
+      autoLinkDebug.allInvitesFound = allInvites?.length || 0
+      autoLinkDebug.inviteStatuses = allInvites?.map(i => i.status)
+      
+      // Now get the pending one
       const { data: invite, error: inviteError } = await supabase
         .from('pending_invites')
         .select('*')
@@ -164,26 +179,41 @@ serve(async (req) => {
         .single()
 
       if (invite && !inviteError) {
+        autoLinkDebug.step = 'found_pending_invite'
+        autoLinkDebug.inviteCompanyId = invite.company_id
         console.log('[AUTO-LINK] Found pending invite for company:', invite.company_id)
         
         // Check if email matches
         if (invite.email?.toLowerCase() === magicLink.email.toLowerCase()) {
+          autoLinkDebug.step = 'email_matched'
+          
           // Get company details
-          const { data: company } = await supabase
+          const { data: company, error: companyError } = await supabase
             .from('companies')
             .select('id, name')
             .eq('id', invite.company_id)
             .single()
 
+          autoLinkDebug.companyFound = !!company
+          autoLinkDebug.companyError = companyError?.message
+
           if (company) {
+            autoLinkDebug.step = 'company_found'
+            autoLinkDebug.companyName = company.name
+            
             // Check if user already exists in users table
-            const { data: existingUserRecord } = await supabase
+            const { data: existingUserRecord, error: existingUserError } = await supabase
               .from('users')
               .select('id')
               .eq('id', userId)
               .single()
 
+            autoLinkDebug.existingUserRecord = !!existingUserRecord
+            autoLinkDebug.existingUserError = existingUserError?.message
+
             if (existingUserRecord) {
+              autoLinkDebug.step = 'updating_existing_user'
+              
               // Update existing user
               const { error: updateError } = await supabase
                 .from('users')
@@ -200,14 +230,20 @@ serve(async (req) => {
                 })
                 .eq('id', userId)
 
+              autoLinkDebug.updateError = updateError?.message || updateError?.code
+
               if (!updateError) {
                 companyLinked = true
                 companyName = company.name
+                autoLinkDebug.step = 'user_updated_success'
                 console.log('[AUTO-LINK] Updated user, linked to company:', company.name)
               } else {
+                autoLinkDebug.step = 'update_failed'
                 console.error('[AUTO-LINK] Failed to update user:', updateError)
               }
             } else {
+              autoLinkDebug.step = 'creating_new_user'
+              
               // Create new user record
               const { error: insertError } = await supabase
                 .from('users')
@@ -225,18 +261,23 @@ serve(async (req) => {
                   created_date: new Date().toISOString()
                 })
 
+              autoLinkDebug.insertError = insertError?.message || insertError?.code
+              autoLinkDebug.insertErrorDetails = insertError?.details
+
               if (!insertError) {
                 companyLinked = true
                 companyName = company.name
+                autoLinkDebug.step = 'user_created_success'
                 console.log('[AUTO-LINK] Created user record, linked to company:', company.name)
               } else {
+                autoLinkDebug.step = 'insert_failed'
                 console.error('[AUTO-LINK] Failed to create user record:', insertError)
               }
             }
 
             // Mark invite as accepted
             if (companyLinked) {
-              await supabase
+              const { error: acceptError } = await supabase
                 .from('pending_invites')
                 .update({
                   status: 'accepted',
@@ -244,16 +285,26 @@ serve(async (req) => {
                 })
                 .eq('id', invite.id)
               
+              autoLinkDebug.acceptError = acceptError?.message
               console.log('[AUTO-LINK] Marked invite as accepted')
             }
           }
         } else {
+          autoLinkDebug.step = 'email_mismatch'
+          autoLinkDebug.inviteEmail = invite.email
+          autoLinkDebug.magicLinkEmail = magicLink.email
           console.log('[AUTO-LINK] Email mismatch:', { inviteEmail: invite.email, magicLinkEmail: magicLink.email })
         }
       } else {
-        console.log('[AUTO-LINK] No pending invite found for token')
+        autoLinkDebug.step = 'no_pending_invite'
+        autoLinkDebug.inviteError = inviteError?.message
+        console.log('[AUTO-LINK] No pending invite found for token:', inviteError?.message)
       }
+    } else {
+      autoLinkDebug.step = 'no_invite_token_in_redirect'
     }
+    
+    console.log('[AUTO-LINK] Final debug state:', autoLinkDebug)
 
     // Generate a session for the user
     // We use generateLink to create a magic link that auto-logs in
@@ -314,7 +365,8 @@ serve(async (req) => {
         companyLinked,
         companyName: companyName || null,
         redirectTo: finalRedirectTo,
-        actionLink: finalActionLink // This link will auto-login the user
+        actionLink: finalActionLink, // This link will auto-login the user
+        autoLinkDebug // Include debug info for troubleshooting
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )

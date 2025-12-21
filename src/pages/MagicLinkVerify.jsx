@@ -45,75 +45,37 @@ export default function MagicLinkVerify() {
 
         setEmail(data.email || '');
 
-        // If we got an action link, use it to log in
+        // If we got an action link, redirect to it to establish a Supabase session
+        // The actionLink is a Supabase magic link URL that will:
+        // 1. Verify the token
+        // 2. Create a session cookie
+        // 3. Redirect to the redirect_to URL (InviteAcceptance or Dashboard)
         if (data.actionLink) {
           // #region agent log
-          console.log('[DEBUG HYP-A] actionLink received:', data.actionLink?.substring(0, 100) + '...');
-          console.log('[DEBUG HYP-A] actionLink full URL parts:', { 
-            protocol: new URL(data.actionLink).protocol,
-            host: new URL(data.actionLink).host,
-            pathname: new URL(data.actionLink).pathname,
-            search: new URL(data.actionLink).search?.substring(0, 50),
-            hash: new URL(data.actionLink).hash?.substring(0, 50) || 'NO_HASH'
-          });
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:actionLink',message:'actionLink details',data:{actionLinkPreview: data.actionLink?.substring(0, 100), hasHash: !!new URL(data.actionLink).hash},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+          console.log('[DEBUG FIX] Got actionLink, redirecting to Supabase to establish session');
+          console.log('[DEBUG FIX] actionLink:', data.actionLink?.substring(0, 80) + '...');
           // #endregion
 
-          // Extract the token parts from the action link and use them
-          const url = new URL(data.actionLink);
-          const accessToken = url.hash?.match(/access_token=([^&]+)/)?.[1];
-          const refreshToken = url.hash?.match(/refresh_token=([^&]+)/)?.[1];
-
-          // #region agent log
-          console.log('[DEBUG HYP-B] Token extraction result:', { 
-            hasAccessToken: !!accessToken, 
-            hasRefreshToken: !!refreshToken,
-            hashContent: url.hash?.substring(0, 30) || 'EMPTY'
-          });
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:tokenExtract',message:'Token extraction',data:{hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken, hashContent: url.hash?.substring(0, 30)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
-
-          if (accessToken && refreshToken) {
-            // Set the session directly
-            const { error: sessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-
-            // #region agent log
-            console.log('[DEBUG HYP-B] setSession result:', { sessionError: sessionError?.message || null, success: !sessionError });
-            // #endregion
-
-            if (!sessionError) {
-              setStatus('success');
-              setMessage('Inloggen geslaagd! U wordt doorgestuurd...');
-              
-              // Redirect to dashboard
-              setTimeout(() => {
-                navigate(data.redirectTo || '/Dashboard');
-              }, 1500);
-              return;
-            }
-          } else {
-            // #region agent log
-            console.log('[DEBUG HYP-C] NO TOKENS FOUND - This is the bug! Will fall through to Google login or redirect without session');
-            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:noTokens',message:'BUG: No tokens in actionLink',data:{actionLinkType: 'supabase-verify-url', redirectTo: data.redirectTo},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
-          }
+          setStatus('success');
+          setMessage('Inloggen geslaagd! U wordt doorgestuurd...');
+          
+          // Redirect to Supabase's magic link URL
+          // This is the FIX - we redirect instead of trying to parse tokens
+          setTimeout(() => {
+            window.location.href = data.actionLink;
+          }, 500);
+          return;
         }
 
-        // If action link didn't work, show success with Google login option
+        // If no action link (requires Google login)
         if (data.requiresGoogleLogin) {
           // #region agent log
-          console.log('[DEBUG HYP-C] Taking requiresGoogleLogin path');
+          console.log('[DEBUG] No actionLink, requires Google login');
           // #endregion
           setStatus('success');
           setMessage('E-mail geverifieerd! Log in via Google om door te gaan.');
         } else {
-          // #region agent log
-          console.log('[DEBUG HYP-C] Taking redirect path WITHOUT session - redirectTo:', data.redirectTo);
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:fallbackRedirect',message:'REDIRECT WITHOUT SESSION',data:{redirectTo: data.redirectTo, userWillLoop: true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
+          // Fallback - shouldn't normally happen
           setStatus('success');
           setMessage('Verificatie geslaagd! U wordt doorgestuurd...');
           setTimeout(() => {

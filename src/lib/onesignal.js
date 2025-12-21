@@ -37,46 +37,77 @@ export async function initOneSignal() {
   }
 
   try {
-    // Wait for OneSignal to be available
-    await new Promise((resolve, reject) => {
-      if (window.OneSignalDeferred) {
-        resolve()
-        return
-      }
-
-      // Load OneSignal SDK dynamically
-      const script = document.createElement('script')
-      script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
-      script.defer = true
-      script.onload = resolve
-      script.onerror = reject
-      document.head.appendChild(script)
-    })
-
-    // Initialize OneSignal
+    // Create OneSignalDeferred array BEFORE loading the script
     window.OneSignalDeferred = window.OneSignalDeferred || []
     
-    await new Promise((resolve) => {
+    // Load OneSignal SDK if not already loaded
+    if (!document.querySelector('script[src*="OneSignalSDK"]')) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
+        script.defer = true
+        script.onload = () => {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Script loaded',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
+          resolve()
+        }
+        script.onerror = (err) => {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Script error',data:{err:String(err)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
+          reject(err)
+        }
+        document.head.appendChild(script)
+      })
+    }
+    
+    // Initialize OneSignal
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Init timeout',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
+        reject(new Error('OneSignal init timeout'))
+      }, 10000)
+      
       window.OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: ONESIGNAL_APP_ID,
-          allowLocalhostAsSecureOrigin: true,
-          notifyButton: {
-            enable: false, // We use our own UI
-          },
-          welcomeNotification: {
-            disable: true
-          }
-        })
-        resolve()
+        clearTimeout(timeout)
+        try {
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            allowLocalhostAsSecureOrigin: true,
+            notifyButton: {
+              enable: false, // We use our own UI
+            },
+            welcomeNotification: {
+              disable: true
+            }
+          })
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'SDK initialized',data:{appId:ONESIGNAL_APP_ID?.substring(0,8)+'...'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
+          resolve()
+        } catch (initError) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'SDK init error',data:{error:initError?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+          // #endregion
+          reject(initError)
+        }
       })
     })
 
     isInitialized = true
     console.log('[OneSignal] Initialized successfully')
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Fully initialized',data:{isInitialized:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     return true
   } catch (error) {
     console.error('[OneSignal] Initialization error:', error)
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:initOneSignal',message:'Init failed',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     return false
   }
 }
@@ -105,18 +136,40 @@ export async function getPushPermissionState() {
  */
 export async function requestPushPermission() {
   if (!isInitialized) {
-    await initOneSignal()
+    const initResult = await initOneSignal()
+    if (!initResult) {
+      console.error('[OneSignal] Failed to initialize before permission request')
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'Init failed',data:{isInitialized,hasDeferred:!!window.OneSignalDeferred},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      return false
+    }
+  }
+
+  // Extra check: ensure OneSignalDeferred exists
+  if (!window.OneSignalDeferred) {
+    console.error('[OneSignal] OneSignalDeferred not available')
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'No OneSignalDeferred',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
+    return false
   }
 
   try {
     return await new Promise((resolve) => {
       window.OneSignalDeferred.push(async function(OneSignal) {
         const result = await OneSignal.Notifications.requestPermission()
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'Permission result',data:{result},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         resolve(result)
       })
     })
   } catch (error) {
     console.error('[OneSignal] Permission request error:', error)
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'onesignal.js:requestPushPermission',message:'Permission error',data:{error:error?.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+    // #endregion
     return false
   }
 }

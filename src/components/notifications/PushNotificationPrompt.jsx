@@ -177,6 +177,35 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
     return null
   }
 
+  // Speciale state als push is geweigerd
+  if (permissionState === 'denied') {
+    if (compact) return null
+    return (
+      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg p-4 shadow-lg">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-white/20 rounded-full">
+            <BellOff className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold mb-1">Push notificaties geblokkeerd</h3>
+            <p className="text-sm text-white/90 mb-2">
+              Je hebt eerder push notificaties geweigerd. Om ze in te schakelen:
+            </p>
+            <ol className="text-sm text-white/90 list-decimal list-inside space-y-1">
+              <li>Klik op het 🔒 icoon links van de URL</li>
+              <li>Zoek "Meldingen" of "Notifications"</li>
+              <li>Wijzig naar "Toestaan"</li>
+              <li>Ververs de pagina</li>
+            </ol>
+          </div>
+          <button onClick={handleDismiss} className="text-white/70 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (compact) {
     return (
       <Button

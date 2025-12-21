@@ -35,6 +35,7 @@ function InviteAcceptanceContent() {
     const [currentUser, setCurrentUser] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [autoAcceptAttempted, setAutoAcceptAttempted] = useState(false);
 
     const logoUrl = resolvedTheme === 'dark' ? logoDarkUrl : logoLightUrl;
     
@@ -74,6 +75,43 @@ function InviteAcceptanceContent() {
         loadInviteData();
         checkCurrentUser();
     }, [token]);
+
+    // AUTO-ACCEPT: When user is logged in and invite is valid, automatically accept
+    useEffect(() => {
+        const autoAccept = async () => {
+            // Only auto-accept if:
+            // 1. User is logged in
+            // 2. Invite data is loaded
+            // 3. We haven't already tried
+            // 4. Not already in loading/success state
+            if (currentUser && inviteData && !autoAcceptAttempted && !isLoading && !success && !error) {
+                console.log('[AUTO-ACCEPT] User is logged in, automatically accepting invitation...');
+                setAutoAcceptAttempted(true);
+                setIsLoading(true);
+
+                try {
+                    const { data } = await acceptInvitation({ token });
+                    if (data && data.success) {
+                        console.log('[AUTO-ACCEPT] Success! Redirecting to Dashboard...');
+                        setSuccess(true);
+                        setTimeout(() => {
+                            window.location.href = createPageUrl('Dashboard');
+                        }, 2000);
+                    } else {
+                        console.log('[AUTO-ACCEPT] Failed:', data?.error);
+                        setError(data.error || 'Er is een fout opgetreden bij het accepteren van de uitnodiging.');
+                    }
+                } catch (err) {
+                    console.error('[AUTO-ACCEPT] Error:', err);
+                    setError('Er is een onverwachte fout opgetreden. Probeer het opnieuw.');
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        autoAccept();
+    }, [currentUser, inviteData, autoAcceptAttempted, isLoading, success, error, token]);
 
     const handleAcceptInvitation = async () => {
         if (!currentUser) {
@@ -251,6 +289,21 @@ function InviteAcceptanceContent() {
                             </div>
                         </div>
 
+                        {/* Show auto-accepting state when logged in and processing */}
+                        {currentUser && isLoading && (
+                            <div className="space-y-4">
+                                <div className="p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800 text-center">
+                                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-2" />
+                                    <p className="text-emerald-800 dark:text-emerald-200 font-medium">
+                                        Uitnodiging wordt geaccepteerd...
+                                    </p>
+                                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                                        Even geduld, u wordt zo doorgestuurd.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         {!currentUser ? (
                             <div className="space-y-4">
                                 <Alert>
@@ -307,7 +360,7 @@ function InviteAcceptanceContent() {
                                     We sturen een login link naar het e-mailadres waarop u bent uitgenodigd.
                                 </p>
                             </div>
-                        ) : (
+                        ) : !isLoading && (
                             <div className="space-y-3">
                                 <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
                                     <p className="text-sm text-blue-800 dark:text-blue-200">

@@ -209,8 +209,12 @@ export function FeatureAccessProvider({ children }) {
     return currentUser?.company_role === USER_ROLES.SUPER_ADMIN;
   }, [currentUser]);
 
-  // Check if user is painter
+  // Check if user is painter (super admins are NEVER treated as painters)
   const isPainter = useCallback(() => {
+    // Super admins should never be blocked as painters
+    if (isSuperAdminByEmail(currentUser?.email)) return false;
+    if (currentUser?.company_role === USER_ROLES.SUPER_ADMIN) return false;
+    
     return currentUser?.company_role === USER_ROLES.PAINTER;
   }, [currentUser]);
 

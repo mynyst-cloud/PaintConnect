@@ -35,14 +35,7 @@ export default function AuthProvider({ children }) {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/80 font-medium">Laden...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Laden..." size="lg" />;
   }
 
   // Publieke routes die geen auth nodig hebben

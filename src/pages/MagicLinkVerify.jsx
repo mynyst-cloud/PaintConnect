@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react';
+import { CheckCircle2, XCircle, Mail } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png";
 
@@ -144,10 +145,8 @@ export default function MagicLinkVerify() {
         {/* Status Icons */}
         {status === 'verifying' && (
           <>
-            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Loader2 className="w-10 h-10 text-emerald-600 animate-spin" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <LoadingSpinner size="lg" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 mt-6">
               Link verifiëren...
             </h2>
             <p className="text-gray-600">

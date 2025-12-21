@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.paintconnect.be/sitemap.xml
+
+
+
+

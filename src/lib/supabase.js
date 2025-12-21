@@ -229,6 +229,7 @@ export const AppError = new Entity('app_errors')
 export const SupplierInvoice = new Entity('supplier_invoices')
 export const MaterialPriceApproval = new Entity('material_price_approvals')
 export const MaterialUsage = MaterialsUsage // alias voor compatibiliteit
+export const CheckInRecord = new Entity('check_in_records')
 
 export const functions = {
   async invoke(functionName, params) {
@@ -251,7 +252,48 @@ export const base44 = {
   auth: {
     signIn: User.login,
     signOut: User.logout,
-    getCurrentUser: User.me
+    getCurrentUser: User.me,
+    me: User.me.bind(User)
+  },
+  entities: {
+    Project,
+    MaterialRequest,
+    Damage,
+    ChatMessage,
+    User,
+    Company,
+    ReferralPoint,
+    Notification,
+    DailyUpdate,
+    HoursEntry,
+    MaterialsUsage,
+    ClientInvitation,
+    GlobalSettings,
+    PendingCompany,
+    PlatformUpdate,
+    Supplier,
+    Material,
+    MaterialCategory,
+    TimeEntry,
+    ExtraCost,
+    PlanningEvent,
+    ColorAdvice,
+    DamageInteraction,
+    DailyUpdateInteraction,
+    PhotoReaction,
+    ReferralPeriod,
+    Lead,
+    OfferteOpmeting,
+    HelpdeskTicket,
+    HelpdeskReply,
+    PendingInvite,
+    Invoice,
+    Subscription,
+    TestLog,
+    AppError,
+    SupplierInvoice,
+    MaterialPriceApproval,
+    CheckInRecord
   }
 }
 

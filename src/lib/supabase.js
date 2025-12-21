@@ -27,6 +27,13 @@ class Entity {
           query = query.neq(key, value.$ne)
         } else if (value.$in) {
           query = query.in(key, value.$in)
+        } else if (value.$contains) {
+          // For array columns (e.g. text[]), use contains operator
+          // This checks if the array column contains the specified value(s)
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'supabase.js:filter',message:'Using $contains operator',data:{key,value:value.$contains},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          query = query.contains(key, value.$contains)
         } else if (value.$gt !== undefined) {
           query = query.gt(key, value.$gt)
         } else if (value.$gte !== undefined) {

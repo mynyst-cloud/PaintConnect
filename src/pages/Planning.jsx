@@ -56,10 +56,17 @@ export default function Planning({ impersonatedCompanyId }) {
           ? Project.filter({ company_id: companyId, is_dummy: false }, '-created_date', 20)
           : (async () => {
               // Schilders zien alleen projecten waaraan ze zijn toegewezen
+              // Use $contains for array column (assigned_painters is text[])
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Planning.jsx:59',message:'Painter projects query with $contains',data:{email:user.email,companyId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+              // #endregion
               const assignedProjects = await Project.filter({
                 company_id: companyId,
-                assigned_painters: { '$in': [user.email] }
+                assigned_painters: { '$contains': [user.email] }
               }, '-created_date', 20);
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Planning.jsx:67',message:'Painter projects query result',data:{count:assignedProjects?.length||0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+              // #endregion
               return (assignedProjects || []).filter(p => !p.is_dummy);
             })(),
         

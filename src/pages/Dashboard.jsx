@@ -289,10 +289,17 @@ export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unrea
             if (uniqueProjectIds.length >= 10) break;
           }
           if (uniqueProjectIds.length === 0) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:294',message:'Painter fallback query with $contains',data:{email:user.email,companyId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            // Use $contains for array column (assigned_painters is text[])
             const fallbackProjects = await Project.filter({
               company_id: companyId,
-              assigned_painters: { '$in': [user.email] }
+              assigned_painters: { '$contains': [user.email] }
             }, '-created_date', 10);
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:301',message:'Painter fallback query result',data:{count:fallbackProjects?.length||0,success:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             return (fallbackProjects || []).filter(p => !p.is_dummy).slice(0, 4);
           }
           const projects = await Project.filter({ id: { '$in': uniqueProjectIds } });

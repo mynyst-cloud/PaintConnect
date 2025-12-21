@@ -5,7 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, UserPlus, X, Copy, Check, Mail } from 'lucide-react';
+import { , UserPlus, X, Copy, Check, Mail } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { invitePainter } from '@/api/functions';
 import { User } from '@/api/entities';
 
@@ -215,7 +216,7 @@ Het PaintConnect Team`;
                     <Button type="submit" className="w-full" disabled={isSubmitting}>
                         {isSubmitting ? (
                             <>
-                                <Loader2 className="animate-spin mr-2" />
+                                <InlineSpinner className="mr-2" />
                                 Uitnodiging Versturen...
                             </>
                         ) : (

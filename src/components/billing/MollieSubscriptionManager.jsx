@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, Check, AlertTriangle, Euro } from 'lucide-react';
+import { , CreditCard, Check, AlertTriangle, Euro } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { Subscription, Invoice } from '@/api/entities';
 import { createMollieCheckout } from '@/api/functions';
 import { testMollieIntegration } from '@/api/functions';
@@ -117,7 +118,7 @@ export default function MollieSubscriptionManager({ user, company }) {
         return (
             <Card>
                 <CardContent className="flex justify-center items-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                    <LoadingSpinner size="sm" />
                     Abonnement laden...
                 </CardContent>
             </Card>
@@ -213,7 +214,7 @@ export default function MollieSubscriptionManager({ user, company }) {
                                     disabled={isCurrentPlan || isProcessing}
                                     onClick={() => handleUpgrade(planKey)}
                                 >
-                                    {isProcessing && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                                    {isProcessing && <InlineSpinner />}
                                     {isCurrentPlan ? 'Huidig Plan' : isUpgrade ? `Upgrade naar ${plan.name}` : `Kies ${plan.name}`}
                                 </Button>
                             </CardContent>
@@ -273,7 +274,7 @@ export default function MollieSubscriptionManager({ user, company }) {
                             onClick={handleTestIntegration}
                             disabled={isProcessing}
                         >
-                            {isProcessing && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                            {isProcessing && <InlineSpinner />}
                             Test Mollie Integratie
                         </Button>
                     </CardContent>

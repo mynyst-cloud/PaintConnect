@@ -236,7 +236,7 @@ export default function PendingCompaniesManager({ pendingCompanies = [], onRefre
                                             className="bg-green-600 hover:bg-green-700 text-white gap-2"
                                         >
                                             {processingIds.has(company.id) ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <InlineSpinner />
                                             ) : (
                                                 <CheckCircle className="w-4 h-4" />
                                             )}

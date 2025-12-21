@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { X, UploadCloud, Loader2, Wand2, Trash2, Save, AlertTriangle, Info } from 'lucide-react';
+import { X, UploadCloud, , Wand2, Trash2, Save, AlertTriangle, Info } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from "@/components/ui/use-toast";
 
 const materialSchemaForExtraction = {
@@ -300,7 +301,7 @@ export default function MaterialInvoiceProcessor({ onCancel, onFinished }) {
 
           {isLoading && (
             <div className="flex flex-col items-center justify-center h-full">
-              <Loader2 className="w-12 h-12 animate-spin text-emerald-600" />
+              <LoadingSpinner size="lg" />
               <p className="mt-4 text-lg text-gray-700 dark:text-slate-300">
                 {currentStep === 'upload' ? 'Factuur wordt verwerkt...' : 'Materialen worden opgeslagen...'}
               </p>
@@ -313,13 +314,13 @@ export default function MaterialInvoiceProcessor({ onCancel, onFinished }) {
           <Button variant="outline" onClick={onCancel} disabled={isLoading}>Annuleren</Button>
           {currentStep === 'upload' && (
             <Button onClick={handleProcessInvoice} disabled={!file || isLoading} className="bg-emerald-600 hover:bg-emerald-700">
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+              {isLoading ? <InlineSpinner /> : <Wand2 className="mr-2 h-4 w-4" />}
               Verwerk Factuur
             </Button>
           )}
           {currentStep === 'review' && (
              <Button onClick={handleSaveMaterials} disabled={extractedData.length === 0 || isLoading} className="bg-blue-600 hover:bg-blue-700">
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              {isLoading ? <InlineSpinner /> : <Save className="mr-2 h-4 w-4" />}
               Sla op in Materialenlijst
             </Button>
           )}

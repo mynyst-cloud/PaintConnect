@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, Clock, MessageSquare, Heart, Send, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Calendar, Clock, MessageSquare, Heart, Send, Image as ImageIcon,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { format, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -204,7 +205,7 @@ const UpdateCard = ({ update, clientInfo, onInteractionChange }) => {
               className={`flex-1 ${hasLiked ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-slate-400'}`}
             >
               {isLiking ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <InlineSpinner />
               ) : (
                 <Heart className={`w-4 h-4 mr-2 ${hasLiked ? 'fill-red-600 dark:fill-red-400' : ''}`} />
               )}
@@ -253,7 +254,7 @@ const UpdateCard = ({ update, clientInfo, onInteractionChange }) => {
                       className="bg-emerald-600 hover:bg-emerald-700 self-end"
                     >
                       {isSubmitting ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <InlineSpinner />
                       ) : (
                         <Send className="w-4 h-4" />
                       )}
@@ -341,7 +342,7 @@ export default function UpdateFeed({ project, clientInfo }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <LoadingSpinner size="default" />
       </div>
     );
   }

@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react'
 import { uploadPhotos, deletePhoto } from '@/lib/storage'
-import { Camera, X, Loader2, Upload } from 'lucide-react'
+import { Camera, X, Upload } from 'lucide-react'
 
 export default function PhotoUploadExample() {
   const [photos, setPhotos] = useState([])
@@ -63,7 +63,7 @@ export default function PhotoUploadExample() {
         />
         {uploading ? (
           <>
-            <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+            <InlineSpinner />
             <span className="text-emerald-600">Uploaden...</span>
           </>
         ) : (

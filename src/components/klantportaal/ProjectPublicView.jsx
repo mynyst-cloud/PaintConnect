@@ -437,7 +437,7 @@ export default function ProjectPublicView({ project }) {
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
                       {isSendingMessage ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <InlineSpinner />
                       ) : (
                         <Send className="w-4 h-4 mr-2" />
                       )}

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Save, Loader2, Package } from "lucide-react";
+import { X, Save, Package } from "lucide-react";
 import { Supplier, Material } from "@/api/entities";
 import { handleMaterialRequest } from '@/api/functions';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo";
@@ -382,7 +382,7 @@ export default function MaterialRequestForm({ request, projects, onSubmit, onCan
             <CardFooter className="flex justify-end gap-3 p-4 bg-gray-50 dark:bg-slate-800/50">
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Annuleren</Button>
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={isSubmitting || isLoadingSuppliers || isLoadingMaterials}>
-                {isSubmitting && <Loader2 className="animate-spin mr-2" />}
+                {isSubmitting && <InlineSpinner className="mr-2" />}
                 {safeRequest.id ? 'Aanvraag Opslaan' : 'Aanvraag Indienen'}
               </Button>
             </CardFooter>

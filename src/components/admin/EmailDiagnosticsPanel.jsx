@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, CheckCircle, AlertTriangle, Loader2, Info, FileText } from 'lucide-react';
+import { Mail, CheckCircle, AlertTriangle, , Info, FileText } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { emailDiagnostics } from '@/api/functions';
 
 const StepResult = ({ step }) => {
@@ -77,7 +78,7 @@ export default function EmailDiagnosticsPanel() {
                     />
                     <Button onClick={handleRunDiagnostics} disabled={isTesting || !testEmail} className="sm:w-auto">
                         {isTesting ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <InlineSpinner />
                         ) : (
                             <FileText className="w-4 h-4 mr-2" />
                         )}
@@ -87,7 +88,7 @@ export default function EmailDiagnosticsPanel() {
 
                 {isTesting && (
                      <div className="text-center py-4">
-                        <Loader2 className="w-6 h-6 mx-auto animate-spin text-emerald-600" />
+                        <LoadingSpinner size="default" />
                         <p className="mt-2 text-sm text-gray-500">Diagnostiek wordt uitgevoerd...</p>
                     </div>
                 )}

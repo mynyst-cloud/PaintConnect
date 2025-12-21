@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mail, Check, Loader2 } from 'lucide-react';
+import { Mail, Check,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { sendClientInvitation } from '@/api/functions';
 
 export default function ClientInvitationButton({ project }) {
@@ -49,7 +50,7 @@ export default function ClientInvitationButton({ project }) {
             >
                 {isSending ? (
                     <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <InlineSpinner />
                         Versturen...
                     </>
                 ) : sent ? (

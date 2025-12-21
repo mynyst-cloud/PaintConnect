@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Star, Zap, Wrench, Megaphone, Gift, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Star, Zap, Wrench, Megaphone, Gift,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notifyCompaniesOfUpdate } from '@/api/functions';
 import ReactQuill from 'react-quill';
@@ -247,7 +248,7 @@ export default function PlatformUpdateManagement() {
                                             disabled={!!processingId}
                                         >
                                             {processingId === update.id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <InlineSpinner />
                                             ) : (
                                                 <Trash2 className="w-4 h-4" />
                                             )}
@@ -378,12 +379,12 @@ export default function PlatformUpdateManagement() {
                             <Button type="submit" disabled={isSubmitting || isNotifying}>
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        <InlineSpinner />
                                         {editingUpdate ? 'Bijwerken...' : 'Aanmaken...'}
                                     </>
                                 ) : isNotifying ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        <InlineSpinner />
                                         Notificaties versturen...
                                     </>
                                 ) : (

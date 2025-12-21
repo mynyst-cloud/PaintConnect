@@ -409,7 +409,7 @@ export default function TeamActiviteit() {
   if ((isLoading && records.length === 0) || featureLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <LoadingSpinner size="default" />
       </div>
     );
   }
@@ -832,7 +832,7 @@ export default function TeamActiviteit() {
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400 mx-auto" />
+                <LoadingSpinner size="sm" />
               </div>
             ) : records.length === 0 ? (
               <div className="text-center py-8">

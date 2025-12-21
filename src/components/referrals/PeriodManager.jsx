@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Calendar as CalendarIcon,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { formatDate } from '@/components/utils';
 
 export default function PeriodManager({ periods, companyId, onPeriodUpdate }) {
@@ -69,7 +70,7 @@ export default function PeriodManager({ periods, companyId, onPeriodUpdate }) {
             </div>
             <div className="flex gap-2 mt-4">
               <Button onClick={handleSave} disabled={isSaving}>
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                {isSaving ? <InlineSpinner /> : <Plus className="w-4 h-4 mr-2" />}
                 Opslaan
               </Button>
               <Button variant="outline" onClick={() => setShowForm(false)}>Annuleren</Button>

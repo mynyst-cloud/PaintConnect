@@ -184,7 +184,7 @@ const MaterialApprovalPanel = ({ approvals, onApprovalAction, onRefresh }) => {
           <CardTitle className="text-lg flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             Materiaal Goedkeuringen
-            {isRefreshing && <Loader2 className="w-4 h-4 animate-spin text-orange-600" />}
+            {isRefreshing && <InlineSpinner />}
           </CardTitle>
           <Badge variant="outline" className="bg-white dark:bg-slate-800">
             {pendingApprovals.length} in behandeling
@@ -339,7 +339,7 @@ const MaterialApprovalPanel = ({ approvals, onApprovalAction, onRefresh }) => {
                     >
                       {processingApproval === approval.id ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <InlineSpinner />
                           Verwerken...
                         </>
                       ) : (
@@ -374,7 +374,7 @@ const MaterialApprovalPanel = ({ approvals, onApprovalAction, onRefresh }) => {
                     >
                       {processingApproval === approval.id ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <InlineSpinner />
                           Verwerken...
                         </>
                       ) : (
@@ -407,7 +407,7 @@ const MaterialApprovalPanel = ({ approvals, onApprovalAction, onRefresh }) => {
                     >
                       {processingApproval === approval.id ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <InlineSpinner />
                           Verwerken...
                         </>
                       ) : (

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; // Import Quill styles
-import { Save, Info, Loader2, Plus } from 'lucide-react';
+import { Save, Info, Plus } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 
 const QuillModules = {
@@ -252,7 +252,7 @@ export default function EmailTemplateEditor() {
                 <div className="self-end">
                      <Button onClick={handleSave} disabled={isSaving || !currentTemplate}>
                         {isSaving ? (
-                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Bezig met opslaan...</>
+                            <><InlineSpinner /> Bezig met opslaan...</>
                         ) : (
                             <><Save className="mr-2 h-4 w-4" /> Template Opslaan</>
                         )}

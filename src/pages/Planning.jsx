@@ -3,7 +3,7 @@ import { Project, User, Company, PlanningEvent } from "@/api/entities";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Printer, Loader2, X } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Printer, X } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isWeekend, addMonths, subMonths, startOfWeek, endOfWeek, eachWeekOfInterval } from "date-fns";
 import { nl } from "date-fns/locale";
 import PlanningForm from "@/components/planning/PlanningForm";
@@ -316,7 +316,7 @@ export default function Planning({ impersonatedCompanyId }) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-2" />
+          <LoadingSpinner size="default" />
           <p className="text-sm text-gray-600 dark:text-gray-400">Planning laden...</p>
         </div>
       </div>

@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Loader2, Bot, User as UserIcon, Sparkles, MessageCircle, X, Minimize2, RefreshCw } from 'lucide-react';
+import { Send, , Bot, User as UserIcon, Sparkles, MessageCircle, X, Minimize2, RefreshCw } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useToast } from '@/components/ui/use-toast';
@@ -355,7 +356,7 @@ export default function AISupportWidget({ currentUser }) {
             <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900 min-h-0">
               {isInitializing ? (
                 <div className="flex items-center justify-center h-full">
-                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                  <LoadingSpinner size="default" />
                 </div>
               ) : (
                 <ScrollArea className="h-full p-4">
@@ -426,7 +427,7 @@ export default function AISupportWidget({ currentUser }) {
                   size="icon"
                 >
                   {isSending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <InlineSpinner />
                   ) : (
                     <Send className="w-4 h-4" />
                   )}

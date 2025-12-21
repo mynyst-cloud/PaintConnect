@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadFile } from "@/api/integrations";
-import { X, Save, Loader2, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { X, Save, UploadCloud, Image as ImageIcon } from "lucide-react";
 
 const severities = ["laag", "gemiddeld", "hoog", "kritiek"];
 const categories = ["materiaal_defect", "schade_bestaand", "nieuwe_schade", "kwaliteit_probleem", "veiligheid", "anders"];
@@ -87,7 +87,7 @@ export default function DefectForm({ defect, projects, onSubmit, onCancel }) {
                   {formData.photo_urls.map(url => <img key={url} src={url} className="w-16 h-16 rounded-md object-cover"/>)}
                   <Button type="button" variant="outline" asChild className="h-16 w-16">
                     <label className="cursor-pointer">
-                      {isUploading ? <Loader2 className="animate-spin"/> : <UploadCloud/>}
+                      {isUploading ? <InlineSpinner /> : <UploadCloud/>}
                       <Input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                     </label>
                   </Button>
@@ -95,7 +95,7 @@ export default function DefectForm({ defect, projects, onSubmit, onCancel }) {
               </div>
 
             </CardContent>
-            <CardFooter className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={onCancel}>Annuleren</Button><Button type="submit" disabled={isSubmitting || isUploading} className="bg-red-600 hover:bg-red-700">{isSubmitting?<Loader2 className="animate-spin"/>:<Save/>}<span className="ml-2">{defect ? "Bijwerken" : "Melden"}</span></Button></CardFooter>
+            <CardFooter className="flex justify-end gap-3"><Button type="button" variant="outline" onClick={onCancel}>Annuleren</Button><Button type="submit" disabled={isSubmitting || isUploading} className="bg-red-600 hover:bg-red-700">{isSubmitting?<InlineSpinner />:<Save/>}<span className="ml-2">{defect ? "Bijwerken" : "Melden"}</span></Button></CardFooter>
           </Card>
         </form>
       </motion.div>

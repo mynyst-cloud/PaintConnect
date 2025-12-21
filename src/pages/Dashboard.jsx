@@ -34,7 +34,7 @@ const QuickUpdateForm = lazy(() => import('@/components/projects/QuickUpdateForm
 const HoursConfirmationForm = lazy(() => import('@/components/projects/HoursConfirmationForm'));
 const MaterialsConfirmationForm = lazy(() => import('@/components/projects/MaterialsConfirmationForm'));
 
-const LoadingSpinner = () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]"><Loader2 className="w-8 h-8 animate-spin text-white" /></div>;
+const LoadingSpinner = () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]"><LoadingSpinner size="default" /></div>;
 
 import CheckInButton from '@/components/checkin/CheckInButton';
 import CheckOutButton from '@/components/checkin/CheckOutButton';
@@ -529,7 +529,7 @@ export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unrea
   const handleInviteSuccess = useCallback(() => { setShowInviteForm(false); if (showOnboardingChecklist) loadDashboardData(true); }, [showOnboardingChecklist, loadDashboardData]);
 
   if (isLoading && !currentUser) {
-    return <div className="p-6"><Loader2 className="w-8 h-8 animate-spin mx-auto mt-12 text-emerald-600" /></div>;
+    return <div className="p-6"><LoadingSpinner size="default" /></div>;
   }
 
   if (error) {

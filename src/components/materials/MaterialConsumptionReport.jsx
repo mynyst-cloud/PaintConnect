@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Download } from "lucide-react";
+import { RefreshCw, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { formatCurrency } from "@/components/utils";
 
@@ -100,7 +100,7 @@ export default function MaterialConsumptionReport({ companyId, categoryColors })
                     <div className="h-[400px] w-full">
                         {loading && data.length === 0 ? (
                             <div className="h-full flex items-center justify-center">
-                                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                                <LoadingSpinner size="default" />
                             </div>
                         ) : data.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">

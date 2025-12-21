@@ -288,7 +288,7 @@ export default function AdminSettings({ periods, activePeriod, painters, referra
            />
            {isImporting && (
              <div className="flex items-center gap-2 text-gray-600">
-               <Loader2 className="w-4 h-4 animate-spin"/>
+               <InlineSpinner />
                <span>Bezig met importeren, een moment geduld...</span>
              </div>
            )}

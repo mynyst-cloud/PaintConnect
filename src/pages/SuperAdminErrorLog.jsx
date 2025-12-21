@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Zap, CheckCircle2, AlertTriangle, Eye, RefreshCw, X, Trash2 } from 'lucide-react';
+import { , Zap, CheckCircle2, AlertTriangle, Eye, RefreshCw, X, Trash2 } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { createPageUrl } from '@/components/utils';
@@ -235,7 +236,7 @@ export default function SuperAdminErrorLog() {
     };
 
     if (loading && !currentUser && !errors.length) {
-        return <div className="p-6 text-center"><Loader2 className="h-8 w-8 animate-spin text-emerald-600 mx-auto" /><p className="mt-2">Laden...</p></div>;
+        return <div className="p-6 text-center"><LoadingSpinner size="default" /><p className="mt-2">Laden...</p></div>;
     }
 
     if (!isSuperAdmin) {
@@ -269,7 +270,7 @@ export default function SuperAdminErrorLog() {
                                     disabled={isBulkDeleting}
                                     className="h-8"
                                 >
-                                    {isBulkDeleting ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <Trash2 className="h-3 w-3 mr-2" />}
+                                    {isBulkDeleting ? <InlineSpinner className="mr-2" /> : <Trash2 className="h-3 w-3 mr-2" />}
                                     Verwijderen
                                 </Button>
                             </div>
@@ -338,7 +339,7 @@ export default function SuperAdminErrorLog() {
                                 {loading && errors.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={8} className="text-center py-12 text-gray-500">
-                                            <Loader2 className="h-8 w-8 animate-spin text-emerald-600 mx-auto mb-3" />
+                                            <LoadingSpinner size="default" />
                                             <p>Fouten laden...</p>
                                         </TableCell>
                                     </TableRow>
@@ -472,7 +473,7 @@ export default function SuperAdminErrorLog() {
                                         variant={selectedError.ai_solution_suggestion ? "outline" : "default"}
                                         className={selectedError.ai_solution_suggestion ? "" : "bg-purple-600 hover:bg-purple-700 text-white"}
                                     >
-                                        {generatingSolution ? <Loader2 className="h-3 w-3 mr-2 animate-spin" /> : <Zap className="h-3 w-3 mr-2" />}
+                                        {generatingSolution ? <InlineSpinner className="mr-2" /> : <Zap className="h-3 w-3 mr-2" />}
                                         {generatingSolution ? 'Genereren...' : (selectedError.ai_solution_suggestion ? 'Opnieuw Genereren' : 'Genereer Oplossing')}
                                     </Button>
                                 </div>
@@ -497,7 +498,7 @@ export default function SuperAdminErrorLog() {
                                         onClick={() => updateErrorStatus(selectedError.id, 'resolved')}
                                         disabled={updatingStatusId === selectedError.id}
                                     >
-                                        {updatingStatusId === selectedError.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                                        {updatingStatusId === selectedError.id ? <InlineSpinner /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
                                         Markeren als Opgelost
                                     </Button>
                                 )}
@@ -507,7 +508,7 @@ export default function SuperAdminErrorLog() {
                                         onClick={() => updateErrorStatus(selectedError.id, 'in_progress')}
                                         disabled={updatingStatusId === selectedError.id}
                                     >
-                                        {updatingStatusId === selectedError.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                                        {updatingStatusId === selectedError.id ? <InlineSpinner /> : null}
                                         In Behandeling Nemen
                                     </Button>
                                 )}

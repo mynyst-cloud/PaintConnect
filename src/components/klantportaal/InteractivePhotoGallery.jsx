@@ -4,7 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Heart, MessageCircle, X, ChevronLeft, ChevronRight, Send, Camera, Loader2 } from 'lucide-react';
+import { Heart, MessageCircle, X, ChevronLeft, ChevronRight, Send, Camera,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { PhotoReaction } from '@/api/entities';
 import { base44 } from '@/api/base44Client';
 import PhotoViewer from '@/components/projects/PhotoViewer';
@@ -176,7 +177,7 @@ export default function InteractivePhotoGallery({ photos = [], project, clientIn
                                 <div className="relative">
                                     {loadingUrls[photo] ? (
                                         <div className="w-full h-48 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                                            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                                            <LoadingSpinner size="sm" />
                                         </div>
                                     ) : (
                                         <img

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle, AlertTriangle, Mail } from 'lucide-react';
+import { , CheckCircle, AlertTriangle, Mail } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { authVerifyEmail } from '@/api/functions';
 import { resendVerificationEmail } from '@/api/functions';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -78,7 +79,7 @@ export default function VerifyEmail() {
             case 'verifying':
                 return (
                     <div className="text-center">
-                        <Loader2 className="w-12 h-12 text-emerald-600 mx-auto animate-spin mb-4" />
+                        <LoadingSpinner size="lg" />
                         <h2 className="text-xl font-semibold">Account verifiëren...</h2>
                         <p className="text-gray-500">Een ogenblik geduld.</p>
                     </div>
@@ -119,7 +120,7 @@ export default function VerifyEmail() {
                                     <Input id="email" type="email" value={emailForResend} onChange={(e) => setEmailForResend(e.target.value)} required placeholder="uw@email.com" disabled={!canResend} />
                                 </div>
                                 <Button type="submit" className="w-full" disabled={resendStatus.loading || !canResend}>
-                                    {resendStatus.loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    {resendStatus.loading ? <InlineSpinner /> : null}
                                     {!canResend ? 'Verzonden, wacht 1 min' : 'Verstuur opnieuw'}
                                 </Button>
                             </form>

@@ -6,7 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { sendNewsletter } from '@/api/functions';
-import { Loader2, Send, CheckCircle, AlertTriangle } from 'lucide-react';
+import { , Send, CheckCircle, AlertTriangle } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 
@@ -129,7 +130,7 @@ export default function NewsletterManager() {
                     
                     <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
                         {isLoading ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <InlineSpinner />
                         ) : (
                             <Send className="mr-2 h-4 w-4" />
                         )}

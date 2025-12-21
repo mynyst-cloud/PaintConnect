@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { setupStripePortal } from '@/api/functions';
-import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { , CheckCircle, AlertTriangle } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function StripeDiagnostics() {
     const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +35,7 @@ export default function StripeDiagnostics() {
                     Als gebruikers een foutmelding krijgen bij het openen van hun abonnement, kan het zijn dat de Stripe klantenportaal niet is ingesteld. Klik op de knop hieronder om een standaard configuratie aan te maken. Dit is een eenmalige actie.
                 </p>
                 <Button onClick={handleSetup} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
+                    {isLoading ? <InlineSpinner className="mr-2" /> : null}
                     Stel Standaard Portaal In
                 </Button>
                 {result && (

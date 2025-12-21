@@ -4,7 +4,8 @@ import { User } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Building, Truck, Users } from 'lucide-react';
+import { , Building, Truck, Users } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { createPageUrl } from '@/components/utils';
 import { globalCache } from '@/components/utils/performanceOptimizer';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -83,7 +84,7 @@ export default function RegistratieSetup() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-4">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <LoadingSpinner size="default" />
       </div>
     );
   }

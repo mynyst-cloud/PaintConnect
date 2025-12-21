@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Package, Loader2 } from 'lucide-react';
+import { Package,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function AddToStockModal({ isOpen, onClose, material, companyId }) {
   const [locations, setLocations] = useState([]);
@@ -265,7 +266,7 @@ export default function AddToStockModal({ isOpen, onClose, material, companyId }
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <InlineSpinner />
                   Bezig...
                 </>
               ) : (

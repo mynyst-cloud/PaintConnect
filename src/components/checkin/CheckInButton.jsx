@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MapPin, Loader2, CheckCircle2, AlertCircle, Navigation } from 'lucide-react';
+import { MapPin, , CheckCircle2, AlertCircle, Navigation } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -218,7 +219,7 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
             {status === 'locating' && (
               <div className="flex flex-col items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <InlineSpinner />
                   <span>Locatie wordt bepaald...</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
@@ -229,7 +230,7 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
 
             {status === 'submitting' && (
               <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <InlineSpinner />
                 <span>Check-in wordt verwerkt...</span>
               </div>
             )}
@@ -259,7 +260,7 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
             >
               {status === 'submitting' ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <InlineSpinner />
                   Bezig...
                 </>
               ) : (

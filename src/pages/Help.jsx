@@ -329,7 +329,7 @@ const ContactForm = () => {
             </div>
             <div className="flex items-center justify-between">
                 <Button type="submit" disabled={status === 'sending'} className="bg-emerald-600 hover:bg-emerald-700">
-                    {status === 'sending' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {status === 'sending' && <InlineSpinner />}
                     Verstuur Bericht
                 </Button>
                 {status === 'success' && <p className="text-green-600 flex items-center gap-2"><CheckCircle/> Bericht succesvol verzonden!</p>}
@@ -403,7 +403,7 @@ const TicketDetailsModal = ({ ticket, onClose }) => {
 
           <div>
             <h4 className="font-semibold text-gray-800 mb-3">Antwoorden</h4>
-            {isLoading ? <Loader2 className="animate-spin" /> : (
+            {isLoading ? <InlineSpinner /> : (
               <div className="space-y-4">
                 {replies.length > 0 ? replies.map(reply => (
                   <div key={reply.id} className="flex gap-3">
@@ -489,7 +489,7 @@ const HelpdeskTicketViewer = ({ onCancel, currentUser }) => {
         <CardContent>
           {isLoading ? (
             <div className="py-8 text-center text-gray-500">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                <LoadingSpinner size="default" />
                 <p>Tickets worden geladen...</p>
             </div>
           ) : tickets.length > 0 ? (

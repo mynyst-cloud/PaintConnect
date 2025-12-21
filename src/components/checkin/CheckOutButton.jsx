@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { LogOut, Loader2, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { LogOut, , CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
@@ -164,7 +165,7 @@ export default function CheckOutButton({ currentUser, onCheckOutSuccess }) {
 
             {status === 'submitting' && (
               <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <InlineSpinner />
                 <span>Check-out wordt verwerkt...</span>
               </div>
             )}
@@ -194,7 +195,7 @@ export default function CheckOutButton({ currentUser, onCheckOutSuccess }) {
             >
               {status === 'submitting' ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <InlineSpinner />
                   Bezig...
                 </>
               ) : (

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, AlertTriangle, Mail } from "lucide-react";
+import { RefreshCw, AlertTriangle, Mail } from "lucide-react";
 import { upgradeEmailTemplates } from '@/api/functions';
 import { sendTestBrandedEmail } from '@/api/functions';
 import { Input } from "@/components/ui/input";
@@ -75,7 +75,7 @@ export default function EmailManagement() {
                     <Button onClick={handleUpgrade} disabled={isLoading}>
                         {isLoading ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <InlineSpinner />
                                 Bezig met upgraden...
                             </>
                         ) : (
@@ -136,7 +136,7 @@ export default function EmailManagement() {
                         <Button onClick={handleSendTest} disabled={isSendingTest} className="sm:w-auto">
                              {isSendingTest ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <InlineSpinner />
                                     Bezig...
                                 </>
                             ) : (

@@ -505,7 +505,7 @@ export default function FeatureSubscriptionManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <LoadingSpinner size="default" />
       </div>
     );
   }
@@ -534,7 +534,7 @@ export default function FeatureSubscriptionManager() {
             disabled={!hasChanges || isSaving}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
-            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            {isSaving ? <InlineSpinner /> : <Save className="w-4 h-4 mr-2" />}
             Alles Opslaan
           </Button>
         </div>

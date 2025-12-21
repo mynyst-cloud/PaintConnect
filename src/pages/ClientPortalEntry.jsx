@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User } from '@/api/entities';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import {  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { clientPortalAuth } from '@/api/functions';
 import { activateClientAccess } from '@/api/functions';
 
@@ -94,7 +95,7 @@ export default function ClientPortalEntry() {
         return (
             <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center p-4">
                 <div className="text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
+                    <LoadingSpinner size="lg" />
                     <p className="text-gray-600">Uitnodiging valideren...</p>
                 </div>
             </div>

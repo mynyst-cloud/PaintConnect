@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { X, Send, Bot, User as UserIcon, Loader2 } from 'lucide-react';
+import { X, Send, Bot, User as UserIcon,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 // import { InvokeLLM } from '@/api/integrations'; // VERWIJDERD – Base44 afhankelijkheid
 import { User } from '@/api/entities';
 
@@ -118,7 +119,7 @@ export default function SupportChatModal({ onClose }) {
                   <Bot className="w-5 h-5" />
                 </div>
                 <div className="max-w-xs px-4 py-3 rounded-2xl bg-gray-100 dark:bg-slate-700 rounded-bl-none">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                  <InlineSpinner />
                 </div>
               </div>
             )}
@@ -137,7 +138,7 @@ export default function SupportChatModal({ onClose }) {
               disabled={isLoading}
             />
             <Button onClick={handleSend} disabled={isLoading || input.trim() === ''}>
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Send className="w-4 h-4" />}
+              {isLoading ? <InlineSpinner /> : <Send className="w-4 h-4" />}
             </Button>
           </div>
         </footer>

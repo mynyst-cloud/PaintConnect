@@ -180,7 +180,7 @@ export default function DailyCheckIn({ project }) {
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               {isLoading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <InlineSpinner />
               ) : (
                 <LogIn className="w-4 h-4 mr-2" />
               )}
@@ -250,7 +250,7 @@ export default function DailyCheckIn({ project }) {
                 <Button variant="outline" asChild className="cursor-pointer w-full">
                   <label>
                     {isUploading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <InlineSpinner />
                     ) : (
                       <Camera className="w-4 h-4 mr-2" />
                     )}
@@ -318,7 +318,7 @@ export default function DailyCheckIn({ project }) {
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
                 >
                   {isLoading ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <InlineSpinner />
                   ) : (
                     <LogOut className="w-4 h-4 mr-2" />
                   )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Zap, Crown, Loader2, CreditCard, Building, Shield, ExternalLink, Settings, ArrowRight, Check, HelpCircle, ChevronDown, Sparkles } from 'lucide-react';
+import { CheckCircle2, Zap, Crown, CreditCard, Building, Shield, ExternalLink, Settings, ArrowRight, Check, HelpCircle, ChevronDown, Sparkles } from 'lucide-react';
 import { createCheckoutSession } from '@/api/functions';
 import { createMollieCheckout } from '@/api/functions';
 import { createCustomerPortalSession } from '@/api/functions';
@@ -237,7 +237,7 @@ const PlanCard = ({ plan, isCurrentPlan, onChoosePlan, isLoading, billingCycle, 
                         disabled={isLoading || isCurrentPlan}
                     >
                         {isLoading ? (
-                            <Loader2 className="animate-spin w-5 h-5" />
+                            <InlineSpinner />
                         ) : isCurrentPlan ? (
                             <>
                                 <Check className="w-5 h-5 mr-2" />
@@ -586,7 +586,7 @@ export default function Subscription() {
                                     className="w-full bg-emerald-600 hover:bg-emerald-700"
                                 >
                                     {isRedirecting ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <InlineSpinner />
                                     ) : (
                                         <>
                                             <ExternalLink className="w-5 h-5 mr-2" />

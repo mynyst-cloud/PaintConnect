@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Save, Loader2, Upload } from 'lucide-react';
+import { X, Save, , Upload } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { User } from '@/api/entities';
 import { uploadFileToSupabase } from '@/lib/uploadHelper';
 
@@ -277,7 +278,7 @@ const uploadPromises = files.map(file => uploadFileToSupabase(file));
                 disabled={uploadingPhotos}
               >
                 {uploadingPhotos ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <InlineSpinner />
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
@@ -326,7 +327,7 @@ const uploadPromises = files.map(file => uploadFileToSupabase(file));
           Annuleren
         </Button>
         <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isSubmitting || !currentUser}>
-          {isSubmitting && <Loader2 className="animate-spin mr-2 w-4 h-4" />}
+          {isSubmitting && <InlineSpinner className="mr-2" />}
           {advice?.id ? 'Opslaan' : 'Toevoegen'}
         </Button>
       </div>

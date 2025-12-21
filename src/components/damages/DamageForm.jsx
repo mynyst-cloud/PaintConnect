@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { X, Upload, Loader2, AlertTriangle } from "lucide-react";
+import { X, Upload, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Damage } from '@/api/entities';
 import { handleDamageReport } from '@/api/functions';
@@ -301,7 +301,7 @@ export default React.memo(function DamageForm({ projects, currentUser, damage, o
                       disabled={uploadingPhotos || isSubmitting}
                     >
                       {uploadingPhotos ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <InlineSpinner />
                       ) : (
                         <Upload className="w-4 h-4 mr-2" />
                       )}
@@ -368,7 +368,7 @@ export default React.memo(function DamageForm({ projects, currentUser, damage, o
               <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="animate-spin mr-2 w-4 h-4" />
+                    <InlineSpinner className="mr-2" />
                     Bezig met opslaan...
                   </>
                 ) : (

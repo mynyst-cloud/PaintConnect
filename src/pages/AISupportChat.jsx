@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Send, Loader2, Bot, User as UserIcon, Sparkles, MessageCircle, Trash2, RefreshCw } from 'lucide-react';
+import { Send, , Bot, User as UserIcon, Sparkles, MessageCircle, Trash2, RefreshCw } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useToast } from '@/components/ui/use-toast';
@@ -301,7 +302,7 @@ export default function AISupportChat() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-12 h-12 animate-spin text-emerald-600" />
+        <LoadingSpinner size="lg" />
       </div>
     );
   }
@@ -422,7 +423,7 @@ export default function AISupportChat() {
                 className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-800"
               >
                 {isSending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <InlineSpinner />
                 ) : (
                   <Send className="w-5 h-5" />
                 )}

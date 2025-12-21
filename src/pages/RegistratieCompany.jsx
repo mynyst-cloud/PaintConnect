@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Loader2, CheckCircle, Mail, Phone, MapPin } from 'lucide-react';
+import { Building, , CheckCircle, Mail, Phone, MapPin } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const paintConnectLogoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
@@ -139,7 +140,7 @@ export default function RegistratieCompany() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
+          <LoadingSpinner size="lg" />
           <p className="text-gray-600">Gegevens laden...</p>
         </div>
       </div>
@@ -322,7 +323,7 @@ export default function RegistratieCompany() {
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6 text-lg">
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <InlineSpinner />
                     Bedrijf registreren...
                   </>
                 ) : (

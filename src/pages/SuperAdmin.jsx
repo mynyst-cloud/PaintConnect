@@ -260,7 +260,7 @@ export default function SuperAdmin() {
                             </Button>
                             <Button variant="outline" onClick={loadAdminData} disabled={isRefreshing} className="shadow-sm">
                                 {isRefreshing ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <InlineSpinner />
                                 ) : (
                                     <RefreshCw className="w-4 h-4" />
                                 )}

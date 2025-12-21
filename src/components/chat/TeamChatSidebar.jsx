@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, MessageCircle, Briefcase } from 'lucide-react';
+import { X, Send, , MessageCircle, Briefcase } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { ChatMessage, User, Project } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -212,7 +213,7 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
             <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                  <LoadingSpinner size="default" />
                 </div>
               ) : (
                 <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
@@ -334,7 +335,7 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     {isSending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <InlineSpinner />
                     ) : (
                       <Send className="w-4 h-4" />
                     )}

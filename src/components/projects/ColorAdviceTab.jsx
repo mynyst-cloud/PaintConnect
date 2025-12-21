@@ -3,7 +3,8 @@ import { ColorAdvice } from '@/api/entities';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Palette, UploadCloud, Loader2 } from 'lucide-react';
+import { Plus, Palette, UploadCloud,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import ColorAdviceCard from './ColorAdviceCard';
 import ColorAdviceForm from './ColorAdviceForm';
 
@@ -256,7 +257,7 @@ export default function ColorAdviceTab({ project, colorAdvices, onRefresh, isAdm
                             >
                                 {isUploading ? (
                                     <>
-                                        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mb-3" />
+                                        <LoadingSpinner size="lg" />
                                         <p className="text-sm text-gray-600 dark:text-slate-400">Uploaden...</p>
                                     </>
                                 ) : (

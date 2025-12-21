@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Save, Loader2, Calendar, UserPlus, Trash2, Upload, Star, Camera, Check, Mail, MapPin, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import { X, Save, Calendar, UserPlus, Trash2, Upload, Star, Camera, Check, Mail, MapPin, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -600,7 +600,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
                 }`}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {isGeocoding && <Loader2 className="w-4 h-4 animate-spin text-blue-500" />}
+                {isGeocoding && <InlineSpinner />}
                 {!isGeocoding && addressError && <AlertCircle className="w-4 h-4 text-red-500" />}
                 {!isGeocoding && geocodeResult && <CheckCircle2 className="w-4 h-4 text-green-500" />}
               </div>
@@ -609,7 +609,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
             {/* Validation feedback */}
             {isGeocoding && (
               <p className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1">
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <InlineSpinner />
                 Adres valideren...
               </p>
             )}
@@ -695,7 +695,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
                   ))}
                   <Label htmlFor="photo-upload" className="cursor-pointer aspect-square flex flex-col items-center justify-center border-2 border-dashed rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
                       {isUploading ? (
-                          <Loader2 className="w-6 h-6 animate-spin"/>
+                          <LoadingSpinner size="sm" />
                       ) : (
                           <>
                               <Upload className="w-6 h-6 text-gray-400"/>
@@ -734,7 +734,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <InlineSpinner />
                   Bezig...
                 </>
               ) : (

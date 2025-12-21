@@ -624,7 +624,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
                   )}
 
                   <Button type="submit" disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700">
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    {isSubmitting ? <InlineSpinner /> : <Save className="w-4 h-4 mr-2" />}
                     Opslaan
                   </Button>
                 </form>
@@ -793,7 +793,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
                     )}
 
                     <Button type="submit" disabled={isSubmittingInvite} className="bg-emerald-600 hover:bg-emerald-700">
-                      {isSubmittingInvite ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+                      {isSubmittingInvite ? <InlineSpinner /> : <Mail className="w-4 h-4 mr-2" />}
                       Uitnodiging Versturen
                     </Button>
                   </form>
@@ -815,7 +815,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
                 <CardContent>
                   {isLoadingTeam ? (
                     <div className="flex justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                      <LoadingSpinner size="sm" />
                     </div>
                   ) : teamMembers.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">Nog geen teamleden</p>
@@ -909,7 +909,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
                         </Button>
                       </Link>
                       <Button onClick={handleManageSubscription} disabled={isRedirecting}>
-                        {isRedirecting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        {isRedirecting ? <InlineSpinner /> : null}
                         Beheer Abonnement
                       </Button>
                     </div>
@@ -926,7 +926,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
                 <CardContent>
                   {isLoadingInvoices ? (
                     <div className="flex justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                      <LoadingSpinner size="sm" />
                     </div>
                   ) : invoices.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">Nog geen facturen</p>

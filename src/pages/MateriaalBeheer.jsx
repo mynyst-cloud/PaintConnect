@@ -1836,7 +1836,7 @@ export default function MateriaalBeheer() {
 
                         <div className="flex flex-wrap gap-2">
                             <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={isExporting || filteredAndSortedAllMaterials.length === 0}>
-                                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                                {isExporting ? <InlineSpinner /> : <Download className="mr-2 h-4 w-4" />}
                                 Export CSV
                             </Button>
                             <Button onClick={handleAddNew}>
@@ -1913,7 +1913,7 @@ export default function MateriaalBeheer() {
 
                     {isLoading ? (
                         <div className="flex justify-center items-center h-64">
-                            <Loader2 className="h-8 w-8 animate-spin" />
+                            <LoadingSpinner size="default" />
                         </div>
                     ) : (
                         <>
@@ -2176,7 +2176,7 @@ export default function MateriaalBeheer() {
 
                     {isLoading ? (
                         <div className="flex justify-center items-center h-64">
-                            <Loader2 className="h-8 w-8 animate-spin" />
+                            <LoadingSpinner size="default" />
                         </div>
                     ) : invoices.length === 0 ? (
                         <Card>
@@ -2491,7 +2491,7 @@ export default function MateriaalBeheer() {
                                                                                                         className="bg-emerald-600 hover:bg-emerald-700"
                                                                                                     >
                                                                                                         {isSavingLineItem ? (
-                                                                                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                                                                                            <InlineSpinner className="mr-1" />
                                                                                                         ) : (
                                                                                                             <Save className="w-3 h-3 mr-1" />
                                                                                                         )}

@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Clock, Save, Loader2 } from 'lucide-react';
+import { X, Clock, Save,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { TimeEntry } from '@/api/entities';
 import { notifyHoursConfirmed } from '@/api/functions';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo"; // New import
@@ -151,7 +152,7 @@ export default function HoursConfirmationForm({ project, currentUser, onSubmit, 
                                 <Button type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? (
                                         <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            <InlineSpinner />
                                             Bevestigen...
                                         </>
                                     ) : (

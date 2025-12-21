@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { User } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, AlertCircle, LogIn } from 'lucide-react';
+import { , CheckCircle, AlertCircle, LogIn } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { getInviteDetailsByToken } from '@/api/functions';
 import { acceptInvitation } from '@/api/functions';
 import { createPageUrl } from '@/components/utils';
@@ -119,7 +120,7 @@ export default function ActivateAccount() {
                 <Card className="w-full max-w-md">
                     <CardHeader className="text-center">
                         <CardTitle className="flex items-center justify-center gap-2">
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <InlineSpinner />
                             Uitnodiging Verwerken
                         </CardTitle>
                     </CardHeader>
@@ -172,7 +173,7 @@ export default function ActivateAccount() {
                             Welkom bij {inviteDetails?.company_name}! U wordt doorgestuurd naar het dashboard.
                         </p>
                         <div className="flex justify-center">
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <InlineSpinner />
                         </div>
                     </CardContent>
                 </Card>

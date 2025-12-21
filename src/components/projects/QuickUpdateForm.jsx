@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Save, Loader2, UploadCloud, Image as ImageIcon } from "lucide-react";
+import { X, Save, UploadCloud, Image as ImageIcon } from "lucide-react";
 import { handleProjectUpdate } from '@/api/functions';
 import { supabase } from '@/lib/supabase';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo";
@@ -222,7 +222,7 @@ export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCan
                     <label>
                       {isUploading ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <InlineSpinner />
                           {uploadProgress.total > 0 && `${uploadProgress.current}/${uploadProgress.total}`}
                         </>
                       ) : (
@@ -273,7 +273,7 @@ export default function QuickUpdateForm({ projects, currentUser, onSubmit, onCan
             <CardFooter className="flex justify-end gap-3 p-4 bg-gray-50 dark:bg-slate-800/50">
               <Button type="button" variant="outline" onClick={onCancel}>Annuleren</Button>
               <Button type="submit" disabled={isSubmitting || isUploading || !formData.project_id || !formData.work_notes.trim()} className="bg-emerald-600 hover:bg-emerald-700">
-                {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Bezig...</> : <><Save className="w-4 h-4 mr-2" /> Update Toevoegen</>}
+                {isSubmitting ? <><InlineSpinner /> Bezig...</> : <><Save className="w-4 h-4 mr-2" /> Update Toevoegen</>}
               </Button>
             </CardFooter>
           </Card>

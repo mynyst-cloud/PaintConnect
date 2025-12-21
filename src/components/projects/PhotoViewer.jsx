@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 
@@ -211,7 +212,7 @@ export default function PhotoViewer({ photos, initialIndex = 0, onClose }) {
             >
               {isLoadingUrl ? (
                 <div className="w-64 h-64 bg-gray-800 rounded-lg flex items-center justify-center text-white">
-                  <Loader2 className="w-8 h-8 animate-spin" />
+                  <LoadingSpinner size="default" />
                 </div>
               ) : signedUrl ? (
                 <img

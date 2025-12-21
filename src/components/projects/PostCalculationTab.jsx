@@ -509,7 +509,7 @@ export default function PostCalculationTab({
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2">
                 <Button onClick={handleGeneratePDF} disabled={isGeneratingPDF} variant="outline">
-                    {isGeneratingPDF ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+                    {isGeneratingPDF ? <InlineSpinner /> : <Download className="w-4 h-4 mr-2" />}
                     Genereer PDF
                 </Button>
                 <Button 
@@ -517,7 +517,7 @@ export default function PostCalculationTab({
                     disabled={isFinalizingProject || project.status === 'afgerond'} 
                     className="bg-green-600 hover:bg-green-700"
                 >
-                    {isFinalizingProject ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
+                    {isFinalizingProject ? <InlineSpinner /> : <FileText className="w-4 h-4 mr-2" />}
                     {project.status === 'afgerond' ? 'Project Afgerond' : 'Project Afronden'}
                 </Button>
             </div>

@@ -329,7 +329,7 @@ export default function VoorraadBeheer() {
   if (isLoading || featureLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <LoadingSpinner size="default" />
       </div>
     );
   }
@@ -846,7 +846,7 @@ export default function VoorraadBeheer() {
               >
                 {isGeocodingLocation ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <InlineSpinner />
                     Adres opzoeken...
                   </>
                 ) : (

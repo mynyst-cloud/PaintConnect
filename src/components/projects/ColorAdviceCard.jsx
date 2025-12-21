@@ -209,7 +209,7 @@ export default function ColorAdviceCard({ advice, onEdit, onDelete, isAdmin }) {
                             disabled={isLoadingPdf}
                         >
                             {isLoadingPdf ? (
-                                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                                <InlineSpinner />
                             ) : (
                                 <Download className="w-4 h-4 mr-1.5" />
                             )}

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { OfferteOpmeting, User, Company } from '@/api/entities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Eye, Loader2, FileText } from 'lucide-react';
+import { Plus, Eye, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPageUrl, formatDateTime } from '@/components/utils';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mic, MicOff, Loader2, Trash2 } from 'lucide-react';
+import { Mic, MicOff, , Trash2 } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { toast } from 'sonner';
 
 export default function SpeechRecognitionComponent({ onTranscriptUpdate, isProcessing, isCorrectingMode = false, correctingMetingNumber = null }) {
@@ -120,7 +121,7 @@ export default function SpeechRecognitionComponent({ onTranscriptUpdate, isProce
             )}
             {isProcessing && (
               <span className="flex items-center gap-2 text-sm text-blue-600 font-normal">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <InlineSpinner />
                 AI verwerkt...
               </span>
             )}

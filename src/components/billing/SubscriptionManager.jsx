@@ -134,7 +134,7 @@ export default function SubscriptionManager({ currentUser, company, onMessage })
     return (
       <Card>
         <CardContent className="p-6 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          <LoadingSpinner size="sm" />
           <span>Abonnementsgegevens laden...</span>
         </CardContent>
       </Card>
@@ -185,7 +185,7 @@ export default function SubscriptionManager({ currentUser, company, onMessage })
                 className="flex items-center gap-2"
               >
                 {billingPortalLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <InlineSpinner />
                 ) : (
                   <ExternalLink className="w-4 h-4" />
                 )}
@@ -243,7 +243,7 @@ export default function SubscriptionManager({ currentUser, company, onMessage })
                   >
                     {upgrading === planKey ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <InlineSpinner />
                         Upgraden...
                       </>
                     ) : isCurrentPlan ? (

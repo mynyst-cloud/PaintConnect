@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, UserPlus, CheckCircle, AlertTriangle, Users, Mail } from 'lucide-react';
+import { UserPlus, CheckCircle, AlertTriangle, Users, Mail } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { ThemeProvider, useTheme } from '@/components/providers/ThemeProvider';
 import { getInviteDetailsByToken } from '@/api/functions';
 import { acceptInvitation } from '@/api/functions';
@@ -278,7 +279,7 @@ function InviteAcceptanceContent() {
                                 U wordt automatisch doorgestuurd naar uw dashboard...
                             </p>
                             <div className="flex items-center justify-center">
-                                <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+                                <LoadingSpinner size="sm" />
                             </div>
                         </CardContent>
                     </Card>
@@ -290,10 +291,7 @@ function InviteAcceptanceContent() {
     if (!inviteData && !error) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-                <div className="text-center">
-                    <Loader2 className="mx-auto h-12 w-12 animate-spin text-emerald-600" />
-                    <p className="mt-4 text-gray-600 dark:text-gray-300">Uitnodiging laden...</p>
-                </div>
+                <LoadingSpinner size="lg" text="Uitnodiging laden..." />
             </div>
         );
     }
@@ -358,8 +356,8 @@ function InviteAcceptanceContent() {
                         {currentUser && isLoading && (
                             <div className="space-y-4">
                                 <div className="p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800 text-center">
-                                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-2" />
-                                    <p className="text-emerald-800 dark:text-emerald-200 font-medium">
+                                    <LoadingSpinner size="default" />
+                                    <p className="text-emerald-800 dark:text-emerald-200 font-medium mt-2">
                                         Uitnodiging wordt geaccepteerd...
                                     </p>
                                     <p className="text-sm text-emerald-600 dark:text-emerald-400">
@@ -386,7 +384,7 @@ function InviteAcceptanceContent() {
                                     className="w-full flex items-center justify-center gap-3 py-6"
                                 >
                                     {isLoading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <InlineSpinner />
                                     ) : (
                                         <>
                                             <GoogleLogo />
@@ -412,7 +410,7 @@ function InviteAcceptanceContent() {
                                     className="w-full bg-emerald-600 hover:bg-emerald-700 py-6"
                                 >
                                     {isLoading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <InlineSpinner />
                                     ) : (
                                         <>
                                             <Mail className="w-5 h-5 mr-2" />
@@ -439,7 +437,7 @@ function InviteAcceptanceContent() {
                                 >
                                     {isLoading ? (
                                         <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            <InlineSpinner className="mr-2" />
                                             Accepteren...
                                         </>
                                     ) : (

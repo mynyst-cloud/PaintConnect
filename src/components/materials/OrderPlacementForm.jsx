@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Save, Loader2, ShoppingCart } from 'lucide-react';
+import { X, Save, , ShoppingCart } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function OrderPlacementForm({ requests, suppliers, onSubmit, onCancel, companyId }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,7 +95,7 @@ export default function OrderPlacementForm({ requests, suppliers, onSubmit, onCa
               </Button>
               <Button type="submit" disabled={isSubmitting} className="bg-purple-600 hover:bg-purple-700">
                 {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                  <InlineSpinner />
                 ) : (
                   <ShoppingCart className="w-4 h-4 mr-2"/>
                 )}

@@ -6,7 +6,8 @@ import ProjectCard from '@/components/klantportaal/ProjectCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Loader2, Search, Building, Eye, ArrowLeft } from 'lucide-react';
+import { LogOut, , Search, Building, Eye, ArrowLeft } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { getClientPortalData } from '@/api/functions';
 import { ClientInvitation, Project, User } from '@/api/entities';
 import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
@@ -184,7 +185,7 @@ export default function Klantportaal() {
             <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-4">
                 <div className="text-center">
                     <img src={logoUrl} alt="PaintConnect" className="w-40 sm:w-48 mx-auto mb-6" />
-                    <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
+                    <LoadingSpinner size="default" />
                     <p className="text-gray-600 dark:text-slate-300 text-sm sm:text-base">Laden...</p>
                 </div>
             </div>

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Package, Save, Loader2, Plus, Trash2, Check, ChevronsUpDown } from 'lucide-react';
+import { X, Package, Save, , Plus, Trash2, Check, ChevronsUpDown } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { MaterialUsage, Material } from '@/api/entities';
 import { notifyMaterialsConfirmed } from '@/api/functions';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo";
@@ -251,7 +252,7 @@ export default function MaterialsConfirmationForm({ project, currentUser, onSubm
                                 <Button type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? (
                                         <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            <InlineSpinner />
                                             Bevestigen...
                                         </>
                                     ) : (

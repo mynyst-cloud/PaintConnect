@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, Trash2, Upload, Loader2, Camera, User, Calendar, Image as ImageIcon } from 'lucide-react';
+import { Star, Trash2, Upload, , Camera, User, Calendar, Image as ImageIcon } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { format, parseISO, isValid } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { Project } from '@/api/entities';
@@ -247,7 +248,7 @@ export default function ProjectPhotosTab({ project, relatedData, onDataRefresh, 
         return (
             <div className="h-full flex items-center justify-center p-8">
                 <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-4" />
+                    <LoadingSpinner size="default" />
                     <p className="text-gray-500 dark:text-gray-400">Foto's laden...</p>
                 </div>
             </div>
@@ -284,7 +285,7 @@ export default function ProjectPhotosTab({ project, relatedData, onDataRefresh, 
                             >
                                 {isUploading ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        <InlineSpinner />
                                         Uploaden...
                                     </>
                                 ) : (

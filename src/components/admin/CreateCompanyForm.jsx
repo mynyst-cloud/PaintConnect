@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Loader2, PlusCircle, AlertTriangle, Mail, Trash2 } from 'lucide-react';
+import { X, , PlusCircle, AlertTriangle, Mail, Trash2 } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -225,7 +226,7 @@ export default function CreateCompanyForm({ onCancel, onCompanyAdded }) {
                                         className="w-full bg-blue-600 hover:bg-blue-700"
                                         disabled={isSubmitting}
                                     >
-                                        {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+                                        {isSubmitting ? <InlineSpinner className="mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
                                         Verstuur Nieuwe Uitnodiging
                                     </Button>
                                 )}
@@ -236,7 +237,7 @@ export default function CreateCompanyForm({ onCancel, onCompanyAdded }) {
                                     className="w-full"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                                    {isSubmitting ? <InlineSpinner className="mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
                                     Verwijder Bestaand Bedrijf
                                 </Button>
                                 
@@ -305,7 +306,7 @@ export default function CreateCompanyForm({ onCancel, onCompanyAdded }) {
                                     Annuleren
                                 </Button>
                                 <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700" disabled={isSubmitting}>
-                                    {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <PlusCircle className="mr-2 w-4 h-4" />}
+                                    {isSubmitting ? <InlineSpinner className="mr-2" /> : <PlusCircle className="mr-2 w-4 h-4" />}
                                     Bedrijf Opslaan & Uitnodigen
                                 </Button>
                             </CardFooter>

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Volume2, Trash2, Loader2, CheckCircle, Play } from 'lucide-react';
+import { Upload, Volume2, Trash2, , CheckCircle, Play } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function NotificationSoundUpload() {
     const [isUploading, setIsUploading] = useState(false);
@@ -121,7 +122,7 @@ export default function NotificationSoundUpload() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center p-8">
-                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                <LoadingSpinner size="sm" />
             </div>
         );
     }
@@ -206,7 +207,7 @@ export default function NotificationSoundUpload() {
                                 <label htmlFor="sound-upload" className="cursor-pointer">
                                     {isUploading ? (
                                         <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            <InlineSpinner />
                                             Uploaden...
                                         </>
                                     ) : (

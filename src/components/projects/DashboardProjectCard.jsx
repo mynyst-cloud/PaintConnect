@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Edit, Trash2, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Edit, Trash2,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { imageOptimizer } from '@/components/utils/performanceOptimizer';
 
@@ -188,7 +189,7 @@ export default function DashboardProjectCard({ project, calculateProgress, onVie
               aria-label="Verwijder project"
             >
               {isDeleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <InlineSpinner />
               ) : (
                 <Trash2 className="w-4 h-4" />
               )}

@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { X, Save, Loader2, Info } from 'lucide-react';
+import { X, Save, , Info } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 const sources = ["website", "referral", "advertentie", "telefoon", "anders"];
 const statuses = ["nieuw", "gecontacteerd", "offerte_verstuurd", "gewonnen", "verloren"];
@@ -167,7 +168,7 @@ export default function LeadForm({ lead, users, onSubmit, onCancel }) {
             <CardFooter className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Annuleren</Button>
               <Button type="submit" disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700">
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                {isSubmitting ? <InlineSpinner /> : <Save className="w-4 h-4 mr-2" />}
                 {lead ? 'Wijzigingen Opslaan' : 'Lead Toevoegen'}
               </Button>
             </CardFooter>

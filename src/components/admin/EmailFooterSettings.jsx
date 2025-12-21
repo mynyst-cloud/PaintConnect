@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, Mail, Loader2 } from 'lucide-react';
+import { Save, Mail,  } from 'lucide-react';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function EmailFooterSettings() {
@@ -76,7 +77,7 @@ export default function EmailFooterSettings() {
         return (
             <Card>
                 <CardContent className="p-8 text-center">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-emerald-600" />
+                    <LoadingSpinner size="default" />
                     <p>Footer instellingen laden...</p>
                 </CardContent>
             </Card>
@@ -146,7 +147,7 @@ export default function EmailFooterSettings() {
                 >
                     {isSaving ? (
                         <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            <InlineSpinner />
                             Opslaan...
                         </>
                     ) : (

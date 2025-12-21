@@ -27,6 +27,8 @@ serve(async (req) => {
 
     const { token } = await req.json()
 
+    console.log('[DEBUG HYP-G] Received token:', token?.substring(0, 8))
+
     if (!token) {
       return new Response(
         JSON.stringify({ success: false, error: 'Geen token opgegeven' }),
@@ -34,7 +36,26 @@ serve(async (req) => {
       )
     }
 
-    // Find the magic link
+    // First, check if table exists by trying to count all records
+    const { count, error: countError } = await supabase
+      .from('magic_links')
+      .select('*', { count: 'exact', head: true })
+
+    console.log('[DEBUG HYP-F] Table check:', { count, error: countError?.message, code: countError?.code })
+
+    // Find the magic link - first without the used=false filter to debug
+    const { data: allMatches, error: allError } = await supabase
+      .from('magic_links')
+      .select('*')
+      .eq('token', token)
+
+    console.log('[DEBUG HYP-G/H] All matches for token:', { 
+      found: allMatches?.length || 0, 
+      error: allError?.message,
+      records: allMatches?.map(m => ({ id: m.id?.substring(0, 8), used: m.used, email: m.email }))
+    })
+
+    // Now find with the used=false filter
     const { data: magicLink, error: findError } = await supabase
       .from('magic_links')
       .select('*')
@@ -42,10 +63,17 @@ serve(async (req) => {
       .eq('used', false)
       .single()
 
+    console.log('[DEBUG HYP-E] Magic link query result:', { 
+      found: !!magicLink, 
+      error: findError?.message,
+      code: findError?.code,
+      email: magicLink?.email
+    })
+
     if (findError || !magicLink) {
       console.error('Magic link not found:', findError)
       return new Response(
-        JSON.stringify({ success: false, error: 'Ongeldige of verlopen link' }),
+        JSON.stringify({ success: false, error: 'Ongeldige of verlopen link', debug: { findError: findError?.message, code: findError?.code } }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }

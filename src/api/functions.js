@@ -198,8 +198,31 @@ export const invitePainter = async (payload) => {
 /**
  * Get invite details by token
  * Used on InviteAcceptance page to show invite info
+ * Uses Edge Function to bypass RLS for unauthenticated users
  */
 export const getInviteDetailsByToken = async ({ token }) => {
+  try {
+    const { supabase } = await import('@/lib/supabase')
+    
+    // Call Edge Function (bypasses RLS with service role)
+    const { data, error } = await supabase.functions.invoke('getInviteDetails', {
+      body: { token }
+    })
+    
+    if (error) {
+      console.error('getInviteDetailsByToken Edge Function error:', error)
+      return { data: { success: false, error: error.message || 'Er ging iets mis' } }
+    }
+    
+    return { data }
+  } catch (error) {
+    console.error('getInviteDetailsByToken failed:', error)
+    return { data: { success: false, error: error.message } }
+  }
+}
+
+// Legacy version - kept for reference but not used
+export const getInviteDetailsByTokenLegacy = async ({ token }) => {
   try {
     const { PendingInvite, Company } = await import('@/lib/supabase')
     const invites = await PendingInvite.filter({ token, status: 'pending' })

@@ -492,7 +492,7 @@ export default function NaCalculatie() {
             onSubmit={handleProjectFormSubmit}
             onCancel={() => { setShowProjectForm(false); setEditingProject(null); }}
             isSubmitting={isSubmitting}
-            painters={allUsers.filter(u => u.is_painter)}
+            painters={allUsers.filter(u => u.status === 'active')}
           />
         )}
       </AnimatePresence>

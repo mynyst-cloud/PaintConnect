@@ -973,7 +973,7 @@ export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unrea
               <ProjectDetails project={selectedProject} onClose={() => { setShowProjectDetails(false); setProjectDetailsInitialTab(null); }}
                 onProjectUpdate={handleProjectUpdate} onEditProject={handleOpenFormForEdit} isAdmin={isAdmin} initialTab={projectDetailsInitialTab} />
             )}
-            {showProjectForm && <ProjectForm project={editingProject} onSubmit={handleProjectFormSubmit} onCancel={() => { setShowProjectForm(false); setEditingProject(null); }} isSubmitting={isSubmitting} painters={allUsers.filter((u) => u.is_painter)} />}
+            {showProjectForm && <ProjectForm project={editingProject} onSubmit={handleProjectFormSubmit} onCancel={() => { setShowProjectForm(false); setEditingProject(null); }} isSubmitting={isSubmitting} painters={allUsers.filter((u) => u.status === 'active')} />}
           </Suspense>
         </AnimatePresence>
       </div>

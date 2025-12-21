@@ -16,6 +16,10 @@ export default function MagicLinkVerify() {
     const verifyToken = async () => {
       const token = searchParams.get('token');
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:useEffect',message:'HYP-B: Token from URL',data:{token: token ? token.substring(0, 8) + '...' : null, hasToken: !!token},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'HYP-B'})}).catch(()=>{});
+      // #endregion
+
       if (!token) {
         setStatus('error');
         setMessage('Geen geldige link. Probeer opnieuw in te loggen.');
@@ -23,10 +27,18 @@ export default function MagicLinkVerify() {
       }
 
       try {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:beforeInvoke',message:'HYP-A: Calling verifyMagicLink',data:{tokenPrefix: token.substring(0, 8)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'HYP-A'})}).catch(()=>{});
+        // #endregion
+
         // Verify the magic link token
         const { data, error } = await supabase.functions.invoke('verifyMagicLink', {
           body: { token }
         });
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:afterInvoke',message:'HYP-A/C/D/E: verifyMagicLink response',data:{hasData: !!data, success: data?.success, error: error?.message || data?.error, hasActionLink: !!data?.actionLink, requiresGoogle: data?.requiresGoogleLogin},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'HYP-A'})}).catch(()=>{});
+        // #endregion
 
         if (error) throw error;
         if (!data?.success) throw new Error(data?.error || 'Verificatie mislukt');
@@ -35,10 +47,18 @@ export default function MagicLinkVerify() {
 
         // If we got an action link, use it to log in
         if (data.actionLink) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:actionLink',message:'HYP-D: Parsing actionLink',data:{actionLinkLength: data.actionLink?.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'HYP-D'})}).catch(()=>{});
+          // #endregion
+
           // Extract the token parts from the action link and use them
           const url = new URL(data.actionLink);
           const accessToken = url.hash?.match(/access_token=([^&]+)/)?.[1];
           const refreshToken = url.hash?.match(/refresh_token=([^&]+)/)?.[1];
+
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:tokens',message:'HYP-D: Extracted tokens',data:{hasAccessToken: !!accessToken, hasRefreshToken: !!refreshToken},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'HYP-D'})}).catch(()=>{});
+          // #endregion
 
           if (accessToken && refreshToken) {
             // Set the session directly
@@ -46,6 +66,10 @@ export default function MagicLinkVerify() {
               access_token: accessToken,
               refresh_token: refreshToken
             });
+
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:setSession',message:'HYP-D: setSession result',data:{sessionError: sessionError?.message || null, success: !sessionError},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'HYP-D'})}).catch(()=>{});
+            // #endregion
 
             if (!sessionError) {
               setStatus('success');
@@ -73,6 +97,10 @@ export default function MagicLinkVerify() {
         }
 
       } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MagicLinkVerify.jsx:catch',message:'HYP-A: Verification failed',data:{errorMessage: error?.message, errorName: error?.name},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'HYP-A'})}).catch(()=>{});
+        // #endregion
+
         console.error('Verify error:', error);
         setStatus('error');
         setMessage(error.message || 'Er is een fout opgetreden. Probeer opnieuw in te loggen.');

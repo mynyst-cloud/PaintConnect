@@ -268,10 +268,31 @@ function PagesContent() {
     );
 }
 
+// Wrapper to handle routes outside of Layout (public routes)
+function AppRoutes() {
+    const location = useLocation();
+    
+    // Routes that don't need the Layout wrapper
+    const publicRoutes = ['/auth/verify'];
+    const isPublicRoute = publicRoutes.some(route => 
+        location.pathname.toLowerCase().startsWith(route.toLowerCase())
+    );
+    
+    if (isPublicRoute) {
+        return (
+            <Routes>
+                <Route path="/auth/verify" element={<MagicLinkVerify />} />
+            </Routes>
+        );
+    }
+    
+    return <PagesContent />;
+}
+
 export default function Pages() {
     return (
         <Router>
-            <PagesContent />
+            <AppRoutes />
         </Router>
     );
 }

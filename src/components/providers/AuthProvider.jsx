@@ -45,6 +45,32 @@ export default function AuthProvider({ children }) {
     );
   }
 
+  // Publieke routes die geen auth nodig hebben
+  const publicRoutes = [
+    '/auth/verify',
+    '/InviteAcceptance', 
+    '/ActivateAccount', 
+    '/Privacy', 
+    '/Terms', 
+    '/PrivacyPolicy', 
+    '/TermsOfService',
+    '/ClientPortalEntry',
+    '/ClientPortalDashboard'
+  ];
+  const currentPath = window.location.pathname;
+  const isPublicRoute = publicRoutes.some(route => 
+    currentPath.toLowerCase().startsWith(route.toLowerCase())
+  );
+
+  // Laat publieke routes door zonder login
+  if (!user && isPublicRoute) {
+    return (
+      <AuthContext.Provider value={{ user: null, login }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
+
   if (!user) {
     return <LoginPage />;
   }

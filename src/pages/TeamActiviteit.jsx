@@ -75,6 +75,10 @@ export default function TeamActiviteit() {
     total: 0
   });
 
+  // Use ref to track current pagination to avoid infinite loops
+  const paginationRef = useRef(pagination);
+  paginationRef.current = pagination;
+
   // Modals
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
@@ -128,10 +132,6 @@ export default function TeamActiviteit() {
       setIsLoading(false);
     }
   };
-
-  // Use ref to track current pagination to avoid infinite loops
-  const paginationRef = useRef(pagination);
-  paginationRef.current = pagination;
 
   const loadTeamActivity = useCallback(async (user = currentUser, comp = company, page = null) => {
     if (!user || !comp) {

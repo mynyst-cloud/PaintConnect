@@ -100,12 +100,12 @@ function getInviteEmailHtml(params: {
                           <!--[if mso]>
                           <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${params.inviteUrl}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="15%" strokecolor="#059669" fillcolor="#059669">
                             <w:anchorlock/>
-                            <center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;">Uitnodiging Accepteren →</center>
+                            <center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;">Account Aanmaken & Starten →</center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
                           <a href="${params.inviteUrl}" target="_blank" class="button-link" style="display: inline-block; padding: 16px 40px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none; border-radius: 8px; background-color: #059669; font-family: Arial, Helvetica, sans-serif;">
-                            Uitnodiging Accepteren →
+                            Account Aanmaken & Starten →
                           </a>
                           <!--<![endif]-->
                         </td>
@@ -116,15 +116,14 @@ function getInviteEmailHtml(params: {
               </table>
               
               <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">
-                Of kopieer deze link naar uw browser:<br>
-                <a href="${params.inviteUrl}" style="color: #059669; word-break: break-all;">${params.inviteUrl}</a>
+                Klik op de knop hierboven om direct uw account aan te maken en te starten.
               </p>
               
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 30px;">
                 <tr>
                   <td style="border-top: 1px solid #e5e7eb; padding-top: 30px;">
                     <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">
-                      Deze uitnodiging is 7 dagen geldig. Heeft u vragen? Neem contact op met uw werkgever.
+                      Deze link is 7 dagen geldig. Eén klik is voldoende om uw account aan te maken en te starten!
                     </p>
                   </td>
                 </tr>
@@ -291,9 +290,45 @@ serve(async (req) => {
       }
     }
 
-    // Build invite URL
-    const inviteUrl = `${APP_URL}/InviteAcceptance?token=${inviteToken}`
+    // Build painter name
     const painterName = `${firstName || ''} ${lastName || ''}`.trim() || 'Collega'
+    const normalizedEmail = email.toLowerCase().trim()
+
+    // ============================================
+    // CREATE MAGIC LINK FOR DIRECT LOGIN
+    // This allows 1-click registration + login from the invite email
+    // ============================================
+    const magicToken = crypto.randomUUID()
+    const magicExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days (same as invite)
+
+    // The redirect after magic link verification goes to InviteAcceptance
+    const inviteAcceptanceUrl = `/InviteAcceptance?token=${inviteToken}`
+
+    const { error: magicInsertError } = await supabase
+      .from('magic_links')
+      .insert({
+        email: normalizedEmail,
+        token: magicToken,
+        expires_at: magicExpiresAt.toISOString(),
+        redirect_to: inviteAcceptanceUrl
+      })
+
+    if (magicInsertError) {
+      console.error('Insert magic link error:', magicInsertError)
+      // Continue anyway - we can fallback to the old flow
+    }
+
+    // Build the invite URL - now points to /auth/verify with magic token for 1-click login!
+    const inviteUrl = magicInsertError 
+      ? `${APP_URL}/InviteAcceptance?token=${inviteToken}` // Fallback to old flow
+      : `${APP_URL}/auth/verify?token=${magicToken}`       // New 1-click flow
+
+    console.log('Created invite with magic link:', { 
+      email: normalizedEmail, 
+      inviteToken: inviteToken.substring(0, 8), 
+      magicToken: magicToken.substring(0, 8),
+      inviteUrl 
+    })
 
     // Send email via Resend
     if (!RESEND_API_KEY) {

@@ -107,10 +107,26 @@ serve(async (req) => {
     )
 
     const now = new Date()
-    const currentTime = now.toTimeString().slice(0, 5) // "HH:MM" format
-    const today = now.toISOString().slice(0, 10) // "YYYY-MM-DD" format
+    
+    // Convert to CET/CEST (Europe/Amsterdam) timezone
+    const cetOptions: Intl.DateTimeFormatOptions = { 
+      timeZone: 'Europe/Amsterdam',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      timeZone: 'Europe/Amsterdam',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }
+    
+    const currentTime = now.toLocaleTimeString('nl-NL', cetOptions) // "HH:MM" format in CET
+    const dateParts = now.toLocaleDateString('nl-NL', dateOptions).split('-')
+    const today = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}` // "YYYY-MM-DD" format
 
-    log(`[CheckInReminders] Running at ${currentTime} on ${today}`)
+    log(`[CheckInReminders] Running at ${currentTime} CET on ${today}`)
     log(`[CheckInReminders] OneSignal configured: APP_ID=${ONESIGNAL_APP_ID ? 'yes' : 'NO'}, API_KEY=${ONESIGNAL_REST_API_KEY ? 'yes' : 'NO'}`)
 
     let checkInReminders = 0

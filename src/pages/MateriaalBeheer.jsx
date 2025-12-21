@@ -26,6 +26,7 @@ import AddToStockModal from '@/components/stock/AddToStockModal';
 import MaterialConsumptionReport from '@/components/materials/MaterialConsumptionReport';
 import { formatDate, formatCurrency } from '@/components/utils';
 import { base44 } from '@/api/base44Client';
+import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
 
 // Normaliseer materiaalnaam voor betere matching
 const normalizeMaterialName = (name) => {
@@ -207,6 +208,9 @@ const is404Error = (error) => {
 };
 
 export default function MateriaalBeheer() {
+    // Feature access for subscription-based restrictions
+    const { hasFeature, isLoading: featureLoading, checkLimit } = useFeatureAccess();
+    
     const [activeTab, setActiveTab] = useState('materials');
     const [materials, setMaterials] = useState([]);
     const [invoices, setInvoices] = useState([]);
@@ -1546,19 +1550,25 @@ export default function MateriaalBeheer() {
                             <Package className="w-4 h-4 mr-2" />
                             Materialen
                         </TabsTrigger>
-                        <TabsTrigger value="invoices" className="relative">
-                            <FileText className="w-4 h-4 mr-2" />
-                            Facturen
-                            {(pendingInvoices.length > 0 || reviewRequiredInvoices.length > 0) && (
-                                <Badge className="ml-2 bg-red-500 text-white">
-                                    {pendingInvoices.length + reviewRequiredInvoices.length}
-                                </Badge>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger value="consumption">
-                            <TrendingUp className="w-4 h-4 mr-2" />
-                            Verbruik
-                        </TabsTrigger>
+                        {/* Facturen tab - Professional+ only */}
+                        {hasFeature('materiaalbeheer_tab_invoices') && (
+                            <TabsTrigger value="invoices" className="relative">
+                                <FileText className="w-4 h-4 mr-2" />
+                                Facturen
+                                {(pendingInvoices.length > 0 || reviewRequiredInvoices.length > 0) && (
+                                    <Badge className="ml-2 bg-red-500 text-white">
+                                        {pendingInvoices.length + reviewRequiredInvoices.length}
+                                    </Badge>
+                                )}
+                            </TabsTrigger>
+                        )}
+                        {/* Verbruik tab - Professional+ only */}
+                        {hasFeature('materiaalbeheer_tab_usage') && (
+                            <TabsTrigger value="consumption">
+                                <TrendingUp className="w-4 h-4 mr-2" />
+                                Verbruik
+                            </TabsTrigger>
+                        )}
                     </TabsList>
                 </div>
 

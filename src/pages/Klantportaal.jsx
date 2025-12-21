@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { LogOut, Loader2, Search, Building, Eye, ArrowLeft } from 'lucide-react';
 import { getClientPortalData } from '@/api/functions';
 import { ClientInvitation, Project, User } from '@/api/entities';
+import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
 
 const logoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 
@@ -27,6 +28,9 @@ export default function Klantportaal() {
     const [invitations, setInvitations] = useState([]);
     const [projects, setProjects] = useState([]);
     const [searchEmail, setSearchEmail] = useState('');
+    
+    // Feature access
+    const { hasFeature, isLoading: featureLoading, isAdmin } = useFeatureAccess();
 
     useEffect(() => {
         const loadData = async () => {
@@ -173,13 +177,28 @@ export default function Klantportaal() {
         ? invitations.filter(inv => inv.client_email.toLowerCase().includes(searchEmail.toLowerCase()))
         : invitations;
 
-    if (isLoading) {
+    if (isLoading || featureLoading) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-4">
                 <div className="text-center">
                     <img src={logoUrl} alt="PaintConnect" className="w-40 sm:w-48 mx-auto mb-6" />
                     <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-4" />
                     <p className="text-gray-600 dark:text-slate-300 text-sm sm:text-base">Laden...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Permission check for admin view - Klantportaal management requires Professional+
+    // Note: Client view (with JWT) is always accessible
+    if (isAdminView && !hasFeature('page_klantportaal')) {
+        return (
+            <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
+                <div className="max-w-2xl mx-auto mt-12 sm:mt-24">
+                    <UpgradePrompt 
+                        feature="page_klantportaal" 
+                        message="Het Klantportaal is alleen beschikbaar voor Professional en Enterprise abonnementen. Upgrade om klanten uit te nodigen en projectvoortgang te delen."
+                    />
                 </div>
             </div>
         );

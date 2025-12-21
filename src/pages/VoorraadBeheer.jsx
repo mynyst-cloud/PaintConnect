@@ -32,8 +32,11 @@ import { nl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/components/utils';
 import { geocodeAddress } from '@/api/functions';
+import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function VoorraadBeheer() {
+  const { hasFeature, isLoading: featureLoading } = useFeatureAccess();
   const [batches, setBatches] = useState([]);
   const [movements, setMovements] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -321,10 +324,24 @@ export default function VoorraadBeheer() {
     expiringCount: batches.filter(b => b.expiry_date && new Date(b.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)).length
   };
 
-  if (isLoading) {
+  if (isLoading || featureLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
+
+  // Permission check - VoorraadBeheer is only for Professional+ subscriptions
+  if (!hasFeature('page_voorraad')) {
+    return (
+      <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
+        <div className="max-w-2xl mx-auto mt-12 sm:mt-24">
+          <UpgradePrompt 
+            feature="page_voorraad" 
+            message="VoorraadBeheer is alleen beschikbaar voor Professional en Enterprise abonnementen. Upgrade om uw voorraad en locaties te beheren."
+          />
+        </div>
       </div>
     );
   }

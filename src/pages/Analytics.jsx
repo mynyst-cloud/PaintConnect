@@ -8,15 +8,18 @@ import {
   Users,
   Building,
   Download,
-  Calendar
+  Calendar,
+  Lock
 } from 'lucide-react';
 import CompanyDashboard from '../components/analytics/CompanyDashboard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
+import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
 
 export default function Analytics() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { hasFeature, isLoading: featureLoading } = useFeatureAccess();
 
   useEffect(() => {
     loadUser();
@@ -33,8 +36,22 @@ export default function Analytics() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || featureLoading) {
     return <LoadingSpinner overlay text="Analytics laden..." />;
+  }
+
+  // Permission check - Analytics is only for Professional+ subscriptions
+  if (!hasFeature('page_analytics')) {
+    return (
+      <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
+        <div className="max-w-2xl mx-auto mt-12 sm:mt-24">
+          <UpgradePrompt 
+            feature="page_analytics" 
+            message="Analytics is alleen beschikbaar voor Professional en Enterprise abonnementen. Upgrade om uitgebreide inzichten in uw bedrijfsprestaties te krijgen."
+          />
+        </div>
+      </div>
+    );
   }
 
   if (!currentUser?.company_id) {

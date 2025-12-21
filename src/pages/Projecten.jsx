@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Project, User } from "@/api/entities";
 import { Button } from "@/components/ui/button";
-import { Plus, MapIcon } from "lucide-react";
+import { Plus, MapIcon, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFeatureAccess, LimitWarning } from "@/hooks/useFeatureAccess";
 
 import ProjectForm from "@/components/planning/PlanningForm";
 import DashboardProjectCard from "@/components/projects/DashboardProjectCard";
@@ -26,6 +27,9 @@ export default function Projecten() {
   const searchParams = new URLSearchParams(location.search);
   const projectIdToOpen = searchParams.get('project_id');
   const tabToOpen = searchParams.get('tab');
+  
+  // Feature access for project limits
+  const { checkLimit, canAddMoreProjects, isAdmin: isFeatureAdmin } = useFeatureAccess();
 
   const [view, setView] = useState('grid');
   const [projects, setProjects] = useState([]);

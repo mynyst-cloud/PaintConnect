@@ -1,3 +1,4 @@
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -89,7 +90,7 @@ export default function ProjectChat({ project, clientInfo }) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex justify-center py-8">
-                        <div className="animate-spin w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full"></div>
+                        <LoadingSpinner size="sm" />
                     </div>
                 </CardContent>
             </Card>
@@ -173,7 +174,7 @@ export default function ProjectChat({ project, clientInfo }) {
                     />
                     <Button type="submit" disabled={isSending || !newMessage.trim() || !clientInfo}>
                         {isSending ? (
-                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                            <InlineSpinner />
                         ) : (
                             <Send className="w-4 h-4" />
                         )}

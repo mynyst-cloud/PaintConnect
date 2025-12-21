@@ -1,4 +1,5 @@
 import React, { lazy } from 'react';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 // Lazy load heavy components with better error boundaries
 export const createLazyComponent = (importFunction, fallback = null) => {
@@ -6,7 +7,7 @@ export const createLazyComponent = (importFunction, fallback = null) => {
   
   return (props) => (
     <React.Suspense 
-      fallback={fallback || <div className="flex items-center justify-center p-8"><div className="animate-spin w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full"></div></div>}
+      fallback={fallback || <div className="flex items-center justify-center p-8"><LoadingSpinner size="sm" /></div>}
     >
       <LazyComponent {...props} />
     </React.Suspense>

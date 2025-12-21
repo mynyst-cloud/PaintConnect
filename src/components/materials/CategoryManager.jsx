@@ -1,3 +1,4 @@
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Pencil, Trash2, Save, GripVertical } from 'lucide-react';
@@ -172,7 +173,7 @@ export default function CategoryManager({ isOpen, onClose, companyId, onCategori
           <div className="flex-1 overflow-y-auto p-6">
             {isLoading ? (
               <div className="text-center py-8">
-                <div className="animate-spin w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full mx-auto"></div>
+                <LoadingSpinner size="default" />
               </div>
             ) : (
               <div className="space-y-3">

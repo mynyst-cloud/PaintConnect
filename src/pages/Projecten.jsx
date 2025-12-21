@@ -1,3 +1,4 @@
+import { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Project, User } from "@/api/entities";
 import { Button } from "@/components/ui/button";
@@ -547,7 +548,7 @@ export default function Projecten() {
                   {isGeocodingInProgress && (
                     <div className="mb-4 text-center">
                       <div className="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                        <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                        <InlineSpinner />
                         Projecten worden voorbereid voor kaartweergave...
                       </div>
                     </div>

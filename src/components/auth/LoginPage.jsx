@@ -12,6 +12,7 @@ import {
   Building2,
   Mail
 } from 'lucide-react';
+import { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 // PaintConnect Logo URLs
 const LOGO_DARK = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png";
@@ -208,7 +209,7 @@ export default function LoginPage() {
                   className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-gray-300 border-t-emerald-600 rounded-full animate-spin" />
+                    <InlineSpinner />
                   ) : (
                     <>
                       <GoogleLogo />
@@ -258,7 +259,7 @@ export default function LoginPage() {
                       className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25"
                     >
                       {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <InlineSpinner />
                       ) : (
                         <>
                           <span>Stuur login link</span>

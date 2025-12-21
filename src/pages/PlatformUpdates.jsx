@@ -1,3 +1,4 @@
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -217,7 +218,7 @@ export default function PlatformUpdates() {
 
                 {isLoading ? (
                     <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
+                        <LoadingSpinner size="default" />
                         <p className="text-gray-600 mt-2">Updates laden...</p>
                     </div>
                 ) : (

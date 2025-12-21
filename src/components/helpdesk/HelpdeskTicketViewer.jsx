@@ -1,3 +1,4 @@
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import React, { useState, useEffect } from "react";
 import { HelpdeskTicket, HelpdeskReply } from "@/api/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -98,7 +99,7 @@ export default function HelpdeskTicketViewer({ onCancel, currentUser }) {
           <div className="w-1/3 border-r border-gray-200 p-4 overflow-y-auto">
             {isLoading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                <LoadingSpinner size="default" />
                 <p className="text-gray-500 mt-2">Laden...</p>
               </div>
             ) : tickets.length === 0 ? (

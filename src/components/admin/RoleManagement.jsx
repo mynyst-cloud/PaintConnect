@@ -1,3 +1,4 @@
+import { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Role, User, RoleChangeLog, Company } from '@/api/entities'; // Added Company entity
@@ -343,7 +344,7 @@ export default function RoleManagement({ currentUser }) {
               className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
             >
               {isInitializingRoles ? (
-                <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2" />
+                <InlineSpinner className="mr-2" />
               ) : (
                 <Settings className="w-4 h-4 mr-2" />
               )}

@@ -1,3 +1,4 @@
+import { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -159,7 +160,7 @@ export default function ClientReviewForm({ projectId, clientEmail, projectName, 
                         >
                             {isSubmitting ? (
                                 <>
-                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                    <InlineSpinner className="mr-2" />
                                     Review indienen...
                                 </>
                             ) : (

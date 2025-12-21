@@ -1,3 +1,4 @@
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,7 +56,7 @@ export default function ClientPortalAccess() {
         return (
             <Card>
                 <CardContent className="p-8 text-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <LoadingSpinner size="default" />
                     <p>Uitnodigingen laden...</p>
                 </CardContent>
             </Card>

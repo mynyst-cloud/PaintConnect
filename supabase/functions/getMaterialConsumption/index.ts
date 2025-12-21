@@ -66,7 +66,22 @@ serve(async (req) => {
 
     const { data: usageRecords, error } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error('Query error:', error)
+      // Return empty data if table doesn't exist yet
+      if (error.code === '42P01') {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            records: [],
+            totals: {},
+            message: 'Materials usage table not yet created'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
+      }
+      throw error
+    }
 
     // Calculate totals per material
     const materialTotals: Record<string, { name: string; unit: string; total: number }> = {}

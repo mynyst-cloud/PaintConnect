@@ -61,6 +61,10 @@ class Entity {
     return data || []
   }
 
+  async list(orderBy = '-created_date') {
+    return this.filter({}, orderBy);
+  }
+
   async get(id) {
     const { data, error } = await supabase
       .from(this.tableName)

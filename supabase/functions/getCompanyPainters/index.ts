@@ -55,7 +55,7 @@ serve(async (req) => {
     // Get all painters/team members for the company
     const { data: painters, error: paintersError } = await supabase
       .from('users')
-      .select('id, email, full_name, company_role, is_painter, created_date, status, avatar_url, home_address, home_latitude, home_longitude')
+      .select('id, email, full_name, company_role, is_painter, created_date, status, home_address, home_latitude, home_longitude')
       .eq('company_id', company_id)
       .order('full_name', { ascending: true })
 

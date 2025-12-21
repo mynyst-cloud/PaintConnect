@@ -33,29 +33,47 @@ serve(async (req) => {
       throw new Error('Niet geautoriseerd')
     }
 
-    // Get request body
-    const body = await req.json().catch(() => ({}))
+    // Get request body (safely parse JSON)
+    let body = {}
+    try {
+      const text = await req.text()
+      if (text && text.length > 0) {
+        body = JSON.parse(text)
+      }
+    } catch (e) {
+      console.log('No JSON body or empty body, continuing...')
+    }
+    
     let company_id = body.company_id
     
     // If no company_id provided, get it from the user
     if (!company_id) {
-      const { data: userData } = await supabase
+      console.log('No company_id in body, fetching from user:', user.id)
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('company_id')
         .eq('id', user.id)
         .single()
       
+      if (userError) {
+        console.error('Error fetching user data:', userError)
+        throw new Error(`Kon gebruiker niet ophalen: ${userError.message}`)
+      }
+      
+      console.log('User data:', userData)
       company_id = userData?.company_id
       
       if (!company_id) {
-        throw new Error('Gebruiker heeft geen bedrijf')
+        throw new Error('Gebruiker heeft geen bedrijf gekoppeld')
       }
     }
+    
+    console.log('Using company_id:', company_id)
 
     // Get all users for the company
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, email, full_name, company_role, is_painter, created_date, status, avatar_url')
+      .select('id, email, full_name, company_role, is_painter, created_date, status')
       .eq('company_id', company_id)
       .order('created_date', { ascending: false })
 
@@ -73,8 +91,17 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('getCompanyUsers error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Unknown error',
+        details: error.stack,
+        function: 'getCompanyUsers'
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 

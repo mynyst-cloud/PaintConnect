@@ -66,10 +66,7 @@ serve(async (req) => {
     console.log('Returning painters:', painters?.length || 0)
     
     return new Response(
-      JSON.stringify({
-        success: true,
-        data: painters || []
-      }),
+      JSON.stringify(painters || []),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

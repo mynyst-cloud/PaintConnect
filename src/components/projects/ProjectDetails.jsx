@@ -101,7 +101,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onPro
             if (projectData.company_id) {
                 try {
                     const paintersResponse = await base44.functions.invoke('getCompanyPainters', { company_id: projectData.company_id });
-                    teamMembersData = paintersResponse?.data || [];
+                    // Response.data is already the array from Supabase client
+                    teamMembersData = Array.isArray(paintersResponse?.data) ? paintersResponse.data : [];
                 } catch (err) {
                     console.warn('Could not fetch team members:', err.message);
                     teamMembersData = [];

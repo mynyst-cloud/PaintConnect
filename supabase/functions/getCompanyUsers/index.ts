@@ -84,10 +84,7 @@ serve(async (req) => {
     console.log('Returning users:', users?.length || 0)
     
     return new Response(
-      JSON.stringify({
-        success: true,
-        data: users || []
-      }),
+      JSON.stringify(users || []),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 

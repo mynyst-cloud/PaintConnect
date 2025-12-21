@@ -98,6 +98,10 @@ CREATE POLICY "Admins can manage company check-ins" ON check_in_records
   );
 
 -- Trigger voor updated_date
+-- Drop trigger if exists
+DROP TRIGGER IF EXISTS trigger_check_in_records_updated_date ON check_in_records;
+
+-- Create or replace the function
 CREATE OR REPLACE FUNCTION update_check_in_records_updated_date()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -106,6 +110,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Create the trigger
 CREATE TRIGGER trigger_check_in_records_updated_date
   BEFORE UPDATE ON check_in_records
   FOR EACH ROW

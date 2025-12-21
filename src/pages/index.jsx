@@ -76,6 +76,8 @@ import OfferteOpmeting from "./OfferteOpmeting";
 
 import OfferteLijst from "./OfferteLijst";
 
+import MagicLinkVerify from "./MagicLinkVerify";
+
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 
 const PAGES = {
@@ -258,6 +260,8 @@ function PagesContent() {
                 <Route path="/OfferteOpmeting" element={<OfferteOpmeting />} />
                 
                 <Route path="/OfferteLijst" element={<OfferteLijst />} />
+                
+                <Route path="/auth/verify" element={<MagicLinkVerify />} />
                 
             </Routes>
         </Layout>

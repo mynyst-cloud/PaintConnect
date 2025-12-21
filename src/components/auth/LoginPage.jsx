@@ -79,18 +79,21 @@ export default function LoginPage() {
     
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.origin + '/Dashboard'
+      // Use custom magic link via Resend (bypasses Supabase SMTP)
+      const { data, error } = await supabase.functions.invoke('sendMagicLink', {
+        body: {
+          email: email.trim().toLowerCase(),
+          redirectTo: '/Dashboard'
         }
       });
       
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
       setEmailSent(true);
     } catch (error) {
       console.error('Magic link error:', error);
-      alert('Er is een fout opgetreden. Probeer het opnieuw.');
+      alert(error.message || 'Er is een fout opgetreden. Probeer het opnieuw.');
     } finally {
       setIsLoading(false);
     }

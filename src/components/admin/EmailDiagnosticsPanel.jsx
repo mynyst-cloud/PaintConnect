@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, CheckCircle, AlertTriangle, , Info, FileText } from 'lucide-react';
+import { Mail, CheckCircle, AlertTriangle, Info, FileText } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { emailDiagnostics } from '@/api/functions';
 

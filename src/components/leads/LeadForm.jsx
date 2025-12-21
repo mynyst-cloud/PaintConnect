@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { X, Save, , Info } from 'lucide-react';
+import { X, Save, Info } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 const sources = ["website", "referral", "advertentie", "telefoon", "anders"];

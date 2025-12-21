@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, , MessageCircle, Briefcase } from 'lucide-react';
+import { X, Send, MessageCircle, Briefcase } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { ChatMessage, User, Project } from '@/api/entities';
 import { Button } from '@/components/ui/button';

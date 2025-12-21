@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { , CheckCircle, AlertTriangle, Mail } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Mail } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { authVerifyEmail } from '@/api/functions';
 import { resendVerificationEmail } from '@/api/functions';

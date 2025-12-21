@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { , LogOut, MessageSquare, Image as ImageIcon, Palette, AlertTriangle, Calendar, Shield } from 'lucide-react';
+import { LogOut, MessageSquare, Image as ImageIcon, Palette, AlertTriangle, Calendar, Shield } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { getClientPortalData } from '@/api/functions'; // New function for data fetching
 import { format } from 'date-fns';

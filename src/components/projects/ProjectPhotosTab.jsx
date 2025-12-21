@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, Trash2, Upload, , Camera, User, Calendar, Image as ImageIcon } from 'lucide-react';
+import { Star, Trash2, Upload, Camera, User, Calendar, Image as ImageIcon } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { format, parseISO, isValid } from 'date-fns';
 import { nl } from 'date-fns/locale';

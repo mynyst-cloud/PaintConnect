@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { X, UploadCloud, , Wand2, Trash2, Save, AlertTriangle, Info } from 'lucide-react';
+import { X, UploadCloud, Wand2, Trash2, Save, AlertTriangle, Info } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from "@/components/ui/use-toast";
 

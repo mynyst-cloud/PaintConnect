@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { sendNewsletter } from '@/api/functions';
-import { , Send, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Send, CheckCircle, AlertTriangle } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 

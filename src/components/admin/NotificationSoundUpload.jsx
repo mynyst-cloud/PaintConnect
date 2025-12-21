@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Volume2, Trash2, , CheckCircle, Play } from 'lucide-react';
+import { Upload, Volume2, Trash2, CheckCircle, Play } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function NotificationSoundUpload() {

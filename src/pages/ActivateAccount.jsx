@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { User } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { , CheckCircle, AlertCircle, LogIn } from 'lucide-react';
+import { CheckCircle, AlertCircle, LogIn } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { getInviteDetailsByToken } from '@/api/functions';
 import { acceptInvitation } from '@/api/functions';

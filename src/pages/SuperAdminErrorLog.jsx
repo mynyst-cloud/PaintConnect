@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { , Zap, CheckCircle2, AlertTriangle, Eye, RefreshCw, X, Trash2 } from 'lucide-react';
+import { Zap, CheckCircle2, AlertTriangle, Eye, RefreshCw, X, Trash2 } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';

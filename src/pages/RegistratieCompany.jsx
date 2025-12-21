@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, , CheckCircle, Mail, Phone, MapPin } from 'lucide-react';
+import { Building, CheckCircle, Mail, Phone, MapPin } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 

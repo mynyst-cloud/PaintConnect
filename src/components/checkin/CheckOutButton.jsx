@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { LogOut, , CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { LogOut, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';

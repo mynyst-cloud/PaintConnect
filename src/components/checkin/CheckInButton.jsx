@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MapPin, , CheckCircle2, AlertCircle, Navigation } from 'lucide-react';
+import { MapPin, CheckCircle2, AlertCircle, Navigation } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';

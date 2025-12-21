@@ -4,7 +4,7 @@ import { User } from '@/api/entities';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { , Building, Truck, Users } from 'lucide-react';
+import { Building, Truck, Users } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { createPageUrl } from '@/components/utils';
 import { globalCache } from '@/components/utils/performanceOptimizer';

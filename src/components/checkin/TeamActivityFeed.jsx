@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Users, MapPin, Clock, Navigation, RefreshCw, , AlertCircle, CheckCircle, Briefcase } from 'lucide-react';
+import { Users, MapPin, Clock, Navigation, RefreshCw, AlertCircle, CheckCircle, Briefcase } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { base44 } from '@/api/base44Client';
 import ProjectsMap from '@/components/projects/ProjectsMap';

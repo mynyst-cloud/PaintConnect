@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { , CreditCard, Check, AlertTriangle, Euro } from 'lucide-react';
+import { CreditCard, Check, AlertTriangle, Euro } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { Subscription, Invoice } from '@/api/entities';
 import { createMollieCheckout } from '@/api/functions';

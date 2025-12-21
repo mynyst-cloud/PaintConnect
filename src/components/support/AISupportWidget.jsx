@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, , Bot, User as UserIcon, Sparkles, MessageCircle, X, Minimize2, RefreshCw } from 'lucide-react';
+import { Send, Bot, User as UserIcon, Sparkles, MessageCircle, X, Minimize2, RefreshCw } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';

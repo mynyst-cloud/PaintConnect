@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { AlertTriangle, MapPin, MessageSquare, Heart, Send, Image as ImageIcon, , Calendar } from 'lucide-react';
+import { AlertTriangle, MapPin, MessageSquare, Heart, Send, Image as ImageIcon, Calendar } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { format, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';

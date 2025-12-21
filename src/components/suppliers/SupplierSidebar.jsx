@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Phone, MapPin, FileText, AlertTriangle, Building, Pencil, Trash2, GitMerge, Save, , Package, Ghost, Euro, TrendingUp, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Mail, Phone, MapPin, FileText, AlertTriangle, Building, Pencil, Trash2, GitMerge, Save, Package, Ghost, Euro, TrendingUp, Upload, Image as ImageIcon } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

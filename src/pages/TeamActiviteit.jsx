@@ -197,6 +197,13 @@ export default function TeamActiviteit() {
     }
   }, [pagination.page]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Role check - show modal for painters (must be before any conditional returns!)
+  useEffect(() => {
+    if (!featureLoading && isPainter()) {
+      setShowAccessModal(true);
+    }
+  }, [featureLoading, isPainter]);
+
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
     setPagination(prev => ({ ...prev, page: 1 }));
@@ -395,13 +402,6 @@ export default function TeamActiviteit() {
       </div>
     );
   }
-
-  // Role check - TeamActiviteit is only for admins
-  useEffect(() => {
-    if (!featureLoading && isPainter()) {
-      setShowAccessModal(true);
-    }
-  }, [featureLoading, isPainter]);
 
   if (isPainter()) {
     return (

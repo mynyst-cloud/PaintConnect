@@ -15,17 +15,29 @@ import ProjectChat from '@/components/klantportaal/ProjectChat';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const statusColors = {
+    'nieuw': 'bg-gray-100 text-gray-700',
+    'planning': 'bg-blue-100 text-blue-700',
+    'in_uitvoering': 'bg-emerald-100 text-emerald-700',
+    'afgerond': 'bg-green-100 text-green-700',
+    'on_hold': 'bg-yellow-100 text-yellow-700',
+    'geannuleerd': 'bg-red-100 text-red-700',
+    'offerte': 'bg-purple-100 text-purple-700',
+    // Backwards compatibility
     'niet_gestart': 'bg-gray-100 text-gray-700',
-    'in_uitvoering': 'bg-blue-100 text-blue-700',
-    'bijna_klaar': 'bg-orange-100 text-orange-700',
-    'afgerond': 'bg-green-100 text-green-700'
+    'bijna_klaar': 'bg-blue-100 text-blue-700'
 };
 
 const statusLabels = {
-    'niet_gestart': 'Niet gestart',
+    'nieuw': 'Nieuw',
+    'planning': 'Planning',
     'in_uitvoering': 'In uitvoering',
-    'bijna_klaar': 'Bijna klaar',
-    'afgerond': 'Afgerond'
+    'afgerond': 'Afgerond',
+    'on_hold': 'On Hold',
+    'geannuleerd': 'Geannuleerd',
+    'offerte': 'Offerte',
+    // Backwards compatibility
+    'niet_gestart': 'Nieuw',
+    'bijna_klaar': 'Planning'
 };
 
 export default function ProjectDetailModal({ project, clientInfo, company, onClose }) {

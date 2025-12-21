@@ -155,10 +155,13 @@ export default function CompanyDashboard() {
 
   const generateProjectStatusData = () => {
     const statusCounts = {
-      'Niet gestart': projects.filter(p => p.status === 'niet_gestart').length,
+      'Nieuw': projects.filter(p => p.status === 'nieuw' || p.status === 'niet_gestart').length,
+      'Planning': projects.filter(p => p.status === 'planning' || p.status === 'bijna_klaar').length,
       'In uitvoering': projects.filter(p => p.status === 'in_uitvoering').length,
-      'Bijna klaar': projects.filter(p => p.status === 'bijna_klaar').length,
-      'Afgerond': projects.filter(p => p.status === 'afgerond').length
+      'Afgerond': projects.filter(p => p.status === 'afgerond').length,
+      'On Hold': projects.filter(p => p.status === 'on_hold').length,
+      'Geannuleerd': projects.filter(p => p.status === 'geannuleerd').length,
+      'Offerte': projects.filter(p => p.status === 'offerte').length
     };
 
     return Object.entries(statusCounts).map(([status, count]) => ({

@@ -21,10 +21,13 @@ import { geocodeAddress } from "@/api/functions";
 import ProjectsMap from "@/components/projects/ProjectsMap";
 
 const statusOptions = [
-  { value: "niet_gestart", label: "Niet gestart" },
+  { value: "nieuw", label: "Nieuw" },
+  { value: "planning", label: "Planning" },
   { value: "in_uitvoering", label: "In uitvoering" },
-  { value: "bijna_klaar", label: "Bijna klaar" },
-  { value: "afgerond", label: "Afgerond" }
+  { value: "afgerond", label: "Afgerond" },
+  { value: "on_hold", label: "On Hold" },
+  { value: "geannuleerd", label: "Geannuleerd" },
+  { value: "offerte", label: "Offerte" }
 ];
 
 export default function PlanningForm({ project, selectedDate, onSubmit, onCancel, painters: availablePainters }) {
@@ -35,7 +38,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
     address: project?.address || "",
     start_date: project?.start_date || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ""),
     expected_end_date: project?.expected_end_date || "",
-    status: project?.status || "niet_gestart",
+    status: project?.status || "nieuw",
     description: project?.description || "",
     assigned_painters: project?.assigned_painters || [],
     notes: project?.notes || "",
@@ -92,7 +95,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
       address: project?.address || "",
       start_date: project?.start_date || (selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ""),
       expected_end_date: project?.expected_end_date || "",
-      status: project?.status || "niet_gestart",
+      status: project?.status || "nieuw",
       description: project?.description || "",
       assigned_painters: project?.assigned_painters || [],
       notes: project?.notes || "",

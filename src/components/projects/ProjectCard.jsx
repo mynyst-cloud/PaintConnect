@@ -18,17 +18,31 @@ import { motion } from "framer-motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const statusLabels = {
-  niet_gestart: "Niet gestart",
+  // Nieuwe geldige statussen
+  nieuw: "Nieuw",
+  planning: "Planning",
   in_uitvoering: "In uitvoering",
-  bijna_klaar: "Bijna klaar",
   afgerond: "Afgerond",
+  on_hold: "On Hold",
+  geannuleerd: "Geannuleerd",
+  offerte: "Offerte",
+  // Backwards compatibility (oude statussen)
+  niet_gestart: "Nieuw",
+  bijna_klaar: "Planning",
 };
 
 const statusColors = {
-  niet_gestart: "bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200",
+  // Nieuwe geldige statussen
+  nieuw: "bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200",
+  planning: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   in_uitvoering: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
-  bijna_klaar: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
   afgerond: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  on_hold: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
+  geannuleerd: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+  offerte: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  // Backwards compatibility (oude statussen)
+  niet_gestart: "bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200",
+  bijna_klaar: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
 };
 
 const colorClasses = {
@@ -162,7 +176,7 @@ export default function ProjectCard({ project, onDelete, onViewDetails, isAdmin 
             <Progress value={displayProgress} className={`h-2 md:h-3 bg-gray-200 dark:bg-slate-700 ${isOverdue ? '[&>div]:bg-red-500 dark:[&>div]:bg-red-400' : '[&>div]:bg-emerald-500 dark:[&>div]:bg-emerald-400'}`} />
 
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className={statusColors[project.status] || statusColors.niet_gestart}>
+              <Badge className={statusColors[project.status] || statusColors.nieuw}>
                 {statusLabels[project.status] || project.status}
               </Badge>
               {project.calendar_color && (

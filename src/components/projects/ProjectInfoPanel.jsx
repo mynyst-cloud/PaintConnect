@@ -9,10 +9,13 @@ import { Save, X, Info, Users, MapPin, Calendar, CheckSquare } from 'lucide-reac
 import { formatDate } from '@/components/utils';
 
 const statusOptions = [
-    { value: "niet_gestart", label: "Niet gestart" },
+    { value: "nieuw", label: "Nieuw" },
+    { value: "planning", label: "Planning" },
     { value: "in_uitvoering", label: "In uitvoering" },
-    { value: "bijna_klaar", label: "Bijna klaar" },
-    { value: "afgerond", label: "Afgerond" }
+    { value: "afgerond", label: "Afgerond" },
+    { value: "on_hold", label: "On Hold" },
+    { value: "geannuleerd", label: "Geannuleerd" },
+    { value: "offerte", label: "Offerte" }
 ];
 
 export default function ProjectInfoPanel({ project, onProjectUpdate, isAdmin }) {

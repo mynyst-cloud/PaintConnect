@@ -25,17 +25,31 @@ import ProjectForm from '@/components/planning/PlanningForm';
 import { globalCache } from '@/components/utils/cache';
 
 const statusColors = {
-  niet_gestart: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
+  // Nieuwe geldige statussen
+  nieuw: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
+  planning: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
   in_uitvoering: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
-  bijna_klaar: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
   afgerond: "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300",
+  on_hold: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
+  geannuleerd: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300",
+  offerte: "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300",
+  // Backwards compatibility
+  niet_gestart: "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200",
+  bijna_klaar: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300",
 };
 
 const statusLabels = {
-  niet_gestart: "Niet gestart",
+  // Nieuwe geldige statussen
+  nieuw: "Nieuw",
+  planning: "Planning",
   in_uitvoering: "In uitvoering",
-  bijna_klaar: "Bijna klaar",
   afgerond: "Afgerond",
+  on_hold: "On Hold",
+  geannuleerd: "Geannuleerd",
+  offerte: "Offerte",
+  // Backwards compatibility
+  niet_gestart: "Nieuw",
+  bijna_klaar: "Planning",
 };
 
 const ITEMS_PER_PAGE = 10;

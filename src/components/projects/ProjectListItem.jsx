@@ -7,10 +7,17 @@ import { formatDistanceToNow, parseISO } from "date-fns";
 import { nl } from "date-fns/locale";
 
 const statusConfig = {
-  niet_gestart: { label: "Niet gestart", color: "bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200" },
+  // Nieuwe geldige statussen
+  nieuw: { label: "Nieuw", color: "bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200" },
+  planning: { label: "Planning", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
   in_uitvoering: { label: "In uitvoering", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" },
-  bijna_klaar: { label: "Bijna klaar", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300" },
-  afgerond: { label: "Afgerond", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" }
+  afgerond: { label: "Afgerond", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
+  on_hold: { label: "On Hold", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" },
+  geannuleerd: { label: "Geannuleerd", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300" },
+  offerte: { label: "Offerte", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300" },
+  // Backwards compatibility (oude statussen)
+  niet_gestart: { label: "Nieuw", color: "bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200" },
+  bijna_klaar: { label: "Planning", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" }
 };
 
 export default function ProjectListItem({ project, onDelete, onViewDetails, isAdmin }) {
@@ -29,7 +36,7 @@ export default function ProjectListItem({ project, onDelete, onViewDetails, isAd
   }, [project]);
   
   const displayProgress = project.progress_percentage ?? progress;
-  const statusInfo = statusConfig[project.status] || statusConfig.niet_gestart;
+  const statusInfo = statusConfig[project.status] || statusConfig.nieuw;
 
   return (
     <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors border-b border-gray-100 dark:border-slate-700 last:border-b-0 cursor-pointer" onClick={onViewDetails}>

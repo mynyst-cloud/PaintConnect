@@ -7,17 +7,29 @@ import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
 const statusColors = {
+    'nieuw': 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-200',
+    'planning': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200',
+    'in_uitvoering': 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-200',
+    'afgerond': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200',
+    'on_hold': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200',
+    'geannuleerd': 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-200',
+    'offerte': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-200',
+    // Backwards compatibility
     'niet_gestart': 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-200',
-    'in_uitvoering': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200',
-    'bijna_klaar': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200',
-    'afgerond': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:text-green-200'
+    'bijna_klaar': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-200'
 };
 
 const statusLabels = {
-    'niet_gestart': 'Niet gestart',
+    'nieuw': 'Nieuw',
+    'planning': 'Planning',
     'in_uitvoering': 'In uitvoering',
-    'bijna_klaar': 'Bijna klaar',
-    'afgerond': 'Afgerond'
+    'afgerond': 'Afgerond',
+    'on_hold': 'On Hold',
+    'geannuleerd': 'Geannuleerd',
+    'offerte': 'Offerte',
+    // Backwards compatibility
+    'niet_gestart': 'Nieuw',
+    'bijna_klaar': 'Planning'
 };
 
 export default function ProjectCard({ project, onOpenDetails, updates, damages }) {

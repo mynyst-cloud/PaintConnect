@@ -62,6 +62,13 @@ CREATE INDEX IF NOT EXISTS idx_check_in_records_company_date ON check_in_records
 -- RLS (Row Level Security) policies
 ALTER TABLE check_in_records ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own check-ins" ON check_in_records;
+DROP POLICY IF EXISTS "Admins can view company check-ins" ON check_in_records;
+DROP POLICY IF EXISTS "Users can create own check-ins" ON check_in_records;
+DROP POLICY IF EXISTS "Users can update own check-ins" ON check_in_records;
+DROP POLICY IF EXISTS "Admins can manage company check-ins" ON check_in_records;
+
 -- Policy: Gebruikers kunnen hun eigen check-ins zien
 CREATE POLICY "Users can view own check-ins" ON check_in_records
   FOR SELECT USING (auth.uid() = user_id);

@@ -46,6 +46,10 @@ supabase functions deploy sendPushNotification
 supabase functions deploy checkInReminders
 supabase functions deploy invitePainter
 supabase functions deploy acceptInvitation
+supabase functions deploy sendMagicLink
+supabase functions deploy verifyMagicLink
+supabase functions deploy getInviteDetails
+supabase functions deploy sendNotification
 ```
 
 ### Of via een enkele opdracht:
@@ -103,4 +107,21 @@ Voer `add_check_in_records.sql` uit in de Supabase SQL Editor.
 | `sendClientInvitation` | Stuur klant uitnodiging email |
 | `getProjectStats` | Haal project statistieken op |
 | `getMaterialConsumption` | Haal materiaal verbruik rapport op |
+| `sendPushNotification` | Stuur OneSignal push notificatie |
+| `checkInReminders` | Automatische check-in herinneringen |
+| `invitePainter` | Stuur schilder uitnodiging met magic link |
+| `acceptInvitation` | Accepteer uitnodiging en link aan bedrijf |
+| `sendMagicLink` | Genereer en verstuur custom magic link email |
+| `verifyMagicLink` | Verifieer magic link en maak sessie aan |
+| `getInviteDetails` | Haal uitnodiging details op (publieke toegang) |
+| `sendNotification` | Maak in-app notificaties + optioneel email |
+
+## Database Migraties
+
+Voer de volgende SQL scripts uit in de Supabase SQL Editor:
+
+1. `create_notifications_table.sql` - Maakt de notifications tabel aan
+2. `add_magic_links_table.sql` - Maakt de magic_links tabel aan  
+3. `add_check_in_records.sql` - Maakt de check_in_records tabel aan
+4. `add_push_notifications_system.sql` - Push notification infrastructuur
 

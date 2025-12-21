@@ -106,23 +106,55 @@ export const seedDummyProjects = async ({ companyId }) => {
   return []
 }
 
-// ====== NOTIFICATION FUNCTIONS - Use Supabase directly ======
+// ====== NOTIFICATION FUNCTIONS - Use Edge Functions ======
+
+/**
+ * Send in-app notifications to multiple recipients
+ * Uses the sendNotification Edge Function
+ */
+export const sendNotification = async ({
+  recipient_emails,
+  type = 'generic',
+  title,
+  message,
+  link_to,
+  project_id,
+  company_id,
+  data = {},
+  send_email = false,
+  triggering_user_name
+}) => {
+  return supabaseFunctions.invoke('sendNotification', {
+    body: {
+      recipient_emails,
+      type,
+      title,
+      message,
+      link_to,
+      project_id,
+      company_id,
+      data,
+      send_email,
+      triggering_user_name
+    }
+  })
+}
 
 export const notifyAssignedPainters = async ({ projectId, projectName, newlyAssignedEmails }) => {
-  // Create notifications directly in database
-  try {
-    const { Notification } = await import('@/lib/supabase')
-    for (const email of newlyAssignedEmails || []) {
-      await Notification.create({
-        user_email: email,
-        type: 'project_assigned',
-        title: 'Nieuw project toegewezen',
-        message: `Je bent toegewezen aan project: ${projectName}`,
-        data: { project_id: projectId },
-        read: false
-      })
-    }
+  if (!newlyAssignedEmails || newlyAssignedEmails.length === 0) {
     return { success: true }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: newlyAssignedEmails,
+      type: 'project_assigned',
+      title: 'Nieuw project toegewezen',
+      message: `Je bent toegewezen aan project: ${projectName}`,
+      link_to: '/Planning',
+      data: { project_id: projectId }
+    })
+    return result.data || { success: true }
   } catch (error) {
     console.warn('notifyAssignedPainters failed:', error)
     return { success: false, error: error.message }
@@ -331,35 +363,147 @@ export const handleMaterialRequest = async (params) => {
 
 // ====== NOTIFICATION MANAGEMENT ======
 
-export const markAllNotificationsAsRead = async ({ user_id }) => {
+/**
+ * Mark all notifications as read for the current user
+ * Uses email-based lookup since that's how notifications are filtered
+ */
+export const markAllNotificationsAsRead = async () => {
   try {
     const { supabase } = await import('@/lib/supabase')
-    await supabase
+    
+    // Get current user's email
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user?.email) {
+      return { success: false, error: 'Not authenticated' }
+    }
+    
+    // Update by recipient_email (not user_id)
+    const { error } = await supabase
       .from('notifications')
-      .update({ read: true })
-      .eq('user_id', user_id)
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('recipient_email', user.email)
       .eq('read', false)
+    
+    if (error) {
+      console.error('markAllNotificationsAsRead error:', error)
+      return { success: false, error: error.message }
+    }
+    
     return { success: true }
   } catch (error) {
+    console.error('markAllNotificationsAsRead error:', error)
     return { success: false, error: error.message }
   }
 }
 
-export const notifyAllTeam = async ({ company_id, message, type }) => {
-  console.log('notifyAllTeam called:', { company_id, message, type })
-  return { success: true }
+/**
+ * Send notification to all team members of a company
+ */
+export const notifyAllTeam = async ({ company_id, message, type = 'generic', title, link_to, send_email = false }) => {
+  try {
+    const { supabase } = await import('@/lib/supabase')
+    
+    // Get all users in the company
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('company_id', company_id)
+      .eq('status', 'active')
+    
+    if (error || !users || users.length === 0) {
+      console.warn('notifyAllTeam: No users found for company', company_id)
+      return { success: false, error: 'No users found' }
+    }
+    
+    const emails = users.map(u => u.email).filter(Boolean)
+    
+    if (emails.length === 0) {
+      return { success: false, error: 'No valid emails found' }
+    }
+    
+    const result = await sendNotification({
+      recipient_emails: emails,
+      type,
+      title,
+      message,
+      link_to,
+      company_id,
+      send_email
+    })
+    
+    return result.data || { success: true, notified: emails.length }
+  } catch (error) {
+    console.error('notifyAllTeam error:', error)
+    return { success: false, error: error.message }
+  }
 }
 
 // ====== PROJECT FUNCTIONS ======
 
-export const notifyHoursConfirmed = async (params) => {
-  console.log('notifyHoursConfirmed:', params)
-  return { success: true }
+/**
+ * Notify admins when hours are confirmed by a painter
+ */
+export const notifyHoursConfirmed = async ({ 
+  company_id, 
+  project_id, 
+  project_name, 
+  painter_name,
+  hours_summary,
+  admin_emails 
+}) => {
+  if (!admin_emails || admin_emails.length === 0) {
+    console.warn('notifyHoursConfirmed: No admin emails provided')
+    return { success: false, error: 'No admin emails' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: admin_emails,
+      type: 'hours_confirmed',
+      title: 'Uren bevestigd',
+      message: `${painter_name} heeft uren bevestigd voor project ${project_name}. ${hours_summary || ''}`,
+      link_to: `/Projecten?id=${project_id}`,
+      project_id,
+      company_id
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyHoursConfirmed error:', error)
+    return { success: false, error: error.message }
+  }
 }
 
-export const notifyMaterialsConfirmed = async (params) => {
-  console.log('notifyMaterialsConfirmed:', params)
-  return { success: true }
+/**
+ * Notify admins when materials are confirmed by a painter
+ */
+export const notifyMaterialsConfirmed = async ({ 
+  company_id, 
+  project_id, 
+  project_name, 
+  painter_name,
+  materials_summary,
+  admin_emails 
+}) => {
+  if (!admin_emails || admin_emails.length === 0) {
+    console.warn('notifyMaterialsConfirmed: No admin emails provided')
+    return { success: false, error: 'No admin emails' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: admin_emails,
+      type: 'materials_confirmed',
+      title: 'Materialen bevestigd',
+      message: `${painter_name} heeft materiaalverbruik bevestigd voor project ${project_name}. ${materials_summary || ''}`,
+      link_to: `/Projecten?id=${project_id}`,
+      project_id,
+      company_id
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyMaterialsConfirmed error:', error)
+    return { success: false, error: error.message }
+  }
 }
 
 export const generatePostCalculationPDF = notImplemented('generatePostCalculationPDF')

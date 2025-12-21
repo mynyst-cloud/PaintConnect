@@ -97,7 +97,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
       const currentUser = await UserEntity.me();
       if (currentUser?.company_id) {
         const users = await UserEntity.filter({ company_id: currentUser.company_id });
-        const painters = users.filter(user => user.is_painter && user.id !== currentUser.id);
+        // Include all painters AND the current user (admin can assign themselves as "meewerkend zaakvoerder")
+        const painters = users.filter(user => user.is_painter || user.id === currentUser.id);
         setAvailablePainters(painters);
       }
     } catch (error) {

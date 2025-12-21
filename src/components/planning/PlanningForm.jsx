@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X, Save, Loader2, Calendar, UserPlus, Trash2, Upload, Star, Camera, Check, Mail, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
+import { X, Save, Loader2, Calendar, UserPlus, Trash2, Upload, Star, Camera, Check, Mail, MapPin, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,7 +50,9 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
     calendar_color: project?.calendar_color || "blue",
     is_outdoor: project?.is_outdoor || false,
     latitude: project?.latitude || null,
-    longitude: project?.longitude || null
+    longitude: project?.longitude || null,
+    work_start_time: project?.work_start_time?.slice(0, 5) || "08:00",
+    work_end_time: project?.work_end_time?.slice(0, 5) || "17:00"
   }));
 
   const [assignedPainterEmails, setAssignedPainterEmails] = useState(project?.assigned_painters || []);
@@ -65,13 +67,12 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
   const [addressError, setAddressError] = useState(null);
   const [showMapPreview, setShowMapPreview] = useState(false);
 
-  // Filter voor alleen actieve schilders
+  // Filter voor actieve schilders EN admins (meewerkend zaakvoerder)
   const activePainters = useMemo(() => {
     return (availablePainters || []).filter(p =>
       p &&
       p.status === 'active' &&
-      p.is_painter === true &&
-      p.company_role === 'painter'
+      (p.is_painter === true || p.company_role === 'admin' || p.company_role === 'owner')
     );
   }, [availablePainters]);
 
@@ -107,7 +108,9 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
       calendar_color: project?.calendar_color || "blue",
       is_outdoor: project?.is_outdoor || false,
       latitude: project?.latitude || null,
-      longitude: project?.longitude || null
+      longitude: project?.longitude || null,
+      work_start_time: project?.work_start_time?.slice(0, 5) || "08:00",
+      work_end_time: project?.work_end_time?.slice(0, 5) || "17:00"
     });
     setAssignedPainterEmails(project?.assigned_painters || []);
 
@@ -284,7 +287,9 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
       expected_end_date: currentProject.expected_end_date || null,
       thumbnail_url: currentProject.cover_photo_url || currentProject.thumbnail_url || (currentProject.photo_urls[0] || ""),
       latitude: currentProject.latitude, // Included latitude
-      longitude: currentProject.longitude // Included longitude
+      longitude: currentProject.longitude, // Included longitude
+      work_start_time: currentProject.work_start_time ? `${currentProject.work_start_time}:00` : '08:00:00',
+      work_end_time: currentProject.work_end_time ? `${currentProject.work_end_time}:00` : '17:00:00'
     };
 
     if (!cleanedData.project_name || !cleanedData.client_name || !cleanedData.address || !cleanedData.start_date || !cleanedData.expected_end_date) {
@@ -499,6 +504,35 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
                 value={currentProject.expected_end_date}
                 onChange={(e) => handleChange("expected_end_date", e.target.value)}
                 required
+              />
+            </div>
+
+            {/* Werktijden voor check-in reminders */}
+            <div className="space-y-2">
+              <Label htmlFor="work_start_time" className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-amber-600" />
+                Starttijd werkdag
+              </Label>
+              <Input
+                id="work_start_time"
+                type="time"
+                value={currentProject.work_start_time}
+                onChange={(e) => handleChange("work_start_time", e.target.value)}
+                className="font-mono"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="work_end_time" className="flex items-center gap-1">
+                <Clock className="w-3 h-3 text-amber-600" />
+                Eindtijd werkdag
+              </Label>
+              <Input
+                id="work_end_time"
+                type="time"
+                value={currentProject.work_end_time}
+                onChange={(e) => handleChange("work_end_time", e.target.value)}
+                className="font-mono"
               />
             </div>
 

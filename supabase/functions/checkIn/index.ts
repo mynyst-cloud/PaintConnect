@@ -212,8 +212,20 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('checkIn error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    })
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        error: error.message || 'Unknown error',
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 

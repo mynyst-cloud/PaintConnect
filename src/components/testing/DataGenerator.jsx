@@ -213,7 +213,7 @@ export default function DataGenerator() {
             address: `${Math.floor(Math.random() * 999) + 1} ${city}straat, ${Math.floor(Math.random() * 8999) + 1000} AA ${city}`,
             start_date: startDate.toISOString().split('T')[0],
             expected_end_date: endDate.toISOString().split('T')[0],
-            status: ['niet_gestart', 'in_uitvoering', 'bijna_klaar', 'afgerond'][Math.floor(Math.random() * 4)],
+            status: ['nieuw', 'in_uitvoering', 'planning', 'afgerond'][Math.floor(Math.random() * 4)],
             progress_percentage: Math.floor(Math.random() * 101),
             description: `Load test project: ${projectType.toLowerCase()} inclusief voorbehandeling en afwerking`,
             estimated_hours: Math.floor(Math.random() * 80) + 20,

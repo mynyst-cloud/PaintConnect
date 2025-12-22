@@ -148,23 +148,56 @@ serve(async (req) => {
     console.log('[registerCompany] Company created:', company.id)
 
     // Link user to company
-    // FIXED: Use 'admin' instead of 'owner' for consistency, and set user_type
-    const { error: userUpdateError } = await supabaseAdmin
+    // FIXED: Use 'admin' instead of 'owner' for consistency
+    // First, try to update without user_type (in case column doesn't exist)
+    const baseUpdateData = {
+      company_id: company.id,
+      company_role: 'admin', // Use 'admin' for consistency with checks
+      status: 'active'
+    }
+
+    // Try update with user_type first
+    let userUpdateError = null
+    const updateWithUserType = {
+      ...baseUpdateData,
+      user_type: 'painter_company' // Set user_type for new companies
+    }
+
+    const { error: errorWithUserType } = await supabaseAdmin
       .from('users')
-      .update({
-        company_id: company.id,
-        company_role: 'admin', // Use 'admin' for consistency with checks
-        user_type: 'painter_company', // Set user_type for new companies
-        status: 'active'
-      })
+      .update(updateWithUserType)
       .eq('id', user.id)
+
+    if (errorWithUserType) {
+      console.warn('[registerCompany] Update with user_type failed, trying without:', errorWithUserType.message)
+      
+      // If user_type update fails, try without it (column might not exist)
+      const { error: errorWithoutUserType } = await supabaseAdmin
+        .from('users')
+        .update(baseUpdateData)
+        .eq('id', user.id)
+      
+      if (errorWithoutUserType) {
+        userUpdateError = errorWithoutUserType
+        console.error('[registerCompany] Error linking user to company (without user_type):', errorWithoutUserType)
+      } else {
+        console.log('[registerCompany] User linked successfully (without user_type)')
+        // user_type will be set by User.me() when user record is created/updated
+      }
+    } else {
+      console.log('[registerCompany] User linked successfully (with user_type)')
+    }
 
     if (userUpdateError) {
       console.error('[registerCompany] Error linking user to company:', userUpdateError)
+      console.error('[registerCompany] Error details:', JSON.stringify(userUpdateError))
       // Try to clean up company
       await supabaseAdmin.from('companies').delete().eq('id', company.id)
       return new Response(
-        JSON.stringify({ success: false, error: 'Kon gebruiker niet koppelen aan bedrijf' }),
+        JSON.stringify({ 
+          success: false, 
+          error: `Kon gebruiker niet koppelen aan bedrijf: ${userUpdateError.message || 'Onbekende fout'}` 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }

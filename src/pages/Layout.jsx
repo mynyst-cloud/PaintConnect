@@ -992,9 +992,6 @@ function LayoutContent({ children }) {
         </header>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 md:p-4 lg:p-4 bg-gray-50 dark:bg-gray-900">
-          {/* #region agent log */}
-          {(()=>{console.log('[DEBUG-HYP-B] Layout passing props via Context:', { hasHandleTeamChatClick: !!handleTeamChatClick, unreadMessages, impersonatedCompanyId });return null;})()}
-          {/* #endregion */}
           <TeamChatProvider value={{ onOpenTeamChat: handleTeamChatClick, unreadMessages, impersonatedCompanyId }}>
             {children}
           </TeamChatProvider>

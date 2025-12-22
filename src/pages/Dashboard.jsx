@@ -47,9 +47,6 @@ import { useTeamChat } from '@/contexts/TeamChatContext';
 export default function Dashboard() {
   // Get TeamChat props from context instead of props
   const { onOpenTeamChat, unreadMessages, impersonatedCompanyId } = useTeamChat();
-  // #region agent log
-  console.log('[DEBUG-HYP-A] Dashboard context:', { hasOnOpenTeamChat: !!onOpenTeamChat, typeOfOnOpenTeamChat: typeof onOpenTeamChat, unreadMessages, impersonatedCompanyId });
-  // #endregion
   const location = useLocation();
   const navigate = useNavigate();
 

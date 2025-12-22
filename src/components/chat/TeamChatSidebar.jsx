@@ -11,6 +11,29 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 const paintConnectIconUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/c4fa1d0cb_Android.png';
 
+// Ping sound for new messages (base64 encoded short ping)
+const playPingSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 880; // A5 note
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.warn('Could not play ping sound:', error);
+  }
+};
+
 export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -20,6 +43,8 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
   const scrollAreaRef = useRef(null);
+  const previousMessageCountRef = useRef(0);
+  const isFirstLoadRef = useRef(true);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -35,7 +60,20 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
         '-timestamp',
         50
       );
-      setMessages((chatMessages || []).reverse());
+      const reversedMessages = (chatMessages || []).reverse();
+      
+      // Play ping sound if new messages arrived (not on first load, not own messages)
+      if (!isFirstLoadRef.current && reversedMessages.length > previousMessageCountRef.current) {
+        const newestMessage = reversedMessages[reversedMessages.length - 1];
+        // Only play sound if the newest message is not from the current user
+        if (newestMessage && newestMessage.sender_email !== currentUser.email) {
+          playPingSound();
+        }
+      }
+      
+      previousMessageCountRef.current = reversedMessages.length;
+      isFirstLoadRef.current = false;
+      setMessages(reversedMessages);
     } catch (error) {
       console.error('Error loading messages:', error);
     } finally {

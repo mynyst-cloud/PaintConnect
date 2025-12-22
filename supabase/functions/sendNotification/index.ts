@@ -48,7 +48,8 @@ const PAINTER_PUSH_TYPES = [
   'project_assigned',
   'update_reply',
   'check_in_reminder',
-  'check_out_reminder'
+  'check_out_reminder',
+  'team_message'
 ]
 
 Deno.serve(async (req: Request) => {

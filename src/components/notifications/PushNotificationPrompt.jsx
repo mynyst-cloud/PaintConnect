@@ -70,13 +70,6 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
     }
     
     init()
-    
-    // Reset when user actually changes (different ID)
-    return () => {
-      if (userIdRef.current !== currentUserId) {
-        initializedRef.current = false
-      }
-    }
   }, [currentUser?.id]) // Use ID instead of full object to prevent infinite loops
 
   const registerUser = async () => {

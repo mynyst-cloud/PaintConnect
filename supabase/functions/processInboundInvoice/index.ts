@@ -490,8 +490,18 @@ async function performOCR(pdfContent: Uint8Array): Promise<string> {
     throw new Error('GOOGLE_VISION_API_KEY not configured')
   }
 
-  // Convert PDF to base64
-  const base64Content = btoa(String.fromCharCode(...pdfContent))
+  // Convert PDF to base64 using chunked approach to avoid stack overflow
+  // For large files, String.fromCharCode(...arr) exceeds max call stack
+  console.log('[performOCR] Converting PDF to base64, size:', pdfContent.length, 'bytes')
+  
+  let binaryString = ''
+  const chunkSize = 8192 // Process 8KB chunks at a time
+  for (let i = 0; i < pdfContent.length; i += chunkSize) {
+    const chunk = pdfContent.subarray(i, Math.min(i + chunkSize, pdfContent.length))
+    binaryString += String.fromCharCode.apply(null, Array.from(chunk))
+  }
+  const base64Content = btoa(binaryString)
+  console.log('[performOCR] Base64 conversion complete, length:', base64Content.length)
 
   // Call Google Vision API
   const response = await fetch(

@@ -1,303 +1,393 @@
 import React, { useState } from 'react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Bell, CheckCheck, FileText, Package, AlertTriangle, CheckCircle, AlertCircle, Calendar, Users, MessageCircle, UserPlus, Clock, LogIn, Reply } from "lucide-react";
+import { Bell, CheckCheck, FileText, Package, AlertTriangle, CheckCircle, Calendar, MessageCircle, UserPlus, Clock, LogIn, Reply, Receipt, TrendingUp, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from 'react-router-dom';
-import { createPageUrl, formatDateTime } from '@/components/utils';
+import { createPageUrl } from '@/components/utils';
 import { Notification } from '@/api/entities';
 import { markAllNotificationsAsRead } from '@/api/functions';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Helper functie om notificatie visuele details te bepalen
-const getNotificationVisuals = (notification) => {
+// Notification type configurations
+const notificationConfig = {
+  'invoice_received': { 
+    icon: Receipt, 
+    bgColor: 'bg-blue-100 dark:bg-blue-900/40',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    label: 'Factuur'
+  },
+  'credit_note_received': { 
+    icon: FileText, 
+    bgColor: 'bg-purple-100 dark:bg-purple-900/40',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    label: 'Creditnota'
+  },
+  'price_change_detected': { 
+    icon: TrendingUp, 
+    bgColor: 'bg-amber-100 dark:bg-amber-900/40',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    label: 'Prijswijziging'
+  },
+  'material_requested': { 
+    icon: Package, 
+    bgColor: 'bg-indigo-100 dark:bg-indigo-900/40',
+    iconColor: 'text-indigo-600 dark:text-indigo-400',
+    label: 'Materiaal'
+  },
+  'material_approved': { 
+    icon: CheckCircle, 
+    bgColor: 'bg-green-100 dark:bg-green-900/40',
+    iconColor: 'text-green-600 dark:text-green-400',
+    label: 'Goedgekeurd'
+  },
+  'damage_reported': { 
+    icon: AlertTriangle, 
+    bgColor: 'bg-orange-100 dark:bg-orange-900/40',
+    iconColor: 'text-orange-600 dark:text-orange-400',
+    label: 'Schade'
+  },
+  'project_update': { 
+    icon: Calendar, 
+    bgColor: 'bg-emerald-100 dark:bg-emerald-900/40',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    label: 'Project'
+  },
+  'project_assigned': { 
+    icon: Calendar, 
+    bgColor: 'bg-emerald-100 dark:bg-emerald-900/40',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    label: 'Toegewezen'
+  },
+  'planning_change': { 
+    icon: Calendar, 
+    bgColor: 'bg-violet-100 dark:bg-violet-900/40',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+    label: 'Planning'
+  },
+  'client_logged_in': { 
+    icon: LogIn, 
+    bgColor: 'bg-sky-100 dark:bg-sky-900/40',
+    iconColor: 'text-sky-600 dark:text-sky-400',
+    label: 'Klant'
+  },
+  'team_message': { 
+    icon: MessageCircle, 
+    bgColor: 'bg-cyan-100 dark:bg-cyan-900/40',
+    iconColor: 'text-cyan-600 dark:text-cyan-400',
+    label: 'Team'
+  },
+  'team_chat_message': { 
+    icon: MessageCircle, 
+    bgColor: 'bg-pink-100 dark:bg-pink-900/40',
+    iconColor: 'text-pink-600 dark:text-pink-400',
+    label: 'Chat'
+  },
+  'painter_activated': { 
+    icon: UserPlus, 
+    bgColor: 'bg-teal-100 dark:bg-teal-900/40',
+    iconColor: 'text-teal-600 dark:text-teal-400',
+    label: 'Schilder'
+  },
+  'painter_not_checked_in': { 
+    icon: Clock, 
+    bgColor: 'bg-amber-100 dark:bg-amber-900/40',
+    iconColor: 'text-amber-600 dark:text-amber-400',
+    label: 'Check-in'
+  },
+  'update_reply': { 
+    icon: Reply, 
+    bgColor: 'bg-fuchsia-100 dark:bg-fuchsia-900/40',
+    iconColor: 'text-fuchsia-600 dark:text-fuchsia-400',
+    label: 'Reactie'
+  },
+  'check_in_reminder': { 
+    icon: Clock, 
+    bgColor: 'bg-emerald-100 dark:bg-emerald-900/40',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    label: 'Herinnering'
+  },
+  'check_out_reminder': { 
+    icon: Clock, 
+    bgColor: 'bg-emerald-100 dark:bg-emerald-900/40',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    label: 'Herinnering'
+  },
+  'generic': { 
+    icon: Bell, 
+    bgColor: 'bg-gray-100 dark:bg-gray-800',
+    iconColor: 'text-gray-600 dark:text-gray-400',
+    label: 'Melding'
+  }
+};
+
+// Format relative time
+const formatRelativeTime = (dateString) => {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'Zojuist';
+  if (diffMins < 60) return `${diffMins} min geleden`;
+  if (diffHours < 24) return `${diffHours} uur geleden`;
+  if (diffDays === 1) return 'Gisteren';
+  if (diffDays < 7) return `${diffDays} dagen geleden`;
+  
+  return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+};
+
+// Parse notification for better display
+const parseNotification = (notification) => {
+  const config = notificationConfig[notification.type] || notificationConfig.generic;
   const message = notification.message || '';
-  const type = notification.type || 'generic';
   
-  // Bepaal icoon op basis van type
-  const iconMap = {
-    'material_requested': { icon: Package, color: 'text-blue-600 dark:text-blue-400' },
-    'material_approved': { icon: CheckCircle, color: 'text-green-600 dark:text-green-400' },
-    'damage_reported': { icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400' },
-    'project_update': { icon: Calendar, color: 'text-emerald-600 dark:text-emerald-400' },
-    'project_assigned': { icon: Calendar, color: 'text-emerald-600 dark:text-emerald-400' },
-    'planning_change': { icon: Calendar, color: 'text-purple-600 dark:text-purple-400' },
-    'materials_confirmed': { icon: CheckCircle, color: 'text-green-600 dark:text-green-400' },
-    'hours_confirmed': { icon: CheckCircle, color: 'text-green-600 dark:text-green-400' },
-    'client_logged_in': { icon: LogIn, color: 'text-indigo-600 dark:text-indigo-400' },
-    'client_message': { icon: MessageCircle, color: 'text-pink-600 dark:text-pink-400' },
-    'team_message': { icon: MessageCircle, color: 'text-cyan-600 dark:text-cyan-400' },
-    'team_chat_message': { icon: MessageCircle, color: 'text-pink-600 dark:text-pink-400' },
-    'painter_activated': { icon: UserPlus, color: 'text-emerald-600 dark:text-emerald-400' },
-    'painter_not_checked_in': { icon: Clock, color: 'text-amber-600 dark:text-amber-400' },
-    'update_reply': { icon: Reply, color: 'text-violet-600 dark:text-violet-400' },
-    'check_in_reminder': { icon: Clock, color: 'text-emerald-600 dark:text-emerald-400' },
-    'check_out_reminder': { icon: Clock, color: 'text-emerald-600 dark:text-emerald-400' },
-    'invoice_received': { icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
-    'generic': { icon: Bell, color: 'text-gray-600 dark:text-gray-400' }
-  };
+  // Use title if available, otherwise extract from message
+  let title = notification.title || '';
+  let body = message;
   
-  const iconConfig = iconMap[type] || iconMap.generic;
+  // Clean up the message - remove [Link: ...] part
+  body = body.replace(/\s*\[Link:.*?\]\s*/g, '').trim();
   
-  // Parse titel en details uit bericht
-  let title = '';
-  let details = message;
-  let alert = null;
-  let status = null;
-  
-  // Detecteer facturen
-  if (message.includes('Factuur') || message.includes('factuur')) {
-    title = message.split(/(?:ontvangen|van)/)[0].trim();
-    if (message.includes('REEDS BETAALD')) {
-      status = { text: 'REEDS BETAALD', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' };
-      details = message.replace('REEDS BETAALD via bancontact', '').trim();
-    }
-    if (message.includes('Check:')) {
-      const checkMatch = message.match(/Check: (.+?)(?:\.|$)/);
-      if (checkMatch) {
-        alert = checkMatch[1].trim();
-      }
-    }
-    iconConfig.icon = FileText;
-    iconConfig.color = 'text-blue-600 dark:text-blue-400';
-  }
-  
-  // Detecteer creditnota's
-  if (message.includes('Creditnota') || message.includes('creditnota')) {
-    title = message.split(/(?:ontvangen|van)/)[0].trim();
-    if (message.includes('Check:')) {
-      const checkMatch = message.match(/Check: (.+?)(?:\.|$)/);
-      if (checkMatch) {
-        alert = checkMatch[1].trim();
-      }
-    }
-    iconConfig.icon = FileText;
-    iconConfig.color = 'text-purple-600 dark:text-purple-400';
-  }
-  
-  // Detecteer materiaal wijzigingen
-  if (message.includes('materiaal wijziging')) {
-    title = 'Materiaal wijziging';
-    details = message;
-    iconConfig.icon = Package;
-    iconConfig.color = 'text-orange-600 dark:text-orange-400';
-    
-    if (message.includes('Check:')) {
-      const checkMatch = message.match(/Check: (.+?)(?:\.|$)/);
-      if (checkMatch) {
-        alert = checkMatch[1].trim();
-      }
-    }
-  }
-  
-  // Als geen specifieke titel gevonden, gebruik eerste deel van bericht
+  // If no title, try to extract from message
   if (!title) {
-    const parts = message.split('.')[0].split('-');
-    title = parts[0].trim();
-    details = message;
+    // For invoice notifications, extract supplier name
+    if (notification.type === 'invoice_received') {
+      const match = message.match(/Van:\s*(.+?)(?:\s*\[|$)/);
+      if (match) {
+        title = 'Nieuwe factuur ontvangen';
+        body = match[1].trim();
+      } else {
+        title = body.split(' - ')[0] || 'Nieuwe factuur';
+        body = body.split(' - ').slice(1).join(' - ') || '';
+      }
+    } else {
+      // Generic: use first sentence as title
+      const parts = message.split(/[.!?]/);
+      title = parts[0]?.trim() || 'Nieuwe melding';
+      body = parts.slice(1).join('. ').trim();
+    }
   }
   
-  // Beperk details lengte
-  if (details.length > 150) {
-    details = details.substring(0, 150) + '...';
+  // Limit body length
+  if (body.length > 80) {
+    body = body.substring(0, 77) + '...';
   }
   
-  return { title, details, alert, status, ...iconConfig };
+  return { title, body, config };
 };
 
 export default function NotificationDropdown({ notifications = [], unreadCount = 0, onRefresh }) {
-    const navigate = useNavigate();
-    const [isOpen, setIsOpen] = useState(false);
-    const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
 
-    const handleNotificationClick = async (notification) => {
-        setIsOpen(false);
-        
-        // Mark notification as read
-        if (!notification.read) {
-            try {
-                await Notification.update(notification.id, { read: true });
-                await onRefresh?.();
-            } catch (error) {
-                console.error('[NotificationDropdown] Error marking notification as read:', error);
-            }
-        }
-        
-        // Navigate to link if present
-        if (notification.link_to) {
-            const path = notification.link_to.startsWith('/') ? notification.link_to : `/${notification.link_to}`;
-            navigate(path);
-        }
-    };
+  const handleNotificationClick = async (notification) => {
+    setIsOpen(false);
     
-    const handleMarkAllAsRead = async (e) => {
-        e.stopPropagation();
-        if (isMarkingAll) return;
+    // Mark notification as read
+    if (!notification.read && !notification.is_read) {
+      try {
+        await Notification.update(notification.id, { read: true, is_read: true });
+        await onRefresh?.();
+      } catch (error) {
+        console.error('[NotificationDropdown] Error marking notification as read:', error);
+      }
+    }
+    
+    // Navigate to link if present in message
+    const linkMatch = notification.message?.match(/\[Link:\s*(.+?)\]/);
+    const linkTo = linkMatch?.[1] || notification.link_to;
+    
+    if (linkTo) {
+      const path = linkTo.startsWith('/') ? linkTo : `/${linkTo}`;
+      navigate(path);
+    }
+  };
+  
+  const handleMarkAllAsRead = async (e) => {
+    e.stopPropagation();
+    if (isMarkingAll) return;
 
-        setIsMarkingAll(true);
-        try {
-            await markAllNotificationsAsRead();
-            await onRefresh?.();
-        } catch (error) {
-            console.error('[NotificationDropdown] Error marking all as read:', error);
-        } finally {
-            setIsMarkingAll(false);
-        }
-    };
+    setIsMarkingAll(true);
+    try {
+      await markAllNotificationsAsRead();
+      await onRefresh?.();
+    } catch (error) {
+      console.error('[NotificationDropdown] Error marking all as read:', error);
+    } finally {
+      setIsMarkingAll(false);
+    }
+  };
 
-    const displayCount = unreadCount > 99 ? '99+' : unreadCount;
+  const displayCount = unreadCount > 99 ? '99+' : unreadCount;
 
-    return (
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-            <DropdownMenuTrigger asChild>
+  return (
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative group h-10 w-10"
+          aria-label={`Meldingen${unreadCount > 0 ? `, ${unreadCount} ongelezen` : ''}`}
+        >
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
+          </motion.div>
+          <AnimatePresence>
+            {unreadCount > 0 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-0.5 -right-0.5"
+              >
+                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white shadow-lg">
+                  {displayCount}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent 
+        align="end" 
+        className="w-[380px] p-0 shadow-xl border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+        sideOffset={8}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/80 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Meldingen</h3>
+            {unreadCount > 0 && (
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                {unreadCount} nieuw
+              </Badge>
+            )}
+          </div>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              disabled={isMarkingAll}
+              className="h-7 px-2 text-xs text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+            >
+              <CheckCheck className="w-3.5 h-3.5 mr-1" />
+              {isMarkingAll ? 'Bezig...' : 'Alles gelezen'}
+            </Button>
+          )}
+        </div>
+
+        {/* Notifications List */}
+        <div className="max-h-[400px] overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="py-12 px-4 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <Bell className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+              </div>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">Geen meldingen</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Je bent helemaal bij!</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {notifications.slice(0, 12).map((notification, index) => {
+                const { title, body, config } = parseNotification(notification);
+                const Icon = config.icon;
+                const isUnread = !notification.read && !notification.is_read;
+                
+                return (
+                  <motion.div
+                    key={notification.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`flex gap-3 px-4 py-3 cursor-pointer transition-all duration-200 group
+                      ${isUnread 
+                        ? 'bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-950/30' 
+                        : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                      }`}
+                  >
+                    {/* Icon */}
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl ${config.bgColor} flex items-center justify-center shadow-sm`}>
+                      <Icon className={`w-5 h-5 ${config.iconColor}`} />
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          {/* Label */}
+                          <span className={`inline-block text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${config.iconColor}`}>
+                            {config.label}
+                          </span>
+                          
+                          {/* Title */}
+                          <h4 className={`text-sm font-medium truncate ${
+                            isUnread 
+                              ? 'text-gray-900 dark:text-white' 
+                              : 'text-gray-700 dark:text-gray-300'
+                          }`}>
+                            {title}
+                          </h4>
+                          
+                          {/* Body */}
+                          {body && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                              {body}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* Unread indicator & Time */}
+                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                          {isUnread && (
+                            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
+                          )}
+                          <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                            {formatRelativeTime(notification.created_date)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Hover arrow */}
+                    <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-3" />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {notifications.length > 0 && (
+          <>
+            <DropdownMenuSeparator className="m-0" />
+            <div className="p-2 bg-gray-50 dark:bg-gray-800/50">
+              <Link to={createPageUrl("Notificaties")} onClick={() => setIsOpen(false)}>
                 <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="relative group"
-                    aria-label={`Meldingen${unreadCount > 0 ? `, ${unreadCount} ongelezen` : ''}`}
+                  variant="ghost" 
+                  className="w-full h-9 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
                 >
-                    <motion.div
-                        whileHover={{ scale: 1.1, rotate: [0, -10, 10, -10, 0] }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <Bell className="h-6 w-6 text-gray-600 dark:text-gray-300 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
-                    </motion.div>
-                    <AnimatePresence>
-                        {unreadCount > 0 && (
-                            <motion.div
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0, opacity: 0 }}
-                                transition={{ 
-                                    type: "spring", 
-                                    stiffness: 500, 
-                                    damping: 25 
-                                }}
-                            >
-                                <Badge
-                                    variant="destructive"
-                                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs rounded-full"
-                                >
-                                    <motion.span
-                                        key={displayCount}
-                                        initial={{ y: -10, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ type: "spring", stiffness: 300 }}
-                                    >
-                                        {displayCount}
-                                    </motion.span>
-                                </Badge>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                  Bekijk alle meldingen
+                  <ExternalLink className="w-3.5 h-3.5 ml-2" />
                 </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent align="end" className="w-96 max-h-[32rem] overflow-y-auto">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Meldingen</h3>
-                    {unreadCount > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleMarkAllAsRead}
-                            disabled={isMarkingAll}
-                            className="text-xs h-auto px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-700"
-                        >
-                            <CheckCheck className="w-3 h-3 mr-1" />
-                            {isMarkingAll ? 'Bezig...' : 'Alles gelezen'}
-                        </Button>
-                    )}
-                </div>
-
-                {notifications.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                        <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p className="text-sm font-medium mb-1">Geen nieuwe meldingen</p>
-                        <p className="text-xs">Updates verschijnen hier</p>
-                    </div>
-                ) : (
-                    <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {notifications.slice(0, 10).map((notification) => {
-                            const { title, details, alert, status, icon: Icon, color } = getNotificationVisuals(notification);
-                            
-                            return (
-                                <DropdownMenuItem
-                                    key={notification.id}
-                                    onSelect={() => handleNotificationClick(notification)}
-                                    className={`px-4 py-3 cursor-pointer transition-colors ${
-                                        !notification.read 
-                                            ? 'bg-blue-50/50 dark:bg-blue-950/10 hover:bg-blue-50 dark:hover:bg-blue-950/20' 
-                                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                                    }`}
-                                >
-                                    <div className="flex items-start gap-3 w-full">
-                                        {/* Icoon */}
-                                        <div className={`flex-shrink-0 mt-0.5 ${color}`}>
-                                            <Icon className="w-5 h-5" />
-                                        </div>
-                                        
-                                        {/* Content */}
-                                        <div className="flex-1 min-w-0">
-                                            {/* Titel + Status */}
-                                            <div className="flex items-start justify-between gap-2 mb-1">
-                                                <h4 className={`text-sm font-semibold ${
-                                                    !notification.read 
-                                                        ? 'text-gray-900 dark:text-gray-100' 
-                                                        : 'text-gray-800 dark:text-gray-200'
-                                                }`}>
-                                                    {title}
-                                                </h4>
-                                                {!notification.read && (
-                                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></div>
-                                                )}
-                                            </div>
-                                            
-                                            {/* Status badge */}
-                                            {status && (
-                                                <div className="mb-2">
-                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${status.color}`}>
-                                                        <CheckCircle className="w-3 h-3 mr-1" />
-                                                        {status.text}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            
-                                            {/* Details */}
-                                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">
-                                                {details}
-                                            </p>
-                                            
-                                            {/* Alert */}
-                                            {alert && (
-                                                <div className="flex items-start gap-1.5 mb-2 text-orange-700 dark:text-orange-400">
-                                                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                                                    <span className="text-xs font-medium">Check: {alert}</span>
-                                                </div>
-                                            )}
-                                            
-                                            {/* Tijdstempel */}
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {formatDateTime(notification.created_date)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </DropdownMenuItem>
-                            );
-                        })}
-                    </div>
-                )}
-
-                <DropdownMenuSeparator />
-                <div className="p-2 bg-gray-50 dark:bg-gray-800/50">
-                    <Link to={createPageUrl("Notificaties")} onClick={() => setIsOpen(false)}>
-                        <Button variant="ghost" className="w-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700">
-                            Alle notificaties bekijken
-                        </Button>
-                    </Link>
-                </div>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
+              </Link>
+            </div>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

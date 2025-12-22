@@ -44,6 +44,9 @@ import PushNotificationPrompt from '@/components/notifications/PushNotificationP
 
 
 export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unreadMessages }) {
+  // #region agent log
+  console.log('[DEBUG-HYP-A] Dashboard props:', { hasOnOpenTeamChat: !!onOpenTeamChat, typeOfOnOpenTeamChat: typeof onOpenTeamChat, unreadMessages, impersonatedCompanyId });
+  // #endregion
   const location = useLocation();
   const navigate = useNavigate();
 

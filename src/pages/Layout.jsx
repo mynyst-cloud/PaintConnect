@@ -991,6 +991,9 @@ function LayoutContent({ children }) {
         </header>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 md:p-4 lg:p-4 bg-gray-50 dark:bg-gray-900">
+          {/* #region agent log */}
+          {(()=>{console.log('[DEBUG-HYP-B] Layout passing props:', { hasHandleTeamChatClick: !!handleTeamChatClick, childrenType: children?.type?.name || 'unknown', unreadMessages });return null;})()}
+          {/* #endregion */}
           {React.cloneElement(children, { impersonatedCompanyId, onOpenTeamChat: handleTeamChatClick, unreadMessages })}
         </main>
 

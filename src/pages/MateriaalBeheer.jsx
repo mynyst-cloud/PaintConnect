@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Material, SupplierInvoice, MaterialPriceApproval, User, Supplier, MaterialCategory, Notification } from '@/api/entities';
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';

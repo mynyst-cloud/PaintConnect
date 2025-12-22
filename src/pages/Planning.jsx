@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Project, User, Company, PlanningEvent } from "@/api/entities";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";

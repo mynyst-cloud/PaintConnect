@@ -26,3 +26,4 @@ WHERE inbound_email_address = 'freshdecorbv69@facturatie.paintconnect.be';
 -- SET inbound_email_address = 'freshdecorbv69@facturatie.paintconnect.be'
 -- WHERE id = 'YOUR-COMPANY-ID-HERE';
 
+

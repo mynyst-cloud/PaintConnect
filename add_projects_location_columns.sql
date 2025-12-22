@@ -24,3 +24,4 @@ AND column_name IN ('latitude', 'longitude', 'expected_start_time', 'full_addres
 ORDER BY column_name;
 
 
+

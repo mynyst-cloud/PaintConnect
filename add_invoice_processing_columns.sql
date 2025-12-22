@@ -108,3 +108,4 @@ ON supplier_invoices(source);
 
 SELECT 'Migration completed successfully!' AS result;
 
+

@@ -78,3 +78,4 @@ CREATE TRIGGER trigger_materials_usage_updated_date
 NOTIFY pgrst, 'reload schema';
 
 
+

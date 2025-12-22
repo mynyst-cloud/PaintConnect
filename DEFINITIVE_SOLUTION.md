@@ -89,3 +89,4 @@ Als ze hetzelfde zijn → code is correct, alleen cache probleem!
 Als ze verschillen → er is een fundamenteel verschil dat we moeten vinden.
 
 
+

@@ -66,3 +66,4 @@ Als `vercel pull` niet werkt:
 3. Check of er build-time wijzigingen zijn
 
 
+

@@ -180,3 +180,4 @@ NOTIFY pgrst, 'reload schema';
 
 SELECT 'Notifications table created successfully!' as status;
 
+

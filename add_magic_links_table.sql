@@ -50,3 +50,4 @@ NOTIFY pgrst, 'reload schema';
 SELECT 'magic_links table created successfully' as result;
 
 
+

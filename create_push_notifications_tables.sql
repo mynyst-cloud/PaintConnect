@@ -169,3 +169,4 @@ NOTIFY pgrst, 'reload schema';
 
 SELECT 'Push notification tables created successfully!' as status;
 
+

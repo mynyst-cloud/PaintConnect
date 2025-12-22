@@ -10,6 +10,7 @@ import { X, Save, UploadCloud, Image as ImageIcon } from "lucide-react";
 import { handleProjectUpdate } from '@/api/functions';
 import { supabase } from '@/lib/supabase';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo";
+import { InlineSpinner } from "@/components/ui/LoadingSpinner";
 
 // Supabase Storage upload functie
 async function uploadFileToSupabase(file) {

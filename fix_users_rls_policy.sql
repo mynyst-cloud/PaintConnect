@@ -45,3 +45,4 @@ CREATE POLICY "Company admins can read company users" ON users
 -- Verify the policies
 -- SELECT policyname, cmd, qual FROM pg_policies WHERE tablename = 'users';
 
+

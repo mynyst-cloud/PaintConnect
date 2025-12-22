@@ -149,58 +149,70 @@ serve(async (req) => {
 
     // Link user to company
     // FIXED: Use 'admin' instead of 'owner' for consistency
-    // First, try to update without user_type (in case column doesn't exist)
-    const baseUpdateData = {
+    // First check if user record exists
+    const { data: existingUser, error: checkError } = await supabaseAdmin
+      .from('users')
+      .select('id, user_type, company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 = not found, which is OK - we'll create/update
+      console.error('[registerCompany] Error checking user:', checkError)
+    }
+
+    // Build update data - start with required fields
+    const baseUpdateData: Record<string, any> = {
       company_id: company.id,
       company_role: 'admin', // Use 'admin' for consistency with checks
       status: 'active'
     }
 
-    // Try update with user_type first
-    let userUpdateError = null
-    const updateWithUserType = {
-      ...baseUpdateData,
-      user_type: 'painter_company' // Set user_type for new companies
+    // Only add user_type if user record exists (meaning column exists in schema)
+    // If user doesn't exist yet, User.me() will create it with user_type
+    if (existingUser) {
+      baseUpdateData.user_type = 'painter_company'
     }
 
-    const { error: errorWithUserType } = await supabaseAdmin
+    // Use UPSERT to handle both create and update cases
+    const { data: updatedUser, error: userUpdateError } = await supabaseAdmin
       .from('users')
-      .update(updateWithUserType)
-      .eq('id', user.id)
-
-    if (errorWithUserType) {
-      console.warn('[registerCompany] Update with user_type failed, trying without:', errorWithUserType.message)
-      
-      // If user_type update fails, try without it (column might not exist)
-      const { error: errorWithoutUserType } = await supabaseAdmin
-        .from('users')
-        .update(baseUpdateData)
-        .eq('id', user.id)
-      
-      if (errorWithoutUserType) {
-        userUpdateError = errorWithoutUserType
-        console.error('[registerCompany] Error linking user to company (without user_type):', errorWithoutUserType)
-      } else {
-        console.log('[registerCompany] User linked successfully (without user_type)')
-        // user_type will be set by User.me() when user record is created/updated
-      }
-    } else {
-      console.log('[registerCompany] User linked successfully (with user_type)')
-    }
+      .upsert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email,
+        ...baseUpdateData,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single()
 
     if (userUpdateError) {
       console.error('[registerCompany] Error linking user to company:', userUpdateError)
+      console.error('[registerCompany] Error code:', userUpdateError.code)
+      console.error('[registerCompany] Error message:', userUpdateError.message)
       console.error('[registerCompany] Error details:', JSON.stringify(userUpdateError))
+      
       // Try to clean up company
-      await supabaseAdmin.from('companies').delete().eq('id', company.id)
+      try {
+        await supabaseAdmin.from('companies').delete().eq('id', company.id)
+      } catch (cleanupError) {
+        console.error('[registerCompany] Error cleaning up company:', cleanupError)
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Kon gebruiker niet koppelen aan bedrijf: ${userUpdateError.message || 'Onbekende fout'}` 
+          error: `Kon gebruiker niet koppelen aan bedrijf: ${userUpdateError.message || userUpdateError.code || 'Onbekende fout'}` 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
+
+    console.log('[registerCompany] User linked to company successfully:', updatedUser?.id)
 
     console.log('[registerCompany] User linked to company successfully')
 

@@ -51,7 +51,9 @@ export default function CompanyDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
 
   // FIXED: Use useCallback to prevent infinite loops
+  // selectedPeriod is not used in data loading, so we only load once on mount
   const loadAnalyticsData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const user = await User.me();
       setCurrentUser(user);
@@ -89,9 +91,11 @@ export default function CompanyDashboard() {
     }
   }, []); // Empty deps - only load once on mount
 
+  // FIXED: Only load data once on mount, selectedPeriod is for filtering/display only
   useEffect(() => {
     loadAnalyticsData();
-  }, [loadAnalyticsData, selectedPeriod]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const calculateKPIs = () => {
     const totalProjects = projects.length;

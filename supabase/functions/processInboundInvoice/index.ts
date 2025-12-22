@@ -508,6 +508,7 @@ function validateDate(dateStr: string | undefined | null): string | null {
 
 /**
  * Perform OCR using Google Cloud Vision API
+ * Uses files:annotate for PDF support
  */
 async function performOCR(pdfContent: Uint8Array): Promise<string> {
   const GOOGLE_VISION_API_KEY = Deno.env.get('GOOGLE_VISION_API_KEY')
@@ -517,7 +518,6 @@ async function performOCR(pdfContent: Uint8Array): Promise<string> {
   }
 
   // Convert PDF to base64 using chunked approach to avoid stack overflow
-  // For large files, String.fromCharCode(...arr) exceeds max call stack
   console.log('[performOCR] Converting PDF to base64, size:', pdfContent.length, 'bytes')
   
   let binaryString = ''
@@ -529,16 +529,21 @@ async function performOCR(pdfContent: Uint8Array): Promise<string> {
   const base64Content = btoa(binaryString)
   console.log('[performOCR] Base64 conversion complete, length:', base64Content.length)
 
-  // Call Google Vision API
+  // Try files:annotate endpoint first (better for PDFs)
+  console.log('[performOCR] Calling Vision API files:annotate for PDF...')
   const response = await fetch(
-    `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`,
+    `https://vision.googleapis.com/v1/files:annotate?key=${GOOGLE_VISION_API_KEY}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requests: [{
-          image: { content: base64Content },
-          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
+          inputConfig: {
+            content: base64Content,
+            mimeType: 'application/pdf'
+          },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+          pages: [1, 2, 3, 4, 5] // Process first 5 pages max
         }]
       })
     }
@@ -546,14 +551,57 @@ async function performOCR(pdfContent: Uint8Array): Promise<string> {
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('[performOCR] Vision API error:', errorText)
-    throw new Error(`Vision API error: ${response.status}`)
+    console.error('[performOCR] Vision API files:annotate error:', errorText)
+    
+    // Fallback to images:annotate (treats PDF as image)
+    console.log('[performOCR] Falling back to images:annotate...')
+    const fallbackResponse = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{
+            image: { content: base64Content },
+            features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
+          }]
+        })
+      }
+    )
+    
+    if (!fallbackResponse.ok) {
+      const fallbackError = await fallbackResponse.text()
+      console.error('[performOCR] Fallback also failed:', fallbackError)
+      throw new Error(`Vision API error: ${response.status}`)
+    }
+    
+    const fallbackResult = await fallbackResponse.json()
+    const fallbackText = fallbackResult.responses?.[0]?.fullTextAnnotation?.text || ''
+    console.log('[performOCR] Fallback extracted text length:', fallbackText.length)
+    return fallbackText
   }
 
   const result = await response.json()
+  console.log('[performOCR] files:annotate response keys:', Object.keys(result))
   
-  // Extract full text from response
-  const fullText = result.responses?.[0]?.fullTextAnnotation?.text || ''
+  // For files:annotate, the structure is different: responses[0].responses[] contains per-page results
+  let fullText = ''
+  
+  // Try files:annotate structure first (nested responses array)
+  const fileResponses = result.responses?.[0]?.responses
+  if (Array.isArray(fileResponses)) {
+    console.log('[performOCR] Processing', fileResponses.length, 'pages from files:annotate')
+    for (const pageResponse of fileResponses) {
+      const pageText = pageResponse?.fullTextAnnotation?.text || ''
+      fullText += pageText + '\n'
+    }
+  } else {
+    // Fallback to simple structure
+    fullText = result.responses?.[0]?.fullTextAnnotation?.text || ''
+  }
+  
+  fullText = fullText.trim()
+  console.log('[performOCR] Total extracted text length:', fullText.length)
   
   if (!fullText) {
     console.warn('[performOCR] No text extracted from document')
@@ -710,17 +758,21 @@ async function notifyAdmins(supabase: any, companyId: string, supplierName: stri
     if (!admins || admins.length === 0) return
 
     // Create notifications
+    const now = new Date().toISOString()
     const notifications = admins.map((admin: any) => ({
       user_id: admin.id,
-      recipient_email: admin.email,
+      recipient_email: admin.email.toLowerCase(), // Normalize email case
       company_id: companyId,
       type: 'invoice_received',
       message: `Nieuwe factuur ontvangen van ${supplierName}`,
       link_to: '/MateriaalBeheer?tab=facturen',
       read: false,
       triggering_user_name: supplierName,
-      created_at: new Date().toISOString()
+      created_at: now,
+      created_date: now // Frontend sorts by created_date
     }))
+    
+    console.log('[notifyAdmins] Creating notifications for:', admins.map((a: any) => a.email))
 
     await supabase
       .from('notifications')

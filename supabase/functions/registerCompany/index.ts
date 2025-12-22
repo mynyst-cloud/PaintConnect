@@ -64,14 +64,17 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get current user
+    // Get current user from auth
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
     if (userError || !user) {
+      console.error('[registerCompany] Auth error:', userError)
       return new Response(
         JSON.stringify({ success: false, error: 'Gebruiker niet gevonden' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
+
+    console.log('[registerCompany] Request from user:', user.id, user.email)
 
     // Parse request body
     const {
@@ -86,12 +89,25 @@ serve(async (req) => {
       country
     } = await req.json()
 
-    console.log('[registerCompany] Request from user:', user.email, 'Company:', company_name)
-
     // Validate required fields
     if (!company_name?.trim()) {
       return new Response(
         JSON.stringify({ success: false, error: 'Bedrijfsnaam is verplicht' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Check if user already has a company
+    const { data: existingUserCheck } = await supabaseAdmin
+      .from('users')
+      .select('company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (existingUserCheck?.company_id) {
+      console.log('[registerCompany] User already has company:', existingUserCheck.company_id)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Gebruiker heeft al een bedrijf' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
@@ -131,7 +147,8 @@ serve(async (req) => {
         country: country || 'België',
         inbound_email_address: inboundEmail,
         subscription_tier: 'free',
-        subscription_status: 'trial',
+        subscription_status: 'trialing',
+        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days trial
         created_at: new Date().toISOString()
       })
       .select()
@@ -139,66 +156,91 @@ serve(async (req) => {
 
     if (companyError) {
       console.error('[registerCompany] Error creating company:', companyError)
+      console.error('[registerCompany] Company error code:', companyError.code)
+      console.error('[registerCompany] Company error details:', JSON.stringify(companyError))
       return new Response(
-        JSON.stringify({ success: false, error: 'Kon bedrijf niet aanmaken: ' + companyError.message }),
+        JSON.stringify({ success: false, error: 'Kon bedrijf niet aanmaken: ' + (companyError.message || companyError.code || 'Onbekende fout') }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
-    console.log('[registerCompany] Company created:', company.id)
+    console.log('[registerCompany] Company created:', company.id, company.name)
 
-    // Link user to company
-    // FIXED: Use 'admin' instead of 'owner' for consistency
-    // First check if user record exists
-    const { data: existingUser, error: checkError } = await supabaseAdmin
-      .from('users')
-      .select('id, user_type, company_id')
-      .eq('id', user.id)
-      .single()
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 = not found, which is OK - we'll create/update
-      console.error('[registerCompany] Error checking user:', checkError)
-    }
-
-    // Build update data - start with required fields
-    const baseUpdateData: Record<string, any> = {
+    // Link user to company using UPSERT
+    // Build base user data - always include these fields
+    const userData: Record<string, any> = {
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
       company_id: company.id,
-      company_role: 'admin', // Use 'admin' for consistency with checks
-      status: 'active'
+      company_role: 'admin',
+      status: 'active',
+      created_date: new Date().toISOString()
     }
 
-    // Only add user_type if user record exists (meaning column exists in schema)
-    // If user doesn't exist yet, User.me() will create it with user_type
-    if (existingUser) {
-      baseUpdateData.user_type = 'painter_company'
+    // Try to upsert with user_type first (if column exists)
+    let userUpsertError = null
+    const userDataWithType = {
+      ...userData,
+      user_type: 'painter_company'
     }
 
-    // Use UPSERT to handle both create and update cases
-    const { data: updatedUser, error: userUpdateError } = await supabaseAdmin
+    console.log('[registerCompany] Attempting user upsert with user_type...')
+    const { data: upsertedUser, error: upsertErrorWithType } = await supabaseAdmin
       .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        full_name: user.user_metadata?.full_name || user.email,
-        ...baseUpdateData,
-        updated_at: new Date().toISOString()
-      }, {
+      .upsert(userDataWithType, {
         onConflict: 'id',
         ignoreDuplicates: false
       })
       .select()
       .single()
 
-    if (userUpdateError) {
-      console.error('[registerCompany] Error linking user to company:', userUpdateError)
-      console.error('[registerCompany] Error code:', userUpdateError.code)
-      console.error('[registerCompany] Error message:', userUpdateError.message)
-      console.error('[registerCompany] Error details:', JSON.stringify(userUpdateError))
+    // If error is PGRST204 (column not found), try without user_type
+    if (upsertErrorWithType) {
+      const errorCode = upsertErrorWithType.code || ''
+      const errorMessage = upsertErrorWithType.message || ''
+      
+      console.warn('[registerCompany] Upsert with user_type failed:', errorCode, errorMessage)
+      
+      // PGRST204 = column not found in schema cache, try without user_type
+      if (errorCode.includes('PGRST') && errorMessage.includes('user_type')) {
+        console.log('[registerCompany] user_type column not found, trying without it...')
+        
+        const { data: upsertedUserNoType, error: upsertErrorNoType } = await supabaseAdmin
+          .from('users')
+          .upsert(userData, {
+            onConflict: 'id',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single()
+
+        if (upsertErrorNoType) {
+          userUpsertError = upsertErrorNoType
+          console.error('[registerCompany] Upsert without user_type also failed:', upsertErrorNoType)
+        } else {
+          console.log('[registerCompany] User linked successfully (without user_type)')
+        }
+      } else {
+        // Other error - fail
+        userUpsertError = upsertErrorWithType
+        console.error('[registerCompany] Upsert error (not column related):', upsertErrorWithType)
+      }
+    } else {
+      console.log('[registerCompany] User linked successfully (with user_type)')
+    }
+
+    // If there was an error, clean up and return
+    if (userUpsertError) {
+      console.error('[registerCompany] Error linking user to company:', userUpsertError)
+      console.error('[registerCompany] Error code:', userUpsertError.code)
+      console.error('[registerCompany] Error message:', userUpsertError.message)
+      console.error('[registerCompany] Error details:', JSON.stringify(userUpsertError))
       
       // Try to clean up company
       try {
         await supabaseAdmin.from('companies').delete().eq('id', company.id)
+        console.log('[registerCompany] Company cleaned up after user error')
       } catch (cleanupError) {
         console.error('[registerCompany] Error cleaning up company:', cleanupError)
       }
@@ -206,27 +248,30 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: `Kon gebruiker niet koppelen aan bedrijf: ${userUpdateError.message || userUpdateError.code || 'Onbekende fout'}` 
+          error: `Kon gebruiker niet koppelen aan bedrijf: ${userUpsertError.message || userUpsertError.code || 'Onbekende fout'}` 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
-    console.log('[registerCompany] User linked to company successfully:', updatedUser?.id)
-
-    console.log('[registerCompany] User linked to company successfully')
-
-    // Create storage bucket for this company's invoices (if not exists)
+    // Create storage bucket for invoices (if not exists) - non-blocking
     try {
-      await supabaseAdmin.storage.createBucket('supplier-invoices', {
+      const { error: bucketError } = await supabaseAdmin.storage.createBucket('supplier-invoices', {
         public: false,
         fileSizeLimit: 10485760, // 10MB
         allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png']
       })
-    } catch (e) {
-      // Bucket might already exist, that's fine
-      console.log('[registerCompany] Storage bucket already exists or error:', e.message)
+      if (bucketError && !bucketError.message.includes('already exists')) {
+        console.warn('[registerCompany] Could not create storage bucket:', bucketError.message)
+      } else {
+        console.log('[registerCompany] Storage bucket ready')
+      }
+    } catch (bucketErr) {
+      // Non-critical, just log
+      console.warn('[registerCompany] Storage bucket error (non-critical):', bucketErr)
     }
+
+    console.log('[registerCompany] Registration successful for company:', company.id)
 
     return new Response(
       JSON.stringify({
@@ -240,11 +285,14 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[registerCompany] Unexpected error:', error)
+    console.error('[registerCompany] Error stack:', error?.stack)
     return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Er is een onverwachte fout opgetreden' }),
+      JSON.stringify({ 
+        success: false, 
+        error: error?.message || 'Er is een onverwachte fout opgetreden',
+        details: error?.toString()
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }
 })
-
-

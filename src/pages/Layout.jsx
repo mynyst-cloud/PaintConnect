@@ -617,7 +617,8 @@ function LayoutContent({ children }) {
   }
 
   const userCompanyRole = user?.company_role || USER_ROLES.PAINTER;
-  const isSuperAdmin = user?.role === 'admin' || isSuperAdminByEmail(user?.email); // Platform super admin
+  // Super admin check - check both email and company_role
+  const isSuperAdmin = isSuperAdminByEmail(user?.email) || userCompanyRole === USER_ROLES.SUPER_ADMIN || user?.role === 'super_admin'; // Platform super admin
   const isCompanyAdmin = userCompanyRole === USER_ROLES.ADMIN;
   const isPainter = userCompanyRole === USER_ROLES.PAINTER;
   
@@ -627,11 +628,11 @@ function LayoutContent({ children }) {
   
   // Helper to check if user has access to a feature
   const hasAccessToFeature = (item) => {
-    // Super admin always has access
+    // Super admin always has access - check first!
     if (isSuperAdmin) return true;
     
-    // Check role requirement
-    if (item.requiredRole === 'admin' && isPainter) return false;
+    // Check role requirement (but not for super admins)
+    if (item.requiredRole === 'admin' && isPainter && !isSuperAdmin) return false;
     
     // Check tier requirement
     if (item.requiredTier === 'professional' && !isProfessionalOrHigher) return false;

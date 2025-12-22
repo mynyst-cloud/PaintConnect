@@ -436,11 +436,18 @@ export default function TeamActiviteit() {
     );
   }
 
-  // Super admins always have access - check this first
-  const isSuperAdminUser = isSuperAdmin && isSuperAdmin();
+  // Super admins always have access - multiple checks to be safe
+  const isSuperAdminUser = 
+    (isSuperAdmin && isSuperAdmin()) || 
+    (currentUser?.email && isSuperAdminByEmail(currentUser.email)) ||
+    currentUser?.company_role === 'super_admin' ||
+    currentUser?.role === 'super_admin';
   
-  // Only block painters, not super admins
-  if (!isSuperAdminUser && isPainter && isPainter()) {
+  // Only block painters, not super admins or admins
+  // If user is not a super admin and is a painter, show access denied
+  const isPainterUser = isPainter && isPainter();
+  
+  if (!isSuperAdminUser && isPainterUser) {
     return (
       <>
         <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">
@@ -465,6 +472,8 @@ export default function TeamActiviteit() {
       </>
     );
   }
+  
+  // If super admin or admin, show the full page - don't block!
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6">

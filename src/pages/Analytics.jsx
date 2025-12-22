@@ -50,25 +50,34 @@ export default function Analytics() {
   useEffect(() => {
     if (modalShownRef.current) return;
     if (featureLoading) return;
+    if (!currentUser) return; // Wait for user to load
     
-    // Super admins always have access
+    // Super admins always have access - check directly without function call
     const isSuperAdminUser = 
-      (isSuperAdmin && isSuperAdmin()) || 
       (currentUser?.email && isSuperAdminByEmail(currentUser.email)) ||
-      currentUser?.company_role === 'super_admin';
+      currentUser?.company_role === 'super_admin' ||
+      currentUser?.role === 'super_admin';
     
     if (isSuperAdminUser) {
       setShowUpgradeModal(false);
+      modalShownRef.current = true; // Mark as checked
       return;
     }
     
-    // Check feature access
-    const hasAnalyticsAccess = hasFeature('page_analytics');
-    if (!hasAnalyticsAccess) {
+    // Check feature access - only call hasFeature if we have the hook ready
+    try {
+      const hasAnalyticsAccess = hasFeature && typeof hasFeature === 'function' ? hasFeature('page_analytics') : false;
+      if (!hasAnalyticsAccess) {
+        setShowUpgradeModal(true);
+        modalShownRef.current = true;
+      }
+    } catch (error) {
+      console.error('Error checking feature access:', error);
+      // Default to showing modal if check fails
       setShowUpgradeModal(true);
       modalShownRef.current = true;
     }
-  }, [featureLoading, currentUser, isSuperAdmin]); // Removed hasFeature from dependencies
+  }, [featureLoading, currentUser]); // Removed isSuperAdmin and hasFeature from dependencies
 
   // Super admins always have access - check this first
   const isSuperAdminUser = 

@@ -206,32 +206,69 @@ serve(async (req) => {
       try {
         console.log('[processInboundInvoice] Processing attachment:', attachment.filename, 'ID:', attachment.id)
         
-        let pdfContent: Uint8Array
+        let pdfContent: Uint8Array | null = null
         
-        // Check if content is included directly (base64) or needs to be fetched
+        // Check if content is included directly (base64)
         if (attachment.content) {
-          // Content is included as base64
+          console.log('[processInboundInvoice] Using base64 content from webhook')
           pdfContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
-        } else if (attachment.id && RESEND_API_KEY) {
-          // Fetch attachment content from Resend API
-          console.log('[processInboundInvoice] Fetching attachment from Resend API...')
-          const attachmentResponse = await fetch(
-            `https://api.resend.com/emails/${emailData.email_id}/attachments/${attachment.id}`,
+        } 
+        // Try to fetch full email with attachments from Resend API
+        else if (emailData.email_id && RESEND_API_KEY) {
+          console.log('[processInboundInvoice] Fetching full email from Resend API...')
+          const emailResponse = await fetch(
+            `https://api.resend.com/emails/${emailData.email_id}`,
             {
               headers: { 'Authorization': `Bearer ${RESEND_API_KEY}` }
             }
           )
           
-          if (!attachmentResponse.ok) {
-            console.error('[processInboundInvoice] Failed to fetch attachment:', attachmentResponse.status)
-            throw new Error(`Failed to fetch attachment: ${attachmentResponse.status}`)
+          if (emailResponse.ok) {
+            const fullEmail = await emailResponse.json()
+            console.log('[processInboundInvoice] Full email response:', JSON.stringify(fullEmail).substring(0, 500))
+            
+            // Find this attachment in the full email
+            const fullAttachment = fullEmail.attachments?.find((a: any) => 
+              a.id === attachment.id || a.filename === attachment.filename
+            )
+            
+            if (fullAttachment?.content) {
+              console.log('[processInboundInvoice] Found attachment content in full email')
+              pdfContent = Uint8Array.from(atob(fullAttachment.content), c => c.charCodeAt(0))
+            }
+          } else {
+            console.log('[processInboundInvoice] Could not fetch full email:', emailResponse.status)
           }
+        }
+        
+        // If we still don't have content, create a placeholder record
+        if (!pdfContent) {
+          console.log('[processInboundInvoice] No attachment content available, creating placeholder')
           
-          const attachmentData = await attachmentResponse.arrayBuffer()
-          pdfContent = new Uint8Array(attachmentData)
-        } else {
-          console.error('[processInboundInvoice] No attachment content and no way to fetch it')
-          throw new Error('Attachment content not available')
+          // Create invoice record without PDF content
+          const { data: invoice, error: invoiceError } = await supabase
+            .from('supplier_invoices')
+            .insert({
+              company_id: company.id,
+              supplier_name: fromName,
+              supplier_email: fromEmail,
+              invoice_number: null,
+              invoice_date: new Date().toISOString().split('T')[0],
+              total_amount: 0,
+              status: 'needs_manual_review',
+              notes: `PDF bijlage gedetecteerd maar kon niet worden gedownload.\n\nBestand: ${attachment.filename}\nOnderwerp: ${subject}\n\nUpload de factuur handmatig.`,
+              original_filename: attachment.filename,
+              source: 'email_inbound',
+              original_email_subject: subject,
+              original_email_from: fromEmail
+            })
+            .select()
+            .single()
+
+          if (!invoiceError && invoice) {
+            processedInvoices.push(invoice)
+          }
+          continue // Skip to next attachment
         }
         
         // Upload to Supabase Storage

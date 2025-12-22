@@ -653,6 +653,7 @@ function LayoutContent({ children }) {
     { name: "Planning", icon: Calendar, href: createPageUrl("Planning"), feature: 'page_planning' },
     { name: "Projecten", icon: Briefcase, href: createPageUrl("Projecten"), feature: 'page_projects' },
     { name: "Beschadigingen", icon: AlertTriangle, href: createPageUrl("Beschadigingen"), feature: 'page_damages' },
+    { name: "TeamChat", icon: MessageCircle, onClick: handleTeamChatClick, badge: unreadMessages > 0 ? unreadMessages : null },
     { name: "Referrals", icon: Gift, href: createPageUrl("Referrals"), feature: 'page_referrals' },
   ];
 
@@ -696,6 +697,12 @@ function LayoutContent({ children }) {
     const isActive = currentPageName.toLowerCase() === item.name.toLowerCase().replace(/\s/g, '');
     
     const handleClick = (e) => {
+      if (item.onClick) {
+        e.preventDefault();
+        item.onClick();
+        setSidebarOpen(false);
+        return;
+      }
       if (!hasAccess) {
         e.preventDefault();
         handleRestrictedClick(item);
@@ -704,17 +711,37 @@ function LayoutContent({ children }) {
       }
     };
     
+    const baseClasses = `flex items-center px-2 py-1.5 text-sm font-medium rounded-lg transition-colors relative ${
+      !hasAccess 
+        ? 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer'
+        : isActive
+          ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+    }`;
+    
+    // For onClick items (like TeamChat), render a button instead of Link
+    if (item.onClick) {
+      return (
+        <button
+          onClick={handleClick}
+          className={baseClasses + ' w-full'}
+        >
+          <item.icon className={`mr-2 h-4 w-4 ${item.badge ? 'text-emerald-500' : 'text-gray-400 dark:text-gray-500'}`} />
+          {item.name}
+          {item.badge && (
+            <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white">
+              {item.badge > 9 ? '9+' : item.badge}
+            </span>
+          )}
+        </button>
+      );
+    }
+    
     return (
       <Link
         to={hasAccess ? item.href : '#'}
         onClick={handleClick}
-        className={`flex items-center px-2 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-          !hasAccess 
-            ? 'text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer'
-            : isActive
-              ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-              : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
-        }`}
+        className={baseClasses}
       >
         <item.icon className={`mr-2 h-4 w-4 ${
           !hasAccess 

@@ -296,17 +296,28 @@ function LayoutContent({ children }) {
           }
         }
 
-        // Handle special cases
-        if (!user.company_id && user.user_type === 'painter_company' && user.company_role === 'admin') {
-          const alwaysAllowedPagesForAuthCheck = [
+        // FIXED: Handle new users without company - redirect to registration
+        // Check for users without company_id (new Google OAuth users or any new users)
+        // Allow registration page and auth pages
+        const alwaysAllowedPagesForAuthCheck = [
           createPageUrl('RegistratieCompany'),
+          createPageUrl('RegistratieSetup'),
           createPageUrl('InviteAcceptance'),
           createPageUrl('ActivateAccount'),
           createPageUrl('PrivacyPolicy'),
-          createPageUrl('TermsOfService')];
+          createPageUrl('TermsOfService'),
+          createPageUrl('PasswordLogin'),
+          createPageUrl('VerifyEmail')
+        ];
 
-
-          if (!alwaysAllowedPagesForAuthCheck.some((page) => currentPath.startsWith(page))) {
+        // If user has no company_id, they need to register
+        // Exception: super admins and users already on registration pages
+        if (!user.company_id) {
+          const isSuperAdmin = user.company_role === 'super_admin' || user.role === 'super_admin';
+          const isOnAllowedPage = alwaysAllowedPagesForAuthCheck.some((page) => currentPath.startsWith(page));
+          
+          // Don't redirect super admins or users already on allowed pages
+          if (!isSuperAdmin && !isOnAllowedPage) {
             navigate(createPageUrl('RegistratieCompany'));
             return { redirect: true };
           }

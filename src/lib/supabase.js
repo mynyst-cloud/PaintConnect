@@ -184,11 +184,13 @@ class UserEntity extends Entity {
     }
     
     // Create new user record with company_id if found
+    // FIXED: Set default user_type for new Google OAuth users (they need to register company)
     const newUser = {
       id: authUser.id,
       email: authUser.email,
       full_name: authUser.user_metadata?.full_name || authUser.email,
       created_date: new Date().toISOString(),
+      user_type: 'painter_company', // Default for new users - they need to register a company
       ...(companyId && { company_id: companyId }),
       ...(companyRole && { company_role: companyRole })
     }

@@ -148,11 +148,13 @@ serve(async (req) => {
     console.log('[registerCompany] Company created:', company.id)
 
     // Link user to company
+    // FIXED: Use 'admin' instead of 'owner' for consistency, and set user_type
     const { error: userUpdateError } = await supabaseAdmin
       .from('users')
       .update({
         company_id: company.id,
-        company_role: 'owner',
+        company_role: 'admin', // Use 'admin' for consistency with checks
+        user_type: 'painter_company', // Set user_type for new companies
         status: 'active'
       })
       .eq('id', user.id)

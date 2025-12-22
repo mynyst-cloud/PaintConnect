@@ -258,16 +258,23 @@ export default function Dashboard() {
       const companyId = impersonatedCompanyId || getCurrentCompanyIdForUser(user);
       const isCurrentUserAdmin = user.company_role === 'admin' || user.role === 'admin';
 
-      if (user.user_type === 'painter_company' && user.company_role === 'admin' && !companyId) throw new Error('setup');
-      if (user.company_role === 'painter' && !companyId) throw new Error('painter_invite_pending');
-
+      // FIXED: Check for users without company - redirect to registration
+      // If user has no company_id and is not a super admin, they need to register
       if (!companyId) {
-        if (user.company_role === 'super_admin' || user.role === 'super_admin') {
+        const isSuperAdmin = user.company_role === 'super_admin' || user.role === 'super_admin';
+        if (isSuperAdmin) {
           isLoadingRef.current = false;
           if (mountedRef.current) safeSetState(setIsLoading, false);
           return;
         }
-        throw new Error('no_company_association');
+        
+        // For painters without company, they might be waiting for invite
+        if (user.company_role === 'painter') {
+          throw new Error('painter_invite_pending');
+        }
+        
+        // For all other users without company (including new Google OAuth users), redirect to registration
+        throw new Error('setup');
       }
 
       const companyPromise = fetchData(`company_${companyId}`, () => Company.get(companyId), 300000, forceRefresh);

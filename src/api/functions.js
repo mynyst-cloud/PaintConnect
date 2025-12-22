@@ -715,7 +715,7 @@ export const handleProjectUpdate = async (params) => {
   try {
     const { DailyUpdate } = await import('@/lib/supabase')
     
-    // Create the daily update record
+    // Create the daily update record (quick update - no check-in/check-out times)
     const updateData = {
       project_id: params.project_id,
       company_id: params.company_id,
@@ -724,9 +724,7 @@ export const handleProjectUpdate = async (params) => {
       work_notes: params.work_notes,
       photo_urls: params.photo_urls || [],
       work_date: params.work_date || new Date().toISOString().split('T')[0],
-      visible_to_client: params.visible_to_client ?? true,
-      check_in_time: new Date().toISOString(),
-      check_out_time: new Date().toISOString()
+      visible_to_client: params.visible_to_client ?? true
     }
     
     // #region agent log

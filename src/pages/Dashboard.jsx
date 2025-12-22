@@ -25,6 +25,7 @@ import { seedDummyProjects } from '@/api/functions';
 import { notifyAssignedPainters } from '@/api/functions';
 import { useRealtimeData } from '@/components/utils/useRealtimeData';
 import { sendQuickActionEmail } from '@/api/functions';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 const ProjectDetails = lazy(() => import('@/components/projects/ProjectDetails'));
 const ProjectForm = lazy(() => import('@/components/planning/PlanningForm'));
@@ -34,7 +35,7 @@ const QuickUpdateForm = lazy(() => import('@/components/projects/QuickUpdateForm
 const HoursConfirmationForm = lazy(() => import('@/components/projects/HoursConfirmationForm'));
 const MaterialsConfirmationForm = lazy(() => import('@/components/projects/MaterialsConfirmationForm'));
 
-const LoadingSpinner = () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]"><LoadingSpinner size="default" /></div>;
+const SuspenseLoader = () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]"><LoadingSpinner size="default" /></div>;
 
 import CheckInButton from '@/components/checkin/CheckInButton';
 import CheckOutButton from '@/components/checkin/CheckOutButton';

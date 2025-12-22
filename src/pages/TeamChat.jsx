@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageCircle, Clock, RefreshCw, User as UserIcon, Paintbrush2, Building, Trash2 } from "lucide-react";
+import { Send, MessageCircle, Clock, RefreshCw, User as UserIcon, Paintbrush2, Building, Loader2, Trash2 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { AnimatePresence, motion } from "framer-motion";
 import { notifyAdmins } from "@/components/utils/notificationManager";
 import { createPageUrl } from "@/components/utils";
 import { format, parseISO, isValid } from "date-fns";
 import { nl } from "date-fns/locale";
-import { clearTeamChat, notifyTeamChatMessage } from "@/api/functions";
+import { clearTeamChat } from "@/api/functions";
 import { base44 } from "@/api/base44Client";
 
 const MESSAGES_PER_PAGE = 20; // Reduced from 50 to 20 for better performance
@@ -316,28 +316,19 @@ export default function TeamChat() {
         setNewMessage(''); 
         scrollToBottom(); 
 
-        // Send notification to other team members
+        // Send notification to admins
         try {
-            const teamMembers = await User.filter({ 
-                company_id: currentUser.company_id, 
-                status: 'active' 
+            await fetch('https://base44.app/api/apps/688ddf9fafec117afa44cb01/functions/sendNotification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    company_id: currentUser.company_id,
+                    type: 'new_chat_message',
+                    message: `${currentUser.full_name} heeft een nieuw bericht geplaatst in Team Chat.`,
+                    link: createPageUrl('TeamChat'),
+                    triggering_user_name: currentUser.full_name
+                })
             });
-            
-            if (teamMembers && teamMembers.length > 0) {
-                const recipientEmails = teamMembers
-                    .map(u => u.email)
-                    .filter(email => email && email.toLowerCase() !== currentUser.email.toLowerCase());
-                
-                if (recipientEmails.length > 0) {
-                    await notifyTeamChatMessage({
-                        company_id: currentUser.company_id,
-                        sender_name: currentUser.full_name || currentUser.email,
-                        message_preview: newMessage.trim(),
-                        recipient_emails: recipientEmails,
-                        sender_email: currentUser.email
-                    });
-                }
-            }
         } catch (notifError) {
             console.error('Failed to send team chat notification:', notifError);
         }
@@ -419,7 +410,7 @@ export default function TeamChat() {
               >
                 {isClearing ? (
                   <>
-                    <InlineSpinner />
+                    <Loader2 className="w-3 h-3 md:w-4 md:h-4 md:mr-2 animate-spin" />
                     <span className="hidden md:inline">Verwijderen...</span>
                   </>
                 ) : (
@@ -456,7 +447,7 @@ export default function TeamChat() {
           <div ref={chatStartRef} className="flex justify-center py-3 md:py-4">
             {isLoadingMore && (
               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
-                <InlineSpinner />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Oudere berichten laden...
               </div>
             )}

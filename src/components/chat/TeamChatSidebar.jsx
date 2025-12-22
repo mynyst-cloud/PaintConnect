@@ -1,10 +1,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, MessageCircle, Briefcase } from 'lucide-react';
-import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
+import { X, Send, Loader2, MessageCircle, Briefcase } from 'lucide-react';
 import { ChatMessage, User, Project } from '@/api/entities';
-import { notifyTeamChatMessage } from '@/api/functions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -104,34 +102,6 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
       }
 
       await ChatMessage.create(messageData);
-      
-      // Send notification to other team members
-      try {
-        // Get all team members to notify
-        const teamMembers = await User.filter({ 
-          company_id: companyId, 
-          status: 'active' 
-        });
-        
-        if (teamMembers && teamMembers.length > 0) {
-          const recipientEmails = teamMembers
-            .map(u => u.email)
-            .filter(email => email && email.toLowerCase() !== currentUser.email.toLowerCase());
-          
-          if (recipientEmails.length > 0) {
-            await notifyTeamChatMessage({
-              company_id: companyId,
-              sender_name: currentUser.full_name || currentUser.email,
-              message_preview: newMessage.trim(),
-              recipient_emails: recipientEmails,
-              sender_email: currentUser.email
-            });
-          }
-        }
-      } catch (notifError) {
-        console.error('Failed to send team chat notifications:', notifError);
-      }
-      
       setNewMessage('');
       setSelectedProject('all');
       await loadMessages();
@@ -242,7 +212,7 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
             <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <LoadingSpinner size="default" />
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
                 </div>
               ) : (
                 <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
@@ -364,7 +334,7 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     {isSending ? (
-                      <InlineSpinner />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Send className="w-4 h-4" />
                     )}

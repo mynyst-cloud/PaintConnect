@@ -202,6 +202,22 @@ serve(async (req) => {
     const processedInvoices = []
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
     
+    // #region DEBUG: Log full attachment structure
+    console.log('[DEBUG-HYP-A] Full emailData keys:', Object.keys(emailData))
+    console.log('[DEBUG-HYP-B] email_id value:', emailData.email_id)
+    console.log('[DEBUG-HYP-B] id value:', emailData.id)
+    console.log('[DEBUG-HYP-C] RESEND_API_KEY present:', !!RESEND_API_KEY)
+    console.log('[DEBUG-HYP-D] Raw attachments:', JSON.stringify(pdfAttachments.map((a: any) => ({
+      filename: a.filename,
+      id: a.id,
+      hasContent: !!a.content,
+      hasData: !!a.data,
+      content_type: a.content_type,
+      size: a.size,
+      keys: Object.keys(a)
+    }))))
+    // #endregion
+    
     for (const attachment of pdfAttachments) {
       try {
         console.log('[processInboundInvoice] Processing attachment:', attachment.filename, 'ID:', attachment.id)
@@ -210,45 +226,73 @@ serve(async (req) => {
         
         // Check if content is included directly (base64)
         if (attachment.content) {
-          console.log('[processInboundInvoice] Using base64 content from webhook')
+          console.log('[DEBUG-HYP-D] Using base64 content from webhook, length:', attachment.content.length)
           pdfContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
         } 
         // Fetch attachments from Resend Inbound API (correct endpoint per Resend support)
-        else if (emailData.email_id && RESEND_API_KEY) {
-          console.log('[processInboundInvoice] Fetching attachments from Resend Inbound API...')
+        else {
+          // Try different email_id fields
+          const emailId = emailData.email_id || emailData.id || emailData.message_id
+          console.log('[DEBUG-HYP-B] Resolved emailId:', emailId, 'from fields:', {
+            email_id: emailData.email_id,
+            id: emailData.id,
+            message_id: emailData.message_id
+          })
           
-          // Correct endpoint for inbound/receiving emails
-          const attachmentsResponse = await fetch(
-            `https://api.resend.com/emails/receiving/${emailData.email_id}/attachments`,
-            {
+          if (emailId && RESEND_API_KEY) {
+            console.log('[processInboundInvoice] Fetching attachments from Resend Inbound API...')
+            
+            // Correct endpoint for inbound/receiving emails
+            const attachmentUrl = `https://api.resend.com/emails/receiving/${emailId}/attachments`
+            console.log('[DEBUG-HYP-C] Fetching URL:', attachmentUrl)
+            
+            const attachmentsResponse = await fetch(attachmentUrl, {
               headers: { 'Authorization': `Bearer ${RESEND_API_KEY}` }
-            }
-          )
-          
-          if (attachmentsResponse.ok) {
-            const attachmentsData = await attachmentsResponse.json()
-            console.log('[processInboundInvoice] Attachments response:', JSON.stringify(attachmentsData).substring(0, 500))
+            })
             
-            // Find this attachment by ID or filename
-            const fullAttachment = attachmentsData?.data?.find((a: any) => 
-              a.id === attachment.id || a.filename === attachment.filename
-            ) || attachmentsData?.find?.((a: any) => 
-              a.id === attachment.id || a.filename === attachment.filename
-            )
+            console.log('[DEBUG-HYP-C] Response status:', attachmentsResponse.status)
             
-            if (fullAttachment?.content) {
-              console.log('[processInboundInvoice] Found attachment content!')
-              pdfContent = Uint8Array.from(atob(fullAttachment.content), c => c.charCodeAt(0))
-            } else if (fullAttachment?.data) {
-              // Some APIs return data instead of content
-              console.log('[processInboundInvoice] Found attachment data!')
-              pdfContent = Uint8Array.from(atob(fullAttachment.data), c => c.charCodeAt(0))
+            if (attachmentsResponse.ok) {
+              const attachmentsData = await attachmentsResponse.json()
+              console.log('[DEBUG-HYP-E] Attachments API response structure:', {
+                hasData: !!attachmentsData.data,
+                isArray: Array.isArray(attachmentsData),
+                keys: Object.keys(attachmentsData),
+                preview: JSON.stringify(attachmentsData).substring(0, 800)
+              })
+              
+              // Find this attachment by ID or filename
+              const attachmentsList = attachmentsData?.data || (Array.isArray(attachmentsData) ? attachmentsData : [])
+              console.log('[DEBUG-HYP-E] Attachments list length:', attachmentsList.length)
+              
+              const fullAttachment = attachmentsList.find((a: any) => 
+                a.id === attachment.id || a.filename === attachment.filename
+              )
+              
+              if (fullAttachment) {
+                console.log('[DEBUG-HYP-E] Found matching attachment:', {
+                  hasContent: !!fullAttachment.content,
+                  hasData: !!fullAttachment.data,
+                  keys: Object.keys(fullAttachment)
+                })
+              }
+              
+              if (fullAttachment?.content) {
+                console.log('[processInboundInvoice] Found attachment content!')
+                pdfContent = Uint8Array.from(atob(fullAttachment.content), c => c.charCodeAt(0))
+              } else if (fullAttachment?.data) {
+                // Some APIs return data instead of content
+                console.log('[processInboundInvoice] Found attachment data!')
+                pdfContent = Uint8Array.from(atob(fullAttachment.data), c => c.charCodeAt(0))
+              } else {
+                console.log('[DEBUG-HYP-E] Attachment found but no content field:', Object.keys(fullAttachment || {}))
+              }
             } else {
-              console.log('[processInboundInvoice] Attachment found but no content field:', Object.keys(fullAttachment || {}))
+              const errorText = await attachmentsResponse.text()
+              console.log('[DEBUG-HYP-C] Could not fetch attachments:', attachmentsResponse.status, errorText)
             }
           } else {
-            const errorText = await attachmentsResponse.text()
-            console.log('[processInboundInvoice] Could not fetch attachments:', attachmentsResponse.status, errorText)
+            console.log('[DEBUG-HYP-B/C] Missing emailId or API key:', { emailId, hasApiKey: !!RESEND_API_KEY })
           }
         }
         

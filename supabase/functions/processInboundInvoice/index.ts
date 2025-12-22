@@ -127,6 +127,25 @@ serve(async (req) => {
     }
 
     console.log('[processInboundInvoice] Looking for company with inbound email:', toEmail)
+    
+    // Deduplication: Check if this email was already processed (using email_id)
+    const emailId = emailData.email_id || emailData.id || emailData.message_id
+    if (emailId) {
+      const { data: existingInvoice } = await supabase
+        .from('supplier_invoices')
+        .select('id')
+        .eq('source', 'email_inbound')
+        .ilike('notes', `%${emailId}%`)
+        .limit(1)
+      
+      if (existingInvoice && existingInvoice.length > 0) {
+        console.log('[processInboundInvoice] Email already processed, skipping. email_id:', emailId)
+        return new Response(
+          JSON.stringify({ success: true, message: 'Email already processed', duplicate: true }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        )
+      }
+    }
 
     // Find company by inbound email address
     const { data: company, error: companyError } = await supabase
@@ -406,7 +425,7 @@ serve(async (req) => {
             line_items: extractedData.line_items || [],
             status: status,
             confidence_score: extractedData.confidence,
-            notes: extractedData.notes,
+            notes: `${extractedData.notes || ''}\n[email_id: ${emailData.email_id || emailData.id || 'unknown'}]`.trim(),
             pdf_file_url: publicUrl,
             original_filename: attachment.filename,
             source: 'email_inbound',

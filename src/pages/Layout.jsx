@@ -653,7 +653,6 @@ function LayoutContent({ children }) {
     { name: "Planning", icon: Calendar, href: createPageUrl("Planning"), feature: 'page_planning' },
     { name: "Projecten", icon: Briefcase, href: createPageUrl("Projecten"), feature: 'page_projects' },
     { name: "Beschadigingen", icon: AlertTriangle, href: createPageUrl("Beschadigingen"), feature: 'page_damages' },
-    { name: "TeamChat", icon: MessageCircle, onClick: handleTeamChatClick, badge: unreadMessages > 0 ? unreadMessages : null },
     { name: "Referrals", icon: Gift, href: createPageUrl("Referrals"), feature: 'page_referrals' },
   ];
 

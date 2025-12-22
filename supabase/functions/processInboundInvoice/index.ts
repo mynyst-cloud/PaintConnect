@@ -394,9 +394,9 @@ serve(async (req) => {
             supplier_vat_number: extractedData.supplier?.vat_number,
             supplier_iban: extractedData.supplier?.iban,
             supplier_bic: extractedData.supplier?.bic,
-            invoice_number: extractedData.invoice?.number,
-            invoice_date: extractedData.invoice?.date || new Date().toISOString().split('T')[0],
-            due_date: extractedData.invoice?.due_date,
+            invoice_number: extractedData.invoice?.number !== 'onbekend' ? extractedData.invoice?.number : null,
+            invoice_date: validateDate(extractedData.invoice?.date) || new Date().toISOString().split('T')[0],
+            due_date: validateDate(extractedData.invoice?.due_date),
             reference: extractedData.invoice?.reference,
             document_type: extractedData.invoice?.document_type || 'factuur',
             total_amount: extractedData.totals?.total_incl_vat || 0,
@@ -479,6 +479,32 @@ serve(async (req) => {
     )
   }
 })
+
+/**
+ * Validate and parse date string - returns null if invalid
+ */
+function validateDate(dateStr: string | undefined | null): string | null {
+  if (!dateStr || dateStr === 'onbekend' || dateStr === 'null' || dateStr === '') {
+    return null
+  }
+  
+  // Check if it matches YYYY-MM-DD format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+  if (dateRegex.test(dateStr)) {
+    const parsed = new Date(dateStr)
+    if (!isNaN(parsed.getTime())) {
+      return dateStr
+    }
+  }
+  
+  // Try parsing other common formats
+  const parsed = new Date(dateStr)
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toISOString().split('T')[0]
+  }
+  
+  return null
+}
 
 /**
  * Perform OCR using Google Cloud Vision API

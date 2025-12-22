@@ -125,55 +125,67 @@ serve(async (req) => {
       console.log('[registerPainter] New user created:', userId)
     }
 
-    // Create or update user record in users table
-    // First try to update existing record
-    const { data: existingUserRecord, error: fetchError } = await supabase
+    // Create or update user record in users table using UPSERT
+    // This ensures company_id is ALWAYS set, regardless of race conditions
+    const userRecord = {
+      id: userId,
+      email: email.toLowerCase(),
+      full_name: full_name || invite.full_name || email.split('@')[0],
+      company_id: invite.company_id,
+      company_role: invite.company_role || 'painter',
+      status: 'active',
+      has_password: true
+    }
+
+    console.log('[registerPainter] Upserting user record:', userRecord)
+
+    const { data: upsertedUser, error: upsertError } = await supabase
       .from('users')
-      .select('id')
+      .upsert(userRecord, { 
+        onConflict: 'id'
+      })
+      .select()
+      .single()
+
+    if (upsertError) {
+      console.error('[registerPainter] User upsert error:', upsertError)
+      // Don't fail the whole operation - user can still login
+    } else {
+      console.log('[registerPainter] User record upserted successfully:', {
+        id: upsertedUser?.id,
+        company_id: upsertedUser?.company_id,
+        email: upsertedUser?.email
+      })
+    }
+
+    // Double-check: Verify company_id is set
+    const { data: verifyUser, error: verifyError } = await supabase
+      .from('users')
+      .select('id, email, company_id, company_role')
       .eq('id', userId)
       .single()
 
-    console.log('[registerPainter] Existing user record check:', { 
-      exists: !!existingUserRecord, 
-      error: fetchError?.message 
-    })
-
-    if (existingUserRecord) {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          company_id: invite.company_id,
-          company_role: invite.company_role || 'painter',
-          status: 'active',
-          has_password: true,
-          full_name: full_name || invite.full_name || email.split('@')[0]
-        })
-        .eq('id', userId)
-
-      if (updateError) {
-        console.error('[registerPainter] User update error:', updateError)
-      } else {
-        console.log('[registerPainter] User record updated with company_id:', invite.company_id)
-      }
+    if (verifyError) {
+      console.error('[registerPainter] Verify user error:', verifyError)
     } else {
-      // Insert new record
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id: userId,
-          email: email.toLowerCase(),
-          full_name: full_name || invite.full_name || email.split('@')[0],
-          company_id: invite.company_id,
-          company_role: invite.company_role || 'painter',
-          status: 'active',
-          has_password: true
-        })
-
-      if (insertError) {
-        console.error('[registerPainter] User insert error:', insertError)
-      } else {
-        console.log('[registerPainter] User record inserted with company_id:', invite.company_id)
+      console.log('[registerPainter] Verified user record:', verifyUser)
+      
+      // If company_id is still not set, force update it
+      if (!verifyUser.company_id) {
+        console.log('[registerPainter] company_id missing! Force updating...')
+        const { error: forceUpdateError } = await supabase
+          .from('users')
+          .update({ 
+            company_id: invite.company_id,
+            company_role: invite.company_role || 'painter'
+          })
+          .eq('id', userId)
+        
+        if (forceUpdateError) {
+          console.error('[registerPainter] Force update error:', forceUpdateError)
+        } else {
+          console.log('[registerPainter] Force updated company_id to:', invite.company_id)
+        }
       }
     }
 

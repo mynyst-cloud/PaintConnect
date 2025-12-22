@@ -140,6 +140,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [resendingInviteId, setResendingInviteId] = useState(null);
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
 
   const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner';
   const fileInputRef = useRef(null);
@@ -151,6 +152,13 @@ export default function AccountSettings({ impersonatedCompanyId }) {
     try {
       const userData = await User.me();
       setUser(userData);
+      
+      // Check if user logged in with Google OAuth
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const isGoogle = authUser?.app_metadata?.provider === 'google' || 
+                       authUser?.identities?.some(id => id.provider === 'google');
+      setIsGoogleUser(isGoogle);
+      
       const nameParts = (userData.full_name || '').trim().split(/\s+/);
       const firstName = nameParts.length > 0 ? nameParts[0] : '';
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
@@ -687,69 +695,71 @@ export default function AccountSettings({ impersonatedCompanyId }) {
               </CardContent>
             </Card>
 
-            {/* Password Card */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-emerald-600" />
-                  Wachtwoord Instellen
-                </CardTitle>
-                <CardDescription>
-                  Stel een wachtwoord in om in te loggen met e-mail en wachtwoord in plaats van een magic link
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handlePasswordUpdate} className="space-y-4">
-                  <div>
-                    <Label>Nieuw wachtwoord</Label>
-                    <div className="relative">
+            {/* Password Card - Only show for non-Google users */}
+            {!isGoogleUser && (
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-emerald-600" />
+                    Wachtwoord Instellen
+                  </CardTitle>
+                  <CardDescription>
+                    Stel een wachtwoord in om in te loggen met e-mail en wachtwoord in plaats van een magic link
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                    <div>
+                      <Label>Nieuw wachtwoord</Label>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                          placeholder="Minimaal 8 tekens"
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Bevestig wachtwoord</Label>
                       <Input
                         type={showPassword ? 'text' : 'password'}
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                        placeholder="Minimaal 8 tekens"
-                        className="pr-10"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        placeholder="Herhaal wachtwoord"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
                     </div>
-                  </div>
 
-                  <div>
-                    <Label>Bevestig wachtwoord</Label>
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      placeholder="Herhaal wachtwoord"
-                    />
-                  </div>
+                    {passwordMessage.text && (
+                      <Alert className={passwordMessage.type === 'error' 
+                        ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300' 
+                        : 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'}>
+                        {passwordMessage.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                        <AlertDescription>{passwordMessage.text}</AlertDescription>
+                      </Alert>
+                    )}
 
-                  {passwordMessage.text && (
-                    <Alert className={passwordMessage.type === 'error' 
-                      ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300' 
-                      : 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'}>
-                      {passwordMessage.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                      <AlertDescription>{passwordMessage.text}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button 
-                    type="submit" 
-                    disabled={isSettingPassword}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {isSettingPassword ? <InlineSpinner /> : <Lock className="w-4 h-4 mr-2" />}
-                    Wachtwoord Instellen
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                    <Button 
+                      type="submit" 
+                      disabled={isSettingPassword}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      {isSettingPassword ? <InlineSpinner /> : <Lock className="w-4 h-4 mr-2" />}
+                      Wachtwoord Instellen
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Company Tab */}

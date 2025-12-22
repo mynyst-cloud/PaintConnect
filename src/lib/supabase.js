@@ -145,37 +145,87 @@ class UserEntity extends Entity {
       throw new Error('auth')
     }
     
+    // First attempt: Try to get existing user record
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', authUser.id)
       .single()
     
-    if (userError) {
-      console.warn('User not in users table, creating...', userError)
-      
-      const newUser = {
-        id: authUser.id,
-        email: authUser.email,
-        full_name: authUser.user_metadata?.full_name || authUser.email,
-        created_date: new Date().toISOString()
-      }
-      
-      const { data: createdUser, error: createError } = await supabase
-        .from('users')
-        .insert(newUser)
-        .select()
-        .single()
-      
-      if (createError) {
-        console.error('Error creating user:', createError)
-        throw createError
-      }
-      
-      return createdUser
+    // If user exists and has company_id, return it
+    if (!userError && userData) {
+      console.log('[User.me] Found existing user:', { id: userData.id, company_id: userData.company_id })
+      return userData
     }
     
-    return userData
+    console.warn('[User.me] User not found or error, checking pending invites...', userError?.message)
+    
+    // Try to find company_id from an accepted pending invite for this email
+    let companyId = null
+    let companyRole = null
+    
+    try {
+      const { data: acceptedInvite } = await supabase
+        .from('pending_invites')
+        .select('company_id, company_role')
+        .eq('email', authUser.email?.toLowerCase())
+        .eq('status', 'accepted')
+        .order('accepted_at', { ascending: false })
+        .limit(1)
+        .single()
+      
+      if (acceptedInvite) {
+        companyId = acceptedInvite.company_id
+        companyRole = acceptedInvite.company_role || 'painter'
+        console.log('[User.me] Found company from accepted invite:', { companyId, companyRole })
+      }
+    } catch (e) {
+      console.log('[User.me] No accepted invite found for email:', authUser.email)
+    }
+    
+    // Create new user record with company_id if found
+    const newUser = {
+      id: authUser.id,
+      email: authUser.email,
+      full_name: authUser.user_metadata?.full_name || authUser.email,
+      created_date: new Date().toISOString(),
+      ...(companyId && { company_id: companyId }),
+      ...(companyRole && { company_role: companyRole })
+    }
+    
+    console.log('[User.me] Creating user record:', newUser)
+    
+    // Use UPSERT to avoid conflicts and preserve existing data
+    const { data: createdUser, error: createError } = await supabase
+      .from('users')
+      .upsert(newUser, { 
+        onConflict: 'id',
+        // Don't overwrite existing company_id if it's already set
+        ignoreDuplicates: false 
+      })
+      .select()
+      .single()
+    
+    if (createError) {
+      console.error('[User.me] Error upserting user:', createError)
+      
+      // If upsert failed, try to read again (maybe RLS issue on first read)
+      const { data: retryData, error: retryError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+      
+      if (!retryError && retryData) {
+        console.log('[User.me] Successfully read on retry:', retryData)
+        return retryData
+      }
+      
+      throw createError
+    }
+    
+    console.log('[User.me] User record created/updated:', createdUser)
+    return createdUser
   }
 
   async login() {

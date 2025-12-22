@@ -755,30 +755,39 @@ async function notifyAdmins(supabase: any, companyId: string, supplierName: stri
       .eq('company_id', companyId)
       .in('company_role', ['admin', 'owner'])
 
-    if (!admins || admins.length === 0) return
+    if (!admins || admins.length === 0) {
+      console.log('[notifyAdmins] No admins found for company:', companyId)
+      return
+    }
 
-    // Create notifications
-    const now = new Date().toISOString()
-    const notifications = admins.map((admin: any) => ({
-      user_id: admin.id,
-      recipient_email: admin.email.toLowerCase(), // Normalize email case
-      company_id: companyId,
-      type: 'invoice_received',
-      message: `Nieuwe factuur ontvangen van ${supplierName}`,
-      link_to: '/MateriaalBeheer?tab=facturen',
-      read: false,
-      triggering_user_name: supplierName,
-      created_at: now,
-      created_date: now // Frontend sorts by created_date
-    }))
+    const adminEmails = admins.map((a: any) => a.email.toLowerCase())
+    console.log('[notifyAdmins] Sending notifications to:', adminEmails)
+
+    // Call the sendNotification Edge Function for proper in-app + push handling
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
-    console.log('[notifyAdmins] Creating notifications for:', admins.map((a: any) => a.email))
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/sendNotification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+      },
+      body: JSON.stringify({
+        recipient_emails: adminEmails,
+        type: 'invoice_received',
+        title: 'Nieuwe factuur ontvangen',
+        message: `${details} - Van: ${supplierName}`,
+        link_to: '/MateriaalBeheer?tab=facturen',
+        company_id: companyId,
+        send_push: true, // Enable push notifications
+        triggering_user_name: supplierName
+      })
+    })
 
-    await supabase
-      .from('notifications')
-      .insert(notifications)
-
-    console.log('[notifyAdmins] Notified', admins.length, 'admins')
+    const result = await response.json()
+    console.log('[notifyAdmins] sendNotification result:', result)
+    
   } catch (error) {
     console.error('[notifyAdmins] Error:', error)
     // Non-critical, continue

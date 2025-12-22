@@ -37,7 +37,9 @@ const ADMIN_PUSH_TYPES = [
   'team_message',
   'painter_activated',
   'client_logged_in',
-  'painter_not_checked_in'
+  'painter_not_checked_in',
+  'invoice_received',
+  'credit_note_received'
 ]
 
 // Notification types that should trigger push for painters
@@ -356,6 +358,9 @@ function getDefaultTitle(type: string): string {
     'update_reply': 'Reactie op je update',
     'check_in_reminder': 'Check-in herinnering',
     'check_out_reminder': 'Check-out herinnering',
+    'invoice_received': 'Nieuwe factuur ontvangen',
+    'credit_note_received': 'Creditnota ontvangen',
+    'price_change_detected': 'Prijswijziging gedetecteerd',
     'generic': 'Nieuwe melding'
   }
   return titles[type] || titles.generic
@@ -376,6 +381,9 @@ function getDefaultLink(type: string): string {
     'update_reply': '/Projecten',
     'check_in_reminder': '/Dashboard',
     'check_out_reminder': '/Dashboard',
+    'invoice_received': '/MateriaalBeheer?tab=facturen',
+    'credit_note_received': '/MateriaalBeheer?tab=facturen',
+    'price_change_detected': '/MateriaalBeheer?tab=facturen',
     'generic': '/Dashboard'
   }
   return links[type] || links.generic

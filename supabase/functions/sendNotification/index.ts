@@ -122,11 +122,13 @@ Deno.serve(async (req: Request) => {
           company_id: company_id || null,
           type,
           title: notificationTitle,
-          message: `${message}${notificationLink ? ` [Link: ${notificationLink}]` : ''}`,
+          message,
+          link_to: notificationLink || null,
           project_id: project_id || null,
+          data: data || {},
           read: false,
-          is_read: false,
-          created_date: new Date().toISOString()
+          created_date: new Date().toISOString(),
+          triggering_user_name: triggering_user_name || null
         }
         
         // Log the notification data for debugging

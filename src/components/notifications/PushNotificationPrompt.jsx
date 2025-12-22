@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Bell, BellOff, Check, X } from 'lucide-react'
 import { 
@@ -30,29 +30,57 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
     return true
   })
   const [isSupported, setIsSupported] = useState(true)
+  const initializedRef = useRef(false) // Prevent multiple initializations
+  const userIdRef = useRef(null) // Track user ID changes
 
   useEffect(() => {
+    // Prevent infinite loops - only run once or when user ID actually changes
+    const currentUserId = currentUser?.id
+    
+    // If already initialized for this user, skip
+    if (initializedRef.current && userIdRef.current === currentUserId) {
+      return
+    }
+    
     const supported = isPushSupported()
     setIsSupported(supported)
     
     if (!supported) return
     
+    // Skip if no user ID yet
+    if (!currentUserId) return
+    
+    // Mark as initialized for this user
+    initializedRef.current = true
+    userIdRef.current = currentUserId
+    
     const init = async () => {
-      await initOneSignal()
-      const state = await getPushPermissionState()
-      setPermissionState(state)
-      
-      // Als al toegestaan, registreer de gebruiker
-      if (state === true && currentUser) {
-        await registerUser()
+      try {
+        await initOneSignal()
+        const state = await getPushPermissionState()
+        setPermissionState(state)
+        
+        // Als al toegestaan, registreer de gebruiker
+        if (state === true && currentUser?.id) {
+          await registerUser()
+        }
+      } catch (error) {
+        console.error('[PushNotificationPrompt] Init error:', error)
       }
     }
     
     init()
-  }, [currentUser])
+    
+    // Reset when user actually changes (different ID)
+    return () => {
+      if (userIdRef.current !== currentUserId) {
+        initializedRef.current = false
+      }
+    }
+  }, [currentUser?.id]) // Use ID instead of full object to prevent infinite loops
 
   const registerUser = async () => {
-    if (!currentUser) return
+    if (!currentUser?.id) return
     
     try {
       await setExternalUserId(currentUser.id, currentUser.email)
@@ -219,14 +247,23 @@ export default function PushNotificationPrompt({ currentUser, compact = false })
 // Kleine badge versie voor in de header
 export function PushNotificationBadge({ currentUser }) {
   const [enabled, setEnabled] = useState(false)
+  const checkedRef = useRef(false)
 
   useEffect(() => {
+    // Prevent multiple checks
+    if (checkedRef.current) return
+    checkedRef.current = true
+    
     const checkState = async () => {
-      const state = await getPushPermissionState()
-      setEnabled(state === true)
+      try {
+        const state = await getPushPermissionState()
+        setEnabled(state === true)
+      } catch (error) {
+        console.error('[PushNotificationBadge] Check state error:', error)
+      }
     }
     checkState()
-  }, [])
+  }, []) // Empty deps - only check once
 
   if (enabled) {
     return (

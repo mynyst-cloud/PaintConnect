@@ -558,9 +558,9 @@ async function extractInvoiceData(ocrText: string): Promise<any> {
   }
 
   try {
-    // Use Gemini 1.5 Flash (free tier, fast, good for structured extraction)
+    // Use Gemini 2.0 Flash (free tier, fast, good for structured extraction)
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

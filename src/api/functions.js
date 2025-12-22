@@ -1,7 +1,7 @@
 // src/api/functions.js
 // Client-side helpers & fallbacks voor (oude) backend functies
 
-import { functions as supabaseFunctions } from '@/lib/supabase'
+import { functions as supabaseFunctions, supabase, Damage, MaterialRequest, Supplier, DamageInteraction, DailyUpdateInteraction, PendingInvite, Company, ClientInvitation, Project } from '@/lib/supabase'
 
 // Exporteer de ruwe Supabase functions client waar nodig
 export { supabaseFunctions as baseFunctions }
@@ -202,8 +202,6 @@ export const createCustomerPortalSession = notImplemented('createCustomerPortalS
  */
 export const invitePainter = async (payload) => {
   try {
-    const { supabase } = await import('@/lib/supabase')
-    
     // Call the Edge Function
     const { data, error } = await supabase.functions.invoke('invitePainter', {
       body: {
@@ -237,8 +235,6 @@ export const invitePainter = async (payload) => {
  */
 export const getInviteDetailsByToken = async ({ token }) => {
   try {
-    const { supabase } = await import('@/lib/supabase')
-    
     // Call Edge Function (bypasses RLS with service role)
     const { data, error } = await supabase.functions.invoke('getInviteDetails', {
       body: { token }
@@ -259,7 +255,7 @@ export const getInviteDetailsByToken = async ({ token }) => {
 // Legacy version - kept for reference but not used
 export const getInviteDetailsByTokenLegacy = async ({ token }) => {
   try {
-    const { PendingInvite, Company } = await import('@/lib/supabase')
+    // Using static imports from top of file
     const invites = await PendingInvite.filter({ token, status: 'pending' })
     
     if (!invites || invites.length === 0) {
@@ -303,8 +299,6 @@ export const getInviteDetailsByTokenLegacy = async ({ token }) => {
  */
 export const acceptInvitation = async ({ token }) => {
   try {
-    const { supabase } = await import('@/lib/supabase')
-    
     // Call the Edge Function
     const { data, error } = await supabase.functions.invoke('acceptInvitation', {
       body: { token }
@@ -326,7 +320,7 @@ export const acceptInvitation = async ({ token }) => {
 
 export const deleteSupplier = async ({ supplier_id }) => {
   try {
-    const { Supplier } = await import('@/lib/supabase')
+    // Using static imports from top of file
     await Supplier.delete(supplier_id)
     return { success: true }
   } catch (error) {
@@ -340,8 +334,6 @@ export const deleteSupplier = async ({ supplier_id }) => {
  */
 export const handleDamageReport = async ({ damageData, project, currentUser }) => {
   try {
-    const { Damage, User, supabase } = await import('@/lib/supabase')
-    
     // Create the damage record
     const createdDamage = await Damage.create(damageData)
     
@@ -396,7 +388,7 @@ export const handleDamageReport = async ({ damageData, project, currentUser }) =
 
 export const createDamageInteraction = async (params) => {
   try {
-    const { DamageInteraction } = await import('@/lib/supabase')
+    // Using static imports from top of file
     const interaction = await DamageInteraction.create(params)
     return { success: true, data: interaction }
   } catch (error) {
@@ -406,7 +398,7 @@ export const createDamageInteraction = async (params) => {
 
 export const createDailyUpdateInteraction = async (params) => {
   try {
-    const { DailyUpdateInteraction } = await import('@/lib/supabase')
+    // Using static imports from top of file
     const interaction = await DailyUpdateInteraction.create(params)
     return { success: true, data: interaction }
   } catch (error) {
@@ -420,8 +412,6 @@ export const createDailyUpdateInteraction = async (params) => {
  */
 export const handleMaterialRequest = async (submissionData) => {
   try {
-    const { MaterialRequest, supabase } = await import('@/lib/supabase')
-    
     // Create the material request record
     const createdRequest = await MaterialRequest.create(submissionData)
     
@@ -748,7 +738,7 @@ export const notifyPainterNotCheckedIn = async ({
  */
 export const markAllNotificationsAsRead = async () => {
   try {
-    const { supabase } = await import('@/lib/supabase')
+    // Using static imports from top of file
     
     // Get current user's email
     const { data: { user } } = await supabase.auth.getUser()
@@ -780,7 +770,7 @@ export const markAllNotificationsAsRead = async () => {
  */
 export const notifyAllTeam = async ({ company_id, message, type = 'generic', title, link_to, send_email = false }) => {
   try {
-    const { supabase } = await import('@/lib/supabase')
+    // Using static imports from top of file
     
     // Get all users in the company
     const { data: users, error } = await supabase
@@ -889,7 +879,7 @@ export const generatePostCalculationPDF = notImplemented('generatePostCalculatio
 
 export const finalizeProject = async ({ project_id }) => {
   try {
-    const { Project } = await import('@/lib/supabase')
+    // Using static imports from top of file
     await Project.update(project_id, { status: 'afgerond', finalized_at: new Date().toISOString() })
     return { success: true }
   } catch (error) {
@@ -916,7 +906,7 @@ export const resendVerificationEmail = notImplemented('resendVerificationEmail')
 
 export const getClientPortalData = async ({ token }) => {
   try {
-    const { ClientInvitation, Project } = await import('@/lib/supabase')
+    // Using static imports from top of file
     const invitations = await ClientInvitation.filter({ token })
     if (!invitations[0]) {
       return { data: null, error: 'Uitnodiging niet gevonden' }
@@ -931,7 +921,7 @@ export const getClientPortalData = async ({ token }) => {
 
 export const clientPortalAuth = async ({ token }) => {
   try {
-    const { ClientInvitation } = await import('@/lib/supabase')
+    // Using static imports from top of file
     const invitations = await ClientInvitation.filter({ token })
     if (!invitations[0]) {
       return { success: false, error: 'Ongeldige of verlopen link' }
@@ -944,7 +934,7 @@ export const clientPortalAuth = async ({ token }) => {
 
 export const activateClientAccess = async ({ token }) => {
   try {
-    const { ClientInvitation } = await import('@/lib/supabase')
+    // Using static imports from top of file
     const invitations = await ClientInvitation.filter({ token })
     if (invitations[0]) {
       await ClientInvitation.update(invitations[0].id, { status: 'active' })
@@ -960,7 +950,7 @@ export const activateClientAccess = async ({ token }) => {
 
 export const clearTeamChat = async ({ company_id }) => {
   try {
-    const { supabase } = await import('@/lib/supabase')
+    // Using static imports from top of file
     await supabase
       .from('chat_messages')
       .delete()

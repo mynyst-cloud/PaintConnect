@@ -35,11 +35,14 @@ import {
   ExternalLink,
   MapPin,
   X,
-  Send
+  Send,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
-import { invitePainter } from '@/api/functions';
-import { createCustomerPortalSession } from '@/api/functions';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { invitePainter, createCustomerPortalSession } from '@/api/functions';
+import { supabase } from '@/lib/supabase';
+import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { createPageUrl } from '@/components/utils';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -127,6 +130,15 @@ export default function AccountSettings({ impersonatedCompanyId }) {
   const [invoices, setInvoices] = useState([]);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Password management state
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+  const [showPassword, setShowPassword] = useState(false);
 
   const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner';
   const fileInputRef = useRef(null);
@@ -330,6 +342,46 @@ export default function AccountSettings({ impersonatedCompanyId }) {
       setMessage({ type: 'error', text: 'Logo uploaden mislukt.' });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // Handle password update
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault();
+    setPasswordMessage({ type: '', text: '' });
+
+    // Validation
+    if (!passwordData.newPassword) {
+      setPasswordMessage({ type: 'error', text: 'Voer een nieuw wachtwoord in.' });
+      return;
+    }
+    if (passwordData.newPassword.length < 8) {
+      setPasswordMessage({ type: 'error', text: 'Wachtwoord moet minimaal 8 tekens bevatten.' });
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordMessage({ type: 'error', text: 'Wachtwoorden komen niet overeen.' });
+      return;
+    }
+
+    setIsSettingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) {
+        console.error('Password update error:', error);
+        setPasswordMessage({ type: 'error', text: error.message || 'Kon wachtwoord niet instellen.' });
+      } else {
+        setPasswordMessage({ type: 'success', text: 'Wachtwoord succesvol ingesteld! U kunt nu inloggen met uw e-mail en wachtwoord.' });
+        setPasswordData({ newPassword: '', confirmPassword: '' });
+      }
+    } catch (err) {
+      console.error('Password update exception:', err);
+      setPasswordMessage({ type: 'error', text: 'Er ging iets mis bij het instellen van het wachtwoord.' });
+    } finally {
+      setIsSettingPassword(false);
     }
   };
 
@@ -626,6 +678,70 @@ export default function AccountSettings({ impersonatedCompanyId }) {
                   <Button type="submit" disabled={isSubmitting} className="bg-emerald-600 hover:bg-emerald-700">
                     {isSubmitting ? <InlineSpinner /> : <Save className="w-4 h-4 mr-2" />}
                     Opslaan
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Password Card */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-emerald-600" />
+                  Wachtwoord Instellen
+                </CardTitle>
+                <CardDescription>
+                  Stel een wachtwoord in om in te loggen met e-mail en wachtwoord in plaats van een magic link
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                  <div>
+                    <Label>Nieuw wachtwoord</Label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? 'text' : 'password'}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        placeholder="Minimaal 8 tekens"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Bevestig wachtwoord</Label>
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      placeholder="Herhaal wachtwoord"
+                    />
+                  </div>
+
+                  {passwordMessage.text && (
+                    <Alert className={passwordMessage.type === 'error' 
+                      ? 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300' 
+                      : 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300'}>
+                      {passwordMessage.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                      <AlertDescription>{passwordMessage.text}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    disabled={isSettingPassword}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    {isSettingPassword ? <InlineSpinner /> : <Lock className="w-4 h-4 mr-2" />}
+                    Wachtwoord Instellen
                   </Button>
                 </form>
               </CardContent>

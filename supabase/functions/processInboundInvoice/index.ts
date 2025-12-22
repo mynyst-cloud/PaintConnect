@@ -428,7 +428,33 @@ serve(async (req) => {
         processedInvoices.push(invoice)
 
         // Create or update Supplier record
-        await upsertSupplier(supabase, company.id, extractedData.supplier)
+        const supplierId = await upsertSupplier(supabase, company.id, extractedData.supplier)
+        
+        // Save material price history and detect price changes
+        if (extractedData.line_items && extractedData.line_items.length > 0) {
+          const priceAlerts = await saveMaterialPriceHistory(
+            supabase,
+            company.id,
+            supplierId,
+            invoice.id,
+            extractedData.line_items,
+            extractedData.invoice?.date || new Date().toISOString().split('T')[0]
+          )
+          
+          // If there are significant price changes, update invoice notes
+          if (priceAlerts.length > 0) {
+            const alertSummary = priceAlerts.map(a => `${a.material}: ${a.reason}`).join('; ')
+            await supabase
+              .from('supplier_invoices')
+              .update({ 
+                notes: (invoice.notes || '') + `\n\n⚠️ PRIJSALERTS: ${alertSummary}`,
+                status: 'needs_review'
+              })
+              .eq('id', invoice.id)
+            
+            console.log('[processInboundInvoice] Price alerts detected:', priceAlerts.length)
+          }
+        }
 
       } catch (attachmentError) {
         console.error('[processInboundInvoice] Error processing attachment:', attachment.filename, attachmentError)
@@ -694,9 +720,12 @@ async function extractInvoiceData(ocrText: string): Promise<any> {
 
 /**
  * Create or update Supplier record
+ * Returns the supplier ID
  */
-async function upsertSupplier(supabase: any, companyId: string, supplierData: any): Promise<void> {
-  if (!supplierData?.name) return
+async function upsertSupplier(supabase: any, companyId: string, supplierData: any): Promise<string | null> {
+  if (!supplierData?.name || supplierData.name === 'Onbekend' || supplierData.name === 'onbekend') {
+    return null
+  }
 
   try {
     // Check if supplier exists
@@ -721,9 +750,11 @@ async function upsertSupplier(supabase: any, companyId: string, supplierData: an
           updated_at: new Date().toISOString()
         })
         .eq('id', existing.id)
+      
+      return existing.id
     } else {
       // Create new supplier
-      await supabase
+      const { data: newSupplier } = await supabase
         .from('suppliers')
         .insert({
           company_id: companyId,
@@ -736,11 +767,144 @@ async function upsertSupplier(supabase: any, companyId: string, supplierData: an
           bic: supplierData.bic,
           is_active: true
         })
+        .select('id')
+        .single()
+      
+      return newSupplier?.id || null
     }
   } catch (error) {
     console.error('[upsertSupplier] Error:', error)
-    // Non-critical, continue
+    return null
   }
+}
+
+/**
+ * Save material price history and detect price changes
+ */
+async function saveMaterialPriceHistory(
+  supabase: any,
+  companyId: string,
+  supplierId: string | null,
+  invoiceId: string,
+  lineItems: any[],
+  invoiceDate: string
+): Promise<Array<{ material: string; reason: string }>> {
+  const priceAlerts: Array<{ material: string; reason: string }> = []
+  
+  for (const item of lineItems) {
+    if (!item.name || item.name === 'onbekend') continue
+    
+    try {
+      // Find previous price for this material from the same supplier
+      const { data: previousPrices } = await supabase
+        .from('material_price_history')
+        .select('net_unit_price, discount_percentage, invoice_date')
+        .eq('company_id', companyId)
+        .eq('supplier_id', supplierId)
+        .or(`sku.eq.${item.sku},material_name.ilike.${item.name}`)
+        .order('invoice_date', { ascending: false })
+        .limit(1)
+      
+      const previousPrice = previousPrices?.[0]
+      const currentNetPrice = item.unit_price || item.gross_unit_price || 0
+      
+      // Calculate price change
+      let priceChangePercentage = 0
+      let priceChangeType = 'new'
+      
+      if (previousPrice?.net_unit_price) {
+        const priceDiff = currentNetPrice - previousPrice.net_unit_price
+        priceChangePercentage = (priceDiff / previousPrice.net_unit_price) * 100
+        
+        if (Math.abs(priceChangePercentage) < 0.5) {
+          priceChangeType = 'no_change'
+        } else if (priceChangePercentage > 0) {
+          priceChangeType = 'increase'
+        } else {
+          priceChangeType = 'decrease'
+        }
+      }
+      
+      // Check for discount agreement
+      let expectedDiscount = 0
+      let discountDeviation = 0
+      
+      const { data: agreements } = await supabase
+        .from('supplier_discount_agreements')
+        .select('discount_percentage')
+        .eq('company_id', companyId)
+        .eq('supplier_id', supplierId)
+        .eq('is_active', true)
+        .or(`category.is.null,category.eq.${item.category || ''}`)
+        .limit(1)
+      
+      if (agreements?.[0]) {
+        expectedDiscount = agreements[0].discount_percentage
+        const actualDiscount = item.discount || 0
+        discountDeviation = expectedDiscount - actualDiscount
+      }
+      
+      // Determine if review is needed
+      let needsReview = false
+      let reviewReason = null
+      
+      if (priceChangeType === 'increase' && priceChangePercentage > 5) {
+        needsReview = true
+        reviewReason = 'price_increase'
+        priceAlerts.push({
+          material: item.name,
+          reason: `+${priceChangePercentage.toFixed(1)}% prijsstijging`
+        })
+      }
+      
+      if (discountDeviation > 1) {
+        needsReview = true
+        reviewReason = reviewReason ? `${reviewReason},missing_discount` : 'missing_discount'
+        priceAlerts.push({
+          material: item.name,
+          reason: `Korting ${(item.discount || 0).toFixed(0)}% i.p.v. ${expectedDiscount}%`
+        })
+      }
+      
+      if (priceChangeType === 'new') {
+        needsReview = true
+        reviewReason = 'new_product'
+      }
+      
+      // Insert price history record
+      await supabase
+        .from('material_price_history')
+        .insert({
+          company_id: companyId,
+          supplier_id: supplierId,
+          supplier_invoice_id: invoiceId,
+          sku: item.sku || null,
+          material_name: item.name,
+          category: item.category || null,
+          gross_unit_price: item.gross_unit_price || null,
+          discount_percentage: item.discount || 0,
+          net_unit_price: currentNetPrice,
+          quantity: item.quantity || 1,
+          unit: item.unit || null,
+          vat_rate: item.vat_rate || 21,
+          total_line_price: item.total_price || null,
+          previous_net_price: previousPrice?.net_unit_price || null,
+          price_change_percentage: priceChangePercentage || null,
+          price_change_type: priceChangeType,
+          expected_discount: expectedDiscount || null,
+          discount_deviation: discountDeviation || null,
+          needs_review: needsReview,
+          review_reason: reviewReason,
+          invoice_date: invoiceDate
+        })
+      
+    } catch (error) {
+      console.error('[saveMaterialPriceHistory] Error processing item:', item.name, error)
+    }
+  }
+  
+  console.log('[saveMaterialPriceHistory] Saved', lineItems.length, 'items, alerts:', priceAlerts.length)
+  return priceAlerts
 }
 
 /**

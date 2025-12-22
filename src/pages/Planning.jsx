@@ -250,17 +250,50 @@ export default function Planning({ impersonatedCompanyId }) {
       let savedProject;
       if (editingProject) {
         savedProject = await Project.update(editingProject.id, dataWithCompany);
+        
+        // Check if planning changed (dates or times)
+        const planningChanged = 
+          editingProject.start_date !== dataWithCompany.start_date ||
+          editingProject.expected_end_date !== dataWithCompany.expected_end_date ||
+          editingProject.work_start_time !== dataWithCompany.work_start_time ||
+          editingProject.work_end_time !== dataWithCompany.work_end_time;
+        
         if (savedProject.assigned_painters && savedProject.assigned_painters.length > 0) {
-          const { notifyAssignedPainters } = await import('@/api/functions');
+          const { notifyAssignedPainters, notifyPlanningChange } = await import('@/api/functions');
+          
+          // Notify about assignment (for newly assigned painters)
           try {
             await notifyAssignedPainters({
               projectId: savedProject.id,
               projectName: savedProject.project_name,
               newlyAssignedEmails: savedProject.assigned_painters,
+              companyId: company?.id,
               isUpdate: true
             });
           } catch (notifError) {
             console.warn('Notificatie versturen mislukt:', notifError);
+          }
+          
+          // Notify about planning change if dates/times changed
+          if (planningChanged) {
+            try {
+              const changes = [];
+              if (editingProject.start_date !== dataWithCompany.start_date) changes.push('startdatum');
+              if (editingProject.expected_end_date !== dataWithCompany.expected_end_date) changes.push('einddatum');
+              if (editingProject.work_start_time !== dataWithCompany.work_start_time) changes.push('starttijd');
+              if (editingProject.work_end_time !== dataWithCompany.work_end_time) changes.push('eindtijd');
+              
+              await notifyPlanningChange({
+                company_id: company?.id,
+                project_id: savedProject.id,
+                project_name: savedProject.project_name,
+                change_description: changes.join(', ') + ' gewijzigd',
+                painter_emails: savedProject.assigned_painters,
+                changer_name: user?.full_name || user?.email
+              });
+            } catch (notifError) {
+              console.warn('Planning change notificatie mislukt:', notifError);
+            }
           }
         }
       } else {

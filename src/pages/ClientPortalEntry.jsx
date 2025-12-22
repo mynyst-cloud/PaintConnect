@@ -4,8 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {  } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
-import { clientPortalAuth } from '@/api/functions';
-import { activateClientAccess } from '@/api/functions';
+import { clientPortalAuth, activateClientAccess, notifyClientLogin } from '@/api/functions';
 
 const paintConnectLogoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 
@@ -69,6 +68,16 @@ export default function ClientPortalEntry() {
             const { data } = await activateClientAccess({ token });
             
             if (data.success) {
+                // Notify admins that client logged in (fire and forget)
+                if (invitationData) {
+                    notifyClientLogin({
+                        company_id: invitationData.company_id,
+                        project_id: invitationData.project_id || data.project_id,
+                        project_name: invitationData.project_name,
+                        client_name: invitationData.client_name || currentUser?.full_name || currentUser?.email || 'Klant'
+                    }).catch(err => console.warn('Client login notification failed:', err));
+                }
+                
                 // Redirect to client portal dashboard
                 navigate(`/ClientPortalDashboard?project_id=${data.project_id}`);
             } else {

@@ -604,6 +604,83 @@ export const notifyPlanningChange = async ({
   }
 }
 
+/**
+ * Notify admins when a client logs into the portal
+ */
+export const notifyClientLogin = async ({
+  company_id,
+  project_id,
+  project_name,
+  client_name
+}) => {
+  try {
+    const { supabase } = await import('@/lib/supabase')
+    
+    // Get admin emails
+    const { data: admins } = await supabase
+      .from('users')
+      .select('email')
+      .eq('company_id', company_id)
+      .eq('company_role', 'admin')
+      .eq('status', 'active')
+    
+    if (!admins || admins.length === 0) {
+      return { success: false, error: 'No admins found' }
+    }
+    
+    const adminEmails = admins.map(a => a.email).filter(Boolean)
+    
+    const result = await sendNotification({
+      recipient_emails: adminEmails,
+      type: 'client_logged_in',
+      title: 'Klant ingelogd op portaal',
+      message: `${client_name} is ingelogd op het klantenportaal${project_name ? ` voor project ${project_name}` : ''}.`,
+      link_to: project_id ? `/Projecten?id=${project_id}` : '/Dashboard',
+      project_id,
+      company_id,
+      send_push: true
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyClientLogin error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify painter when admin replies to their daily update
+ */
+export const notifyUpdateReply = async ({
+  company_id,
+  project_id,
+  project_name,
+  replier_name,
+  reply_preview,
+  painter_email
+}) => {
+  if (!painter_email) {
+    return { success: false, error: 'No painter email' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: [painter_email],
+      type: 'update_reply',
+      title: 'Reactie op je update',
+      message: `${replier_name} heeft gereageerd op je update${project_name ? ` voor ${project_name}` : ''}: ${reply_preview.substring(0, 80)}...`,
+      link_to: project_id ? `/Projecten?id=${project_id}&tab=updates` : '/Dashboard',
+      project_id,
+      company_id,
+      send_push: true,
+      triggering_user_name: replier_name
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyUpdateReply error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
 // ====== PROJECT FUNCTIONS ======
 
 export const notifyHoursConfirmed = async (params) => {

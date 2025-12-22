@@ -331,7 +331,133 @@ serve(async (req) => {
     }
 
     // ===============================================
-    // 3. CHECK-OUT REMINDERS (at work_end_time)
+    // 3. PAINTER NOT CHECKED IN (15 min after start)
+    // ===============================================
+    for (const project of projects) {
+      const startTime = project.work_start_time?.slice(0, 5)
+      const assignedEmails = project.assigned_painters || []
+      
+      if (!startTime || assignedEmails.length === 0) continue
+
+      // Check if it's 15 minutes after start time
+      const [startHour, startMin] = startTime.split(':').map(Number)
+      const targetTime = `${String(startHour).padStart(2, '0')}:${String(startMin + 15).padStart(2, '0')}`
+      
+      if (!isTimeWithinWindow(targetTime, currentTime, 5)) continue
+
+      log(`[Project: ${project.project_name}] Checking for painters not checked in 15min after start`)
+
+      // Get users for this project
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, email, full_name, company_id')
+        .in('email', assignedEmails)
+
+      if (!users || users.length === 0) continue
+
+      const userIds = users.map(u => u.id)
+      const companyId = users[0]?.company_id
+
+      // Check who already checked in today
+      const { data: checkedIn } = await supabase
+        .from('check_in_records')
+        .select('user_id')
+        .eq('project_id', project.id)
+        .gte('check_in_time', `${today}T00:00:00`)
+
+      const checkedInUserIds = (checkedIn || []).map((c: any) => c.user_id)
+      const notCheckedInUsers = users.filter((u: any) => !checkedInUserIds.includes(u.id))
+
+      if (notCheckedInUsers.length === 0) {
+        log(`[Project: ${project.project_name}] All painters checked in, no late notification needed`)
+        continue
+      }
+
+      // Check if we already sent this notification today
+      const { data: existingNotif } = await supabase
+        .from('push_notification_log')
+        .select('id')
+        .eq('project_id', project.id)
+        .eq('notification_type', 'painter_not_checked_in')
+        .gte('sent_at', `${today}T00:00:00`)
+        .limit(1)
+
+      if (existingNotif && existingNotif.length > 0) {
+        log(`[Project: ${project.project_name}] Already sent painter_not_checked_in today, skipping`)
+        continue
+      }
+
+      // Get company admins
+      const { data: admins } = await supabase
+        .from('users')
+        .select('id, email, full_name')
+        .eq('company_id', companyId)
+        .eq('company_role', 'admin')
+        .eq('status', 'active')
+
+      if (!admins || admins.length === 0) {
+        log(`[Project: ${project.project_name}] No admins found to notify`)
+        continue
+      }
+
+      const adminIds = admins.map((a: any) => a.id)
+      const painterNames = notCheckedInUsers.map((u: any) => u.full_name || u.email).join(', ')
+
+      // Create in-app notifications for admins
+      for (const admin of admins) {
+        await supabase.from('notifications').insert({
+          user_id: admin.id,
+          recipient_email: admin.email,
+          company_id: companyId,
+          project_id: project.id,
+          type: 'painter_not_checked_in',
+          message: `${painterNames} ${notCheckedInUsers.length === 1 ? 'is' : 'zijn'} nog niet ingecheckt bij ${project.project_name} (15 min na starttijd)`,
+          link_to: `/Projecten?id=${project.id}`,
+          read: false
+        })
+      }
+
+      log(`[Project: ${project.project_name}] Created in-app notifications for ${admins.length} admins`)
+
+      // Get push subscriptions for admins
+      const { data: adminSubscriptions } = await supabase
+        .from('push_subscriptions')
+        .select('onesignal_player_id, user_id')
+        .in('user_id', adminIds)
+        .eq('is_active', true)
+
+      if (adminSubscriptions && adminSubscriptions.length > 0) {
+        const playerIds = adminSubscriptions.map((s: any) => s.onesignal_player_id)
+
+        const result = await sendPush(
+          playerIds,
+          '⚠️ Schilder niet ingecheckt',
+          `${painterNames} ${notCheckedInUsers.length === 1 ? 'is' : 'zijn'} nog niet ingecheckt bij ${project.project_name}`,
+          {
+            notification_type: 'painter_not_checked_in',
+            project_id: project.id,
+            url: `/Projecten?id=${project.id}`
+          }
+        )
+
+        // Log push notifications
+        for (const adminId of adminIds) {
+          await supabase.from('push_notification_log').insert({
+            user_id: adminId,
+            project_id: project.id,
+            notification_type: 'painter_not_checked_in',
+            title: '⚠️ Schilder niet ingecheckt',
+            message: `${painterNames} ${notCheckedInUsers.length === 1 ? 'is' : 'zijn'} nog niet ingecheckt bij ${project.project_name}`,
+            onesignal_response: result
+          })
+        }
+
+        log(`[Project: ${project.project_name}] Sent painter_not_checked_in push to ${playerIds.length} admins`)
+      }
+    }
+
+    // ===============================================
+    // 4. CHECK-OUT REMINDERS (at work_end_time)
     // ===============================================
     for (const project of projects) {
       const endTime = project.work_end_time?.slice(0, 5)

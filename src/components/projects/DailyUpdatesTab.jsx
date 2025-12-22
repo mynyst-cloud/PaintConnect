@@ -10,7 +10,7 @@ import { format, parseISO } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { AnimatePresence, motion } from 'framer-motion';
 import PhotoViewer from '@/components/projects/PhotoViewer';
-import { createDailyUpdateInteraction } from '@/api/functions';
+import { createDailyUpdateInteraction, notifyUpdateReply } from '@/api/functions';
 
 const getInitials = (name) => {
   if (!name) return '??';
@@ -83,6 +83,18 @@ const DailyUpdateCard = ({ update, currentUser, onInteractionChange }) => {
       });
 
       if (data?.success) {
+        // Notify the painter if the commenter is not the painter
+        if (update.painter_email && update.painter_email.toLowerCase() !== currentUser.email.toLowerCase()) {
+          notifyUpdateReply({
+            company_id: update.company_id,
+            project_id: update.project_id,
+            project_name: update.project_name,
+            replier_name: currentUser.full_name || currentUser.email,
+            reply_preview: commentText.trim(),
+            painter_email: update.painter_email
+          }).catch(err => console.warn('Update reply notification failed:', err));
+        }
+        
         setCommentText('');
         await loadInteractions();
         if (onInteractionChange) onInteractionChange();

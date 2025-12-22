@@ -213,31 +213,42 @@ serve(async (req) => {
           console.log('[processInboundInvoice] Using base64 content from webhook')
           pdfContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
         } 
-        // Try to fetch full email with attachments from Resend API
+        // Fetch attachments from Resend Inbound API (correct endpoint per Resend support)
         else if (emailData.email_id && RESEND_API_KEY) {
-          console.log('[processInboundInvoice] Fetching full email from Resend API...')
-          const emailResponse = await fetch(
-            `https://api.resend.com/emails/${emailData.email_id}`,
+          console.log('[processInboundInvoice] Fetching attachments from Resend Inbound API...')
+          
+          // Correct endpoint for inbound/receiving emails
+          const attachmentsResponse = await fetch(
+            `https://api.resend.com/emails/receiving/${emailData.email_id}/attachments`,
             {
               headers: { 'Authorization': `Bearer ${RESEND_API_KEY}` }
             }
           )
           
-          if (emailResponse.ok) {
-            const fullEmail = await emailResponse.json()
-            console.log('[processInboundInvoice] Full email response:', JSON.stringify(fullEmail).substring(0, 500))
+          if (attachmentsResponse.ok) {
+            const attachmentsData = await attachmentsResponse.json()
+            console.log('[processInboundInvoice] Attachments response:', JSON.stringify(attachmentsData).substring(0, 500))
             
-            // Find this attachment in the full email
-            const fullAttachment = fullEmail.attachments?.find((a: any) => 
+            // Find this attachment by ID or filename
+            const fullAttachment = attachmentsData?.data?.find((a: any) => 
+              a.id === attachment.id || a.filename === attachment.filename
+            ) || attachmentsData?.find?.((a: any) => 
               a.id === attachment.id || a.filename === attachment.filename
             )
             
             if (fullAttachment?.content) {
-              console.log('[processInboundInvoice] Found attachment content in full email')
+              console.log('[processInboundInvoice] Found attachment content!')
               pdfContent = Uint8Array.from(atob(fullAttachment.content), c => c.charCodeAt(0))
+            } else if (fullAttachment?.data) {
+              // Some APIs return data instead of content
+              console.log('[processInboundInvoice] Found attachment data!')
+              pdfContent = Uint8Array.from(atob(fullAttachment.data), c => c.charCodeAt(0))
+            } else {
+              console.log('[processInboundInvoice] Attachment found but no content field:', Object.keys(fullAttachment || {}))
             }
           } else {
-            console.log('[processInboundInvoice] Could not fetch full email:', emailResponse.status)
+            const errorText = await attachmentsResponse.text()
+            console.log('[processInboundInvoice] Could not fetch attachments:', attachmentsResponse.status, errorText)
           }
         }
         

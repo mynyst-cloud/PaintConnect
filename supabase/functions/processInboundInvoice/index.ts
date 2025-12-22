@@ -99,27 +99,34 @@ serve(async (req) => {
   )
 
   try {
-    const webhookData = await req.json()
+    const webhookPayload = await req.json()
+    
+    // Resend Inbound wraps email data in a 'data' object
+    // Structure: { type: "email.received", data: { to, from, subject, attachments, ... } }
+    const emailData = webhookPayload.data || webhookPayload
     
     console.log('[processInboundInvoice] Received webhook:', {
-      from: webhookData.from,
-      to: webhookData.to,
-      subject: webhookData.subject,
-      attachmentsCount: webhookData.attachments?.length || 0
+      type: webhookPayload.type,
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject,
+      attachmentsCount: emailData.attachments?.length || 0
     })
 
     // Extract recipient email (the inbound address)
-    const toEmail = Array.isArray(webhookData.to) 
-      ? webhookData.to[0]?.toLowerCase() 
-      : webhookData.to?.toLowerCase()
+    const toEmail = Array.isArray(emailData.to) 
+      ? emailData.to[0]?.toLowerCase() 
+      : emailData.to?.toLowerCase()
     
     if (!toEmail) {
-      console.error('[processInboundInvoice] No recipient email found')
+      console.error('[processInboundInvoice] No recipient email found in:', emailData)
       return new Response(
         JSON.stringify({ success: false, error: 'No recipient email' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
+
+    console.log('[processInboundInvoice] Looking for company with inbound email:', toEmail)
 
     // Find company by inbound email address
     const { data: company, error: companyError } = await supabase
@@ -131,21 +138,22 @@ serve(async (req) => {
     if (companyError || !company) {
       console.error('[processInboundInvoice] Company not found for email:', toEmail, companyError)
       return new Response(
-        JSON.stringify({ success: false, error: 'Company not found for this email address' }),
+        JSON.stringify({ success: false, error: 'Company not found for this email address', email: toEmail }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       )
     }
 
-    console.log('[processInboundInvoice] Found company:', company.name)
+    console.log('[processInboundInvoice] Found company:', company.name, company.id)
 
-    // Get sender info
-    const fromEmail = webhookData.from?.address || webhookData.from || 'unknown'
-    const fromName = webhookData.from?.name || fromEmail.split('@')[0]
-    const subject = webhookData.subject || 'Geen onderwerp'
+    // Get sender info - Resend uses string for 'from', not object
+    const fromEmail = typeof emailData.from === 'string' ? emailData.from : (emailData.from?.address || 'unknown')
+    const fromName = typeof emailData.from === 'string' ? emailData.from.split('@')[0] : (emailData.from?.name || 'unknown')
+    const subject = emailData.subject || 'Geen onderwerp'
 
-    // Check for PDF attachments
-    const attachments = webhookData.attachments || []
+    // Check for PDF attachments - Resend uses content_type, not contentType
+    const attachments = emailData.attachments || []
     const pdfAttachments = attachments.filter((att: any) => 
+      att.content_type === 'application/pdf' || 
       att.contentType === 'application/pdf' || 
       att.filename?.toLowerCase().endsWith('.pdf')
     )
@@ -164,7 +172,7 @@ serve(async (req) => {
           invoice_date: new Date().toISOString().split('T')[0],
           total_amount: 0,
           status: 'needs_manual_review',
-          notes: `Email ontvangen zonder PDF bijlage.\n\nOnderwerp: ${subject}\n\nInhoud:\n${webhookData.text || webhookData.html || 'Geen inhoud'}`,
+          notes: `Email ontvangen zonder PDF bijlage.\n\nOnderwerp: ${subject}\n\nInhoud:\n${emailData.text || emailData.html || 'Geen inhoud'}`,
           source: 'email_inbound',
           original_email_subject: subject,
           original_email_from: fromEmail
@@ -192,13 +200,39 @@ serve(async (req) => {
 
     // Process each PDF attachment
     const processedInvoices = []
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
     
     for (const attachment of pdfAttachments) {
       try {
-        console.log('[processInboundInvoice] Processing attachment:', attachment.filename)
+        console.log('[processInboundInvoice] Processing attachment:', attachment.filename, 'ID:', attachment.id)
         
-        // Decode base64 PDF content
-        const pdfContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
+        let pdfContent: Uint8Array
+        
+        // Check if content is included directly (base64) or needs to be fetched
+        if (attachment.content) {
+          // Content is included as base64
+          pdfContent = Uint8Array.from(atob(attachment.content), c => c.charCodeAt(0))
+        } else if (attachment.id && RESEND_API_KEY) {
+          // Fetch attachment content from Resend API
+          console.log('[processInboundInvoice] Fetching attachment from Resend API...')
+          const attachmentResponse = await fetch(
+            `https://api.resend.com/emails/${emailData.email_id}/attachments/${attachment.id}`,
+            {
+              headers: { 'Authorization': `Bearer ${RESEND_API_KEY}` }
+            }
+          )
+          
+          if (!attachmentResponse.ok) {
+            console.error('[processInboundInvoice] Failed to fetch attachment:', attachmentResponse.status)
+            throw new Error(`Failed to fetch attachment: ${attachmentResponse.status}`)
+          }
+          
+          const attachmentData = await attachmentResponse.arrayBuffer()
+          pdfContent = new Uint8Array(attachmentData)
+        } else {
+          console.error('[processInboundInvoice] No attachment content and no way to fetch it')
+          throw new Error('Attachment content not available')
+        }
         
         // Upload to Supabase Storage
         const fileName = `${company.id}/${Date.now()}_${attachment.filename}`

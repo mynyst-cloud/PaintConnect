@@ -106,7 +106,7 @@ export default function Analytics() {
       setShowUpgradeModal(true);
       modalShownRef.current = true;
     }
-  }, [featureLoading, currentUser?.id]); // Use ID instead of full object
+  }, [featureLoading, currentUser?.id || null]); // Use ID instead of full object, null for undefined
 
   // Super admins always have access - check this first
   const isSuperAdminUser = 

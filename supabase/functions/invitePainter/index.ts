@@ -116,7 +116,7 @@ function getInviteEmailHtml(params: {
               </table>
               
               <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">
-                Klik op de knop hierboven om direct uw account aan te maken en te starten.
+                Klik op de knop hierboven om uw account aan te maken met een wachtwoord.
               </p>
               
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 30px;">
@@ -295,38 +295,15 @@ serve(async (req) => {
     const normalizedEmail = email.toLowerCase().trim()
 
     // ============================================
-    // CREATE MAGIC LINK FOR DIRECT LOGIN
-    // This allows 1-click registration + login from the invite email
+    // BUILD DIRECT INVITE URL
+    // User must register with password on InviteAcceptance page
+    // NO magic link - enforces password creation for security
     // ============================================
-    const magicToken = crypto.randomUUID()
-    const magicExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days (same as invite)
+    const inviteUrl = `${APP_URL}/InviteAcceptance?token=${inviteToken}`
 
-    // The redirect after magic link verification goes to InviteAcceptance
-    const inviteAcceptanceUrl = `/InviteAcceptance?token=${inviteToken}`
-
-    const { error: magicInsertError } = await supabase
-      .from('magic_links')
-      .insert({
-        email: normalizedEmail,
-        token: magicToken,
-        expires_at: magicExpiresAt.toISOString(),
-        redirect_to: inviteAcceptanceUrl
-      })
-
-    if (magicInsertError) {
-      console.error('Insert magic link error:', magicInsertError)
-      // Continue anyway - we can fallback to the old flow
-    }
-
-    // Build the invite URL - now points to /auth/verify with magic token for 1-click login!
-    const inviteUrl = magicInsertError 
-      ? `${APP_URL}/InviteAcceptance?token=${inviteToken}` // Fallback to old flow
-      : `${APP_URL}/auth/verify?token=${magicToken}`       // New 1-click flow
-
-    console.log('Created invite with magic link:', { 
+    console.log('Created invite (password required):', { 
       email: normalizedEmail, 
       inviteToken: inviteToken.substring(0, 8), 
-      magicToken: magicToken.substring(0, 8),
       inviteUrl 
     })
 

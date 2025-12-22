@@ -2,16 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User } from '@/api/entities';
 import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserPlus, CheckCircle, AlertTriangle, Users, Mail } from 'lucide-react';
+import { UserPlus, CheckCircle, AlertTriangle, Users, Lock, Eye, EyeOff, Mail } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { ThemeProvider, useTheme } from '@/components/providers/ThemeProvider';
-import { getInviteDetailsByToken } from '@/api/functions';
-import { acceptInvitation } from '@/api/functions';
+import { getInviteDetailsByToken, acceptInvitation } from '@/api/functions';
 import { createPageUrl } from '@/components/utils';
 
 // Google Logo SVG
@@ -31,12 +30,20 @@ function InviteAcceptanceContent() {
     const navigate = useNavigate();
     const location = useLocation();
     const { resolvedTheme } = useTheme();
-    const [isLoading, setIsLoading] = useState(false);
+    
+    // States
+    const [isLoading, setIsLoading] = useState(true);
     const [inviteData, setInviteData] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
-    const [autoAcceptAttempted, setAutoAcceptAttempted] = useState(false);
+    
+    // Registration form state
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [registrationError, setRegistrationError] = useState('');
 
     const logoUrl = resolvedTheme === 'dark' ? logoDarkUrl : logoLightUrl;
     
@@ -44,221 +51,169 @@ function InviteAcceptanceContent() {
     const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
 
-    // #region agent log
-    console.log('[DEBUG HYP-A] InviteAcceptance loaded:', { 
-        fullUrl: window.location.href,
-        pathname: location.pathname,
-        search: location.search,
-        token: token ? token.substring(0, 8) + '...' : 'NO TOKEN',
-        hasToken: !!token
-    });
-    // #endregion
-
+    // Load invite data and check user
     useEffect(() => {
-        const loadInviteData = async () => {
-            // #region agent log
-            console.log('[DEBUG HYP-B] loadInviteData called with token:', token ? token.substring(0, 8) + '...' : 'NO TOKEN');
-            // #endregion
+        const initialize = async () => {
+            setIsLoading(true);
             
             if (!token) {
-                console.log('[DEBUG HYP-B] No token - setting error');
                 setError('Geen geldige uitnodigingstoken gevonden.');
+                setIsLoading(false);
                 return;
             }
 
             try {
+                // Load invite details
                 const { data } = await getInviteDetailsByToken({ token });
-                // #region agent log
-                console.log('[DEBUG HYP-B] getInviteDetailsByToken response:', { 
-                    success: data?.success, 
-                    hasInvite: !!data?.invite,
-                    error: data?.error,
-                    companyName: data?.invite?.company_name
-                });
-                // #endregion
                 
                 if (data && data.success) {
                     setInviteData(data.invite);
                 } else {
-                    setError(data.error || 'Uitnodiging niet gevonden of verlopen.');
+                    setError(data?.error || 'Uitnodiging niet gevonden of verlopen.');
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Check if user is already logged in
+                try {
+                    const user = await User.me();
+                    setCurrentUser(user);
+                } catch {
+                    // Not logged in - that's fine
+                    setCurrentUser(null);
                 }
             } catch (err) {
-                console.log('[DEBUG HYP-B] Error loading invite:', err);
+                console.error('Error loading invite:', err);
                 setError('Er is een fout opgetreden bij het laden van de uitnodiging.');
+            } finally {
+                setIsLoading(false);
             }
         };
 
-        const checkCurrentUser = async () => {
-            try {
-                const user = await User.me();
-                // #region agent log
-                console.log('[DEBUG HYP-C] User found:', { 
-                    id: user?.id?.substring(0, 8), 
-                    email: user?.email,
-                    companyId: user?.company_id
-                });
-                // #endregion
-                setCurrentUser(user);
-            } catch (err) {
-                // #region agent log
-                console.log('[DEBUG HYP-C] No user logged in:', err?.message);
-                // #endregion
-                setCurrentUser(null);
-            }
-        };
-
-        loadInviteData();
-        checkCurrentUser();
+        initialize();
     }, [token]);
 
-    // AUTO-ACCEPT: When user is logged in and invite is valid, automatically accept
-    useEffect(() => {
-        // #region agent log
-        console.log('[DEBUG HYP-D] Auto-accept useEffect triggered:', {
-            hasCurrentUser: !!currentUser,
-            hasInviteData: !!inviteData,
-            autoAcceptAttempted,
-            isLoading,
-            success,
-            hasError: !!error,
-            token: token ? token.substring(0, 8) + '...' : 'NO TOKEN'
-        });
-        // #endregion
-        
-        const autoAccept = async () => {
-            // Only auto-accept if:
-            // 1. User is logged in
-            // 2. Invite data is loaded
-            // 3. We haven't already tried
-            // 4. Not already in loading/success state
-            if (currentUser && inviteData && !autoAcceptAttempted && !isLoading && !success && !error) {
-                // #region agent log
-                console.log('[DEBUG HYP-D] AUTO-ACCEPT CONDITIONS MET! Calling acceptInvitation...');
-                console.log('[DEBUG HYP-D] User email:', currentUser?.email, 'Invite email:', inviteData?.email);
-                // #endregion
-                
-                setAutoAcceptAttempted(true);
-                setIsLoading(true);
+    // Handle registration with password
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        setRegistrationError('');
 
-                try {
-                    // #region agent log
-                    console.log('[DEBUG HYP-E] Calling acceptInvitation with token:', token);
-                    // #endregion
-                    
-                    const { data } = await acceptInvitation({ token });
-                    
-                    // #region agent log
-                    console.log('[DEBUG HYP-E] acceptInvitation response:', data);
-                    // #endregion
-                    
-                    if (data && data.success) {
-                        console.log('[AUTO-ACCEPT] Success! Redirecting to Dashboard...');
-                        setSuccess(true);
-                        setTimeout(() => {
-                            window.location.href = createPageUrl('Dashboard');
-                        }, 2000);
-                    } else {
-                        console.log('[AUTO-ACCEPT] Failed:', data?.error);
-                        setError(data.error || 'Er is een fout opgetreden bij het accepteren van de uitnodiging.');
-                    }
-                } catch (err) {
-                    // #region agent log
-                    console.error('[DEBUG HYP-E] acceptInvitation ERROR:', err);
-                    // #endregion
-                    setError('Er is een onverwachte fout opgetreden. Probeer het opnieuw.');
-                } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                // #region agent log
-                console.log('[DEBUG HYP-D] Auto-accept conditions NOT met, skipping');
-                // #endregion
-            }
-        };
-
-        autoAccept();
-    }, [currentUser, inviteData, autoAcceptAttempted, isLoading, success, error, token]);
-
-    const handleAcceptInvitation = async () => {
-        if (!currentUser) {
-            // User not logged in - should not happen as we show login buttons
+        // Validation
+        if (!password) {
+            setRegistrationError('Voer een wachtwoord in.');
+            return;
+        }
+        if (password.length < 8) {
+            setRegistrationError('Wachtwoord moet minimaal 8 tekens bevatten.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            setRegistrationError('Wachtwoorden komen niet overeen.');
             return;
         }
 
-        setIsLoading(true);
-        setError(null);
+        setIsRegistering(true);
 
         try {
-            const { data } = await acceptInvitation({ token });
-            if (data && data.success) {
-                setSuccess(true);
-                // BELANGRIJKE FIX: Na succesvolle acceptatie direct naar Dashboard zonder setupComplete parameter
-                // Dit voorkomt dat de uitgenodigde schilder naar bedrijfsregistratie wordt geleid
-                setTimeout(() => {
-                    window.location.href = createPageUrl('Dashboard'); // Hard redirect om user data te refreshen
-                }, 2000);
-            } else {
-                setError(data.error || 'Er is een fout opgetreden bij het accepteren van de uitnodiging.');
+            // Step 1: Create user with Supabase Auth (email + password)
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                email: inviteData.email,
+                password: password,
+                options: {
+                    data: {
+                        full_name: inviteData.full_name || inviteData.email.split('@')[0]
+                    }
+                }
+            });
+
+            if (signUpError) {
+                // Check if user already exists
+                if (signUpError.message.includes('already registered') || signUpError.message.includes('already exists')) {
+                    // Try to sign in instead
+                    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                        email: inviteData.email,
+                        password: password
+                    });
+
+                    if (signInError) {
+                        if (signInError.message.includes('Invalid login credentials')) {
+                            setRegistrationError('Dit e-mailadres is al geregistreerd. Log in met uw bestaande wachtwoord of gebruik "Wachtwoord vergeten".');
+                        } else {
+                            setRegistrationError(signInError.message);
+                        }
+                        setIsRegistering(false);
+                        return;
+                    }
+                } else {
+                    setRegistrationError(signUpError.message);
+                    setIsRegistering(false);
+                    return;
+                }
             }
+
+            // Step 2: Accept invitation to link user to company
+            const { data: acceptData } = await acceptInvitation({ token });
+
+            if (!acceptData?.success) {
+                setRegistrationError(acceptData?.error || 'Kon uitnodiging niet accepteren.');
+                setIsRegistering(false);
+                return;
+            }
+
+            // Step 3: Success!
+            setSuccess(true);
+            setTimeout(() => {
+                window.location.href = createPageUrl('Dashboard');
+            }, 2000);
+
         } catch (err) {
-            setError('Er is een onverwachte fout opgetreden. Probeer het opnieuw.');
+            console.error('Registration error:', err);
+            setRegistrationError('Er is een onverwachte fout opgetreden. Probeer het opnieuw.');
         } finally {
-            setIsLoading(false);
+            setIsRegistering(false);
         }
     };
 
-    // Handle Google login - redirects back to this page after auth
+    // Handle Google login
     const handleGoogleLogin = async () => {
-        setIsLoading(true);
         try {
             await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: window.location.href // Come back to this invite page
+                    redirectTo: window.location.href
                 }
             });
         } catch (error) {
             console.error('Google login error:', error);
-            setError('Google login mislukt. Probeer het opnieuw.');
-            setIsLoading(false);
+            setRegistrationError('Google login mislukt. Probeer het opnieuw.');
         }
     };
 
-    // Handle Magic Link login
-    const handleMagicLink = async () => {
-        // #region agent log
-        console.log('[DEBUG] handleMagicLink called, inviteData:', { email: inviteData?.email, hasInviteData: !!inviteData });
-        // #endregion
-        
-        if (!inviteData?.email) {
-            console.log('[DEBUG] No email in inviteData, returning early');
-            return;
-        }
-        
-        setIsLoading(true);
+    // Handle accepting invitation for logged-in users
+    const handleAcceptInvitation = async () => {
+        setIsRegistering(true);
+        setRegistrationError('');
+
         try {
-            console.log('[DEBUG] Calling sendMagicLink with email:', inviteData.email);
-            const { data, error } = await supabase.functions.invoke('sendMagicLink', {
-                body: {
-                    email: inviteData.email,
-                    redirectTo: window.location.pathname + window.location.search
-                }
-            });
-            console.log('[DEBUG] sendMagicLink response:', { data, error: error?.message });
+            const { data } = await acceptInvitation({ token });
             
-            if (error) throw error;
-            if (data?.error) throw new Error(data.error);
-            
-            setError(null);
-            alert(`Login link verstuurd naar ${inviteData.email}. Controleer uw inbox!`);
-        } catch (error) {
-            console.error('Magic link error:', error);
-            setError(error.message || 'Kon login link niet versturen.');
+            if (data && data.success) {
+                setSuccess(true);
+                setTimeout(() => {
+                    window.location.href = createPageUrl('Dashboard');
+                }, 2000);
+            } else {
+                setRegistrationError(data?.error || 'Er is een fout opgetreden bij het accepteren van de uitnodiging.');
+            }
+        } catch (err) {
+            console.error('Accept invitation error:', err);
+            setRegistrationError('Er is een onverwachte fout opgetreden.');
         } finally {
-            setIsLoading(false);
+            setIsRegistering(false);
         }
     };
 
+    // Success screen
     if (success) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
@@ -273,7 +228,7 @@ function InviteAcceptanceContent() {
                         </CardHeader>
                         <CardContent className="text-center space-y-4">
                             <p className="text-gray-600 dark:text-gray-300">
-                                U bent succesvol toegevoegd aan het team van <strong>{inviteData?.company_name}</strong>.
+                                Uw account is succesvol aangemaakt en u bent toegevoegd aan het team van <strong>{inviteData?.company_name}</strong>.
                             </p>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
                                 U wordt automatisch doorgestuurd naar uw dashboard...
@@ -288,7 +243,8 @@ function InviteAcceptanceContent() {
         );
     }
 
-    if (!inviteData && !error) {
+    // Loading screen
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
                 <LoadingSpinner size="lg" text="Uitnodiging laden..." />
@@ -296,6 +252,7 @@ function InviteAcceptanceContent() {
         );
     }
 
+    // Error screen
     if (error) {
         return (
             <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
@@ -326,6 +283,7 @@ function InviteAcceptanceContent() {
         );
     }
 
+    // Main registration form
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
@@ -335,63 +293,142 @@ function InviteAcceptanceContent() {
                         <div className="w-16 h-16 mx-auto bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center">
                             <Users className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                         </div>
-                        <CardTitle>Uitnodiging voor team</CardTitle>
+                        <CardTitle>Maak uw account aan</CardTitle>
+                        <CardDescription>
+                            U bent uitgenodigd voor het team van <strong className="text-emerald-600">{inviteData?.company_name}</strong>
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="text-center space-y-2">
-                            <p className="text-gray-600 dark:text-gray-300">
-                                U bent uitgenodigd om deel uit te maken van het team van:
+                    <CardContent className="space-y-6">
+                        {/* Company info */}
+                        <div className="p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800 text-center">
+                            <h3 className="font-semibold text-emerald-800 dark:text-emerald-200">
+                                {inviteData?.company_name}
+                            </h3>
+                            <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                                Rol: {inviteData?.company_role === 'admin' ? 'Administrator' : 'Schilder'}
                             </p>
-                            <div className="p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                                <h3 className="font-semibold text-emerald-800 dark:text-emerald-200 text-lg">
-                                    {inviteData?.company_name}
-                                </h3>
-                                <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                                    Rol: Schilder
-                                </p>
-                            </div>
                         </div>
 
-                        {/* Show auto-accepting state when logged in and processing */}
-                        {currentUser && isLoading && (
+                        {/* If user is already logged in, just show accept button */}
+                        {currentUser ? (
                             <div className="space-y-4">
-                                <div className="p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800 text-center">
-                                    <LoadingSpinner size="default" />
-                                    <p className="text-emerald-800 dark:text-emerald-200 font-medium mt-2">
-                                        Uitnodiging wordt geaccepteerd...
-                                    </p>
-                                    <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                                        Even geduld, u wordt zo doorgestuurd.
+                                <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                                        Ingelogd als: <strong>{currentUser.full_name || currentUser.email}</strong>
                                     </p>
                                 </div>
-                            </div>
-                        )}
-
-                        {!currentUser ? (
-                            <div className="space-y-4">
-                                <Alert>
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertDescription>
-                                        Log in om deze uitnodiging te accepteren.
-                                    </AlertDescription>
-                                </Alert>
                                 
-                                {/* Google Login */}
+                                {registrationError && (
+                                    <Alert variant="destructive">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertDescription>{registrationError}</AlertDescription>
+                                    </Alert>
+                                )}
+
                                 <Button 
-                                    onClick={handleGoogleLogin}
-                                    disabled={isLoading}
-                                    variant="outline"
-                                    className="w-full flex items-center justify-center gap-3 py-6"
+                                    onClick={handleAcceptInvitation}
+                                    disabled={isRegistering}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 py-6"
                                 >
-                                    {isLoading ? (
-                                        <InlineSpinner />
+                                    {isRegistering ? (
+                                        <>
+                                            <InlineSpinner className="mr-2" />
+                                            Accepteren...
+                                        </>
                                     ) : (
                                         <>
-                                            <GoogleLogo />
-                                            <span>Doorgaan met Google</span>
+                                            <UserPlus className="w-5 h-5 mr-2" />
+                                            Uitnodiging Accepteren
                                         </>
                                     )}
                                 </Button>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Registration form */}
+                                <form onSubmit={handleRegister} className="space-y-4">
+                                    {/* Email (readonly) */}
+                                    <div>
+                                        <Label className="flex items-center gap-2">
+                                            <Mail className="w-4 h-4" />
+                                            E-mailadres
+                                        </Label>
+                                        <Input
+                                            type="email"
+                                            value={inviteData?.email || ''}
+                                            disabled
+                                            className="bg-gray-100 dark:bg-gray-700 mt-1"
+                                        />
+                                    </div>
+
+                                    {/* Password */}
+                                    <div>
+                                        <Label className="flex items-center gap-2">
+                                            <Lock className="w-4 h-4" />
+                                            Wachtwoord *
+                                        </Label>
+                                        <div className="relative mt-1">
+                                            <Input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                placeholder="Minimaal 8 tekens"
+                                                className="pr-10"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                            >
+                                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Confirm Password */}
+                                    <div>
+                                        <Label className="flex items-center gap-2">
+                                            <Lock className="w-4 h-4" />
+                                            Bevestig wachtwoord *
+                                        </Label>
+                                        <Input
+                                            type={showPassword ? 'text' : 'password'}
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="Herhaal wachtwoord"
+                                            className="mt-1"
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Error message */}
+                                    {registrationError && (
+                                        <Alert variant="destructive">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            <AlertDescription>{registrationError}</AlertDescription>
+                                        </Alert>
+                                    )}
+
+                                    {/* Submit button */}
+                                    <Button 
+                                        type="submit"
+                                        disabled={isRegistering}
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 py-6"
+                                    >
+                                        {isRegistering ? (
+                                            <>
+                                                <InlineSpinner className="mr-2" />
+                                                Account aanmaken...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <UserPlus className="w-5 h-5 mr-2" />
+                                                Account Aanmaken & Uitnodiging Accepteren
+                                            </>
+                                        )}
+                                    </Button>
+                                </form>
 
                                 {/* Divider */}
                                 <div className="relative">
@@ -403,51 +440,22 @@ function InviteAcceptanceContent() {
                                     </div>
                                 </div>
 
-                                {/* Magic Link */}
+                                {/* Google Login Alternative */}
                                 <Button 
-                                    onClick={handleMagicLink}
-                                    disabled={isLoading || !inviteData?.email}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700 py-6"
+                                    type="button"
+                                    onClick={handleGoogleLogin}
+                                    disabled={isRegistering}
+                                    variant="outline"
+                                    className="w-full flex items-center justify-center gap-3 py-6"
                                 >
-                                    {isLoading ? (
-                                        <InlineSpinner />
-                                    ) : (
-                                        <>
-                                            <Mail className="w-5 h-5 mr-2" />
-                                            <span>Login link naar {inviteData?.email}</span>
-                                        </>
-                                    )}
+                                    <GoogleLogo />
+                                    <span>Doorgaan met Google</span>
                                 </Button>
 
                                 <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                                    We sturen een login link naar het e-mailadres waarop u bent uitgenodigd.
+                                    Door te registreren gaat u akkoord met onze voorwaarden en privacybeleid.
                                 </p>
-                            </div>
-                        ) : !isLoading && (
-                            <div className="space-y-3">
-                                <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-                                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                                        Ingelogd als: <strong>{currentUser.full_name || currentUser.email}</strong>
-                                    </p>
-                                </div>
-                                <Button 
-                                    onClick={handleAcceptInvitation}
-                                    disabled={isLoading}
-                                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <InlineSpinner className="mr-2" />
-                                            Accepteren...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <UserPlus className="w-4 h-4 mr-2" />
-                                            Uitnodiging Accepteren
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
+                            </>
                         )}
                     </CardContent>
                 </Card>

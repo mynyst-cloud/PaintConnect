@@ -72,7 +72,7 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
     return (availablePainters || []).filter(p =>
       p &&
       p.status === 'active' &&
-      (p.is_painter === true || p.company_role === 'admin' || p.company_role === 'owner')
+      (p.is_painter === true || p.company_role === 'admin')
     );
   }, [availablePainters]);
 

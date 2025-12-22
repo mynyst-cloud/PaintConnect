@@ -142,7 +142,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
   const [resendingInviteId, setResendingInviteId] = useState(null);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
 
-  const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner';
+  const isAdmin = user?.company_role === 'admin' || user?.role === 'admin';
   const fileInputRef = useRef(null);
   const { theme, setTheme } = useTheme();
   const activeCompanyId = impersonatedCompanyId || user?.current_company_id || user?.company_id;

@@ -126,21 +126,55 @@ serve(async (req) => {
     }
 
     // Create or update user record in users table
-    const { error: userRecordError } = await supabase
+    // First try to update existing record
+    const { data: existingUserRecord, error: fetchError } = await supabase
       .from('users')
-      .upsert({
-        id: userId,
-        email: email.toLowerCase(),
-        full_name: full_name || invite.full_name || email.split('@')[0],
-        company_id: invite.company_id,
-        company_role: invite.company_role || 'painter',
-        status: 'active',
-        has_password: true
-      }, { onConflict: 'id' })
+      .select('id')
+      .eq('id', userId)
+      .single()
 
-    if (userRecordError) {
-      console.error('[registerPainter] User record error:', userRecordError)
-      // Continue anyway - the auth user exists
+    console.log('[registerPainter] Existing user record check:', { 
+      exists: !!existingUserRecord, 
+      error: fetchError?.message 
+    })
+
+    if (existingUserRecord) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          company_id: invite.company_id,
+          company_role: invite.company_role || 'painter',
+          status: 'active',
+          has_password: true,
+          full_name: full_name || invite.full_name || email.split('@')[0]
+        })
+        .eq('id', userId)
+
+      if (updateError) {
+        console.error('[registerPainter] User update error:', updateError)
+      } else {
+        console.log('[registerPainter] User record updated with company_id:', invite.company_id)
+      }
+    } else {
+      // Insert new record
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: userId,
+          email: email.toLowerCase(),
+          full_name: full_name || invite.full_name || email.split('@')[0],
+          company_id: invite.company_id,
+          company_role: invite.company_role || 'painter',
+          status: 'active',
+          has_password: true
+        })
+
+      if (insertError) {
+        console.error('[registerPainter] User insert error:', insertError)
+      } else {
+        console.log('[registerPainter] User record inserted with company_id:', invite.company_id)
+      }
     }
 
     // Mark invite as accepted

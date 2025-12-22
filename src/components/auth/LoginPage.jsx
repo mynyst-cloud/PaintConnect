@@ -10,7 +10,11 @@ import {
   ArrowRight,
   Sparkles,
   Building2,
-  Mail
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle
 } from 'lucide-react';
 import { InlineSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -56,8 +60,12 @@ const stats = [
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -95,6 +103,38 @@ export default function LoginPage() {
     } catch (error) {
       console.error('Magic link error:', error);
       alert(error.message || 'Er is een fout opgetreden. Probeer het opnieuw.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async (e) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    
+    setIsLoading(true);
+    setLoginError('');
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password
+      });
+      
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          setLoginError('Ongeldige e-mail of wachtwoord.');
+        } else {
+          setLoginError(error.message);
+        }
+        return;
+      }
+      
+      // Success - redirect will happen automatically via auth state change
+      window.location.href = '/Dashboard';
+    } catch (error) {
+      console.error('Password login error:', error);
+      setLoginError('Er is een fout opgetreden. Probeer het opnieuw.');
     } finally {
       setIsLoading(false);
     }
@@ -229,15 +269,91 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Email Form Toggle */}
-                {!showEmailForm ? (
-                  <button
-                    onClick={() => setShowEmailForm(true)}
-                    className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gray-100 rounded-xl font-semibold text-gray-700 hover:bg-gray-200 transition-all duration-200"
-                  >
-                    <Mail className="w-5 h-5" />
-                    <span>Doorgaan met e-mail</span>
-                  </button>
+                {/* Email/Password Login */}
+                {!showEmailForm && !showPasswordLogin ? (
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setShowPasswordLogin(true)}
+                      className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-all duration-200"
+                    >
+                      <Lock className="w-5 h-5" />
+                      <span>Inloggen met e-mail & wachtwoord</span>
+                    </button>
+                    <button
+                      onClick={() => setShowEmailForm(true)}
+                      className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gray-100 rounded-xl font-semibold text-gray-700 hover:bg-gray-200 transition-all duration-200"
+                    >
+                      <Mail className="w-5 h-5" />
+                      <span>Login link via e-mail</span>
+                    </button>
+                  </div>
+                ) : showPasswordLogin ? (
+                  <form onSubmit={handlePasswordLogin} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        E-mailadres
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => { setEmail(e.target.value); setLoginError(''); }}
+                        placeholder="naam@bedrijf.nl"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Wachtwoord
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => { setPassword(e.target.value); setLoginError(''); }}
+                          placeholder="Uw wachtwoord"
+                          className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {loginError && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span>{loginError}</span>
+                      </div>
+                    )}
+                    
+                    <button
+                      type="submit"
+                      disabled={isLoading || !email || !password}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25"
+                    >
+                      {isLoading ? (
+                        <InlineSpinner />
+                      ) : (
+                        <>
+                          <span>Inloggen</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowPasswordLogin(false); setLoginError(''); }}
+                      className="w-full text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Terug naar andere opties
+                    </button>
+                  </form>
                 ) : (
                   <form onSubmit={handleMagicLink} className="space-y-4">
                     <div>

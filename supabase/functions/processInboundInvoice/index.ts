@@ -387,13 +387,14 @@ async function performOCR(pdfContent: Uint8Array): Promise<string> {
 }
 
 /**
- * Extract structured invoice data using Claude API
+ * Extract structured invoice data using Google Gemini API (FREE!)
  */
 async function extractInvoiceData(ocrText: string): Promise<any> {
-  const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
+  // Use same API key as Vision - Gemini is part of Google AI
+  const GOOGLE_API_KEY = Deno.env.get('GOOGLE_VISION_API_KEY')
   
-  if (!ANTHROPIC_API_KEY) {
-    console.warn('[extractInvoiceData] ANTHROPIC_API_KEY not configured, returning basic structure')
+  if (!GOOGLE_API_KEY) {
+    console.warn('[extractInvoiceData] GOOGLE_API_KEY not configured, returning basic structure')
     return {
       supplier: { name: 'Onbekend' },
       invoice: { document_type: 'onbekend' },
@@ -401,45 +402,56 @@ async function extractInvoiceData(ocrText: string): Promise<any> {
       payment: {},
       line_items: [],
       confidence: 0.3,
-      notes: 'Claude API niet geconfigureerd - handmatige invoer vereist'
+      notes: 'Google Gemini API niet geconfigureerd - handmatige invoer vereist'
     }
   }
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 4096,
-        messages: [{
-          role: 'user',
-          content: INVOICE_EXTRACTION_PROMPT + ocrText
-        }]
-      })
-    })
+    // Use Gemini 1.5 Flash (free tier, fast, good for structured extraction)
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: INVOICE_EXTRACTION_PROMPT + ocrText
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 4096,
+            responseMimeType: "application/json"
+          }
+        })
+      }
+    )
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[extractInvoiceData] Claude API error:', errorText)
-      throw new Error(`Claude API error: ${response.status}`)
+      console.error('[extractInvoiceData] Gemini API error:', errorText)
+      throw new Error(`Gemini API error: ${response.status}`)
     }
 
     const result = await response.json()
-    const content = result.content?.[0]?.text || '{}'
+    const content = result.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
     
-    // Parse JSON from response (Claude might wrap it in markdown code blocks)
+    console.log('[extractInvoiceData] Gemini response length:', content.length)
+    
+    // Parse JSON from response (Gemini might wrap it in markdown code blocks)
     let jsonContent = content
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/)
     if (jsonMatch) {
       jsonContent = jsonMatch[1]
     }
+    // Also try without json tag
+    const plainMatch = content.match(/```\s*([\s\S]*?)\s*```/)
+    if (!jsonMatch && plainMatch) {
+      jsonContent = plainMatch[1]
+    }
     
-    return JSON.parse(jsonContent)
+    return JSON.parse(jsonContent.trim())
     
   } catch (error) {
     console.error('[extractInvoiceData] Error:', error)

@@ -16,8 +16,8 @@ supabase secrets set GOOGLE_MAPS_API_KEY=<your-google-maps-api-key>
 supabase secrets set RESEND_API_KEY=<your-resend-api-key>
 supabase secrets set ONESIGNAL_APP_ID=<your-onesignal-app-id>
 supabase secrets set ONESIGNAL_REST_API_KEY=<your-onesignal-rest-api-key>
-supabase secrets set GOOGLE_VISION_API_KEY=<your-google-vision-api-key>
-supabase secrets set ANTHROPIC_API_KEY=<your-anthropic-claude-api-key>
+supabase secrets set GOOGLE_VISION_API_KEY=<your-google-api-key>
+# Note: GOOGLE_VISION_API_KEY is also used for Gemini AI (free tier)
 ```
 
 Of via het Dashboard: Project Settings → Edge Functions → Secrets

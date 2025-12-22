@@ -295,9 +295,9 @@ export const CheckInRecord = new Entity('check_in_records')
 export const functions = {
   async invoke(functionName, params) {
     try {
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: params
-      })
+      // params can be { body: {...} } or just the body directly
+      // Pass params directly to avoid double-wrapping
+      const { data, error } = await supabase.functions.invoke(functionName, params)
       
       if (error) throw error
       return { data }

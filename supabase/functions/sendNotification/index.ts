@@ -114,23 +114,22 @@ Deno.serve(async (req: Request) => {
           .eq('email', email.toLowerCase())
           .single()
 
-        const notificationData = {
+        // Only include columns that exist in the notifications table
+        const notificationData: Record<string, any> = {
           recipient_email: email.toLowerCase(),
           user_id: userData?.id || null,
           company_id: company_id || null,
           type,
           title: notificationTitle,
-          message,
-          link_to: notificationLink,
+          message: `${message}${notificationLink ? ` [Link: ${notificationLink}]` : ''}`,
           project_id: project_id || null,
-          data: {
-            ...data,
-            triggering_user_name
-          },
           read: false,
-          created_date: new Date().toISOString(),
-          created_at: new Date().toISOString()
+          is_read: false,
+          created_date: new Date().toISOString()
         }
+        
+        // Log the notification data for debugging
+        console.log('[sendNotification] Creating notification:', { email, type, title: notificationTitle })
 
         const { error } = await supabase
           .from('notifications')

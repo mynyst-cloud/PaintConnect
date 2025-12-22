@@ -721,7 +721,7 @@ export const handleProjectUpdate = async (params) => {
       company_id: params.company_id,
       painter_name: params.painter_name,
       painter_email: params.painter_email,
-      work_notes: params.work_notes,
+      update_text: params.work_notes, // DB column is update_text, not work_notes
       photo_urls: params.photo_urls || [],
       work_date: params.work_date || new Date().toISOString().split('T')[0],
       visible_to_client: params.visible_to_client ?? true

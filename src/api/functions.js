@@ -125,8 +125,17 @@ export const sendNotification = async ({
   send_push = false,
   triggering_user_name
 }) => {
+  // #region agent log
+  console.log('[DEBUG-SEND] sendNotification called with:', { 
+    recipient_emails, 
+    type, 
+    message: message?.substring(0, 50),
+    send_push,
+    company_id
+  })
+  // #endregion
   try {
-    return await supabaseFunctions.invoke('sendNotification', {
+    const result = await supabaseFunctions.invoke('sendNotification', {
       body: {
         recipient_emails,
         type,
@@ -141,6 +150,10 @@ export const sendNotification = async ({
         triggering_user_name
       }
     })
+    // #region agent log
+    console.log('[DEBUG-SEND] sendNotification result:', { data: result.data, error: result.error })
+    // #endregion
+    return result
   } catch (error) {
     console.error('sendNotification error:', error)
     return { data: null, error }

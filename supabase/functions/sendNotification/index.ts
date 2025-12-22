@@ -60,6 +60,9 @@ Deno.serve(async (req: Request) => {
   try {
     const payload: NotificationPayload = await req.json()
     
+    // Debug log the incoming payload
+    console.log('[sendNotification] Received payload:', JSON.stringify(payload))
+    
     const {
       recipient_emails,
       type = 'generic',
@@ -74,7 +77,15 @@ Deno.serve(async (req: Request) => {
       triggering_user_name
     } = payload
 
+    console.log('[sendNotification] Extracted:', { 
+      recipient_emails_count: recipient_emails?.length, 
+      type, 
+      has_message: !!message,
+      send_push 
+    })
+
     if (!recipient_emails || !Array.isArray(recipient_emails) || recipient_emails.length === 0) {
+      console.log('[sendNotification] ERROR: recipient_emails missing or empty')
       return new Response(
         JSON.stringify({ error: 'recipient_emails array is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -82,6 +93,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!message) {
+      console.log('[sendNotification] ERROR: message is missing')
       return new Response(
         JSON.stringify({ error: 'message is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

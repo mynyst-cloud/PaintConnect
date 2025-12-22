@@ -145,20 +145,39 @@ export function FeatureAccessProvider({ children }) {
 
   // Check if a feature is enabled
   const hasFeature = useCallback((featureKey) => {
+    console.log('[useFeatureAccess] hasFeature called:', {
+      featureKey,
+      userId: currentUser?.id,
+      userEmail: currentUser?.email,
+      companyRole: currentUser?.company_role,
+      enabledFeaturesKeys: Object.keys(enabledFeatures),
+      stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n')
+    });
+    
     // Super admin always has access - check by email first
-    if (isSuperAdminByEmail(currentUser?.email)) return true;
+    if (isSuperAdminByEmail(currentUser?.email)) {
+      console.log('[useFeatureAccess] Super admin by email, returning true');
+      return true;
+    }
     
     // Super admin check via role
-    if (currentUser?.company_role === USER_ROLES.SUPER_ADMIN) return true;
+    if (currentUser?.company_role === USER_ROLES.SUPER_ADMIN) {
+      console.log('[useFeatureAccess] Super admin by role, returning true');
+      return true;
+    }
     
     // If no features loaded yet, use config-based check
     if (Object.keys(enabledFeatures).length === 0) {
       const userRole = currentUser?.company_role || USER_ROLES.PAINTER;
       const tierId = company?.subscription_tier || SUBSCRIPTION_TIERS.STARTER_TRIAL;
-      return checkFeatureAccess(userRole, tierId, featureKey);
+      const result = checkFeatureAccess(userRole, tierId, featureKey);
+      console.log('[useFeatureAccess] Features not loaded, using config check:', result);
+      return result;
     }
     
-    return enabledFeatures[featureKey] === true;
+    const result = enabledFeatures[featureKey] === true;
+    console.log('[useFeatureAccess] Feature check result:', result);
+    return result;
   }, [currentUser, company, enabledFeatures]);
 
   // Check if within limit

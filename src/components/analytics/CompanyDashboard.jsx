@@ -53,21 +53,32 @@ export default function CompanyDashboard() {
   // FIXED: Load data directly in useEffect to prevent infinite loops
   // selectedPeriod is not used in data loading, so we only load once on mount
   useEffect(() => {
+    console.log('[CompanyDashboard] useEffect triggered - loading data', {
+      stackTrace: new Error().stack?.split('\n').slice(1, 5).join('\n')
+    });
+    
     let mounted = true;
     
     const loadData = async () => {
+      console.log('[CompanyDashboard] loadData called, mounted:', mounted);
       setIsLoading(true);
       try {
         const user = await User.me();
-        if (!mounted) return;
+        console.log('[CompanyDashboard] User loaded:', user?.id, 'mounted:', mounted);
+        if (!mounted) {
+          console.log('[CompanyDashboard] Component unmounted, aborting');
+          return;
+        }
         
         setCurrentUser(user);
         
         if (!user.company_id) {
+          console.log('[CompanyDashboard] No company_id, stopping');
           setIsLoading(false);
           return;
         }
 
+        console.log('[CompanyDashboard] Loading data for company:', user.company_id);
         const [projectsData, materialsData, damagesData, paintersData, timeEntriesData] = await Promise.all([
           Project.filter({ 
             company_id: user.company_id,
@@ -79,12 +90,21 @@ export default function CompanyDashboard() {
           TimeEntry.filter({ company_id: user.company_id }).catch(() => [])
         ]);
 
-        if (!mounted) return;
+        if (!mounted) {
+          console.log('[CompanyDashboard] Component unmounted during data load, aborting');
+          return;
+        }
 
         // Extra safeguard: filter again client-side to exclude dummy projects
         const realProjects = (projectsData || []).filter(p => p && p.is_dummy !== true);
         
-        console.log('[Analytics] Loaded projects:', realProjects.length, 'real projects (excluding dummies)');
+        console.log('[CompanyDashboard] Data loaded:', {
+          projects: realProjects.length,
+          materials: materialsData?.length || 0,
+          damages: damagesData?.length || 0,
+          painters: paintersData?.length || 0,
+          timeEntries: timeEntriesData?.length || 0
+        });
 
         setProjects(realProjects);
         setMaterialRequests(materialsData || []);
@@ -92,12 +112,13 @@ export default function CompanyDashboard() {
         setPainters(paintersData || []);
         setTimeEntries(timeEntriesData || []);
       } catch (error) {
-        console.error('Error loading analytics data:', error);
+        console.error('[CompanyDashboard] Error loading analytics data:', error);
         if (mounted) {
           setIsLoading(false);
         }
       } finally {
         if (mounted) {
+          console.log('[CompanyDashboard] Setting isLoading to false');
           setIsLoading(false);
         }
       }
@@ -106,6 +127,7 @@ export default function CompanyDashboard() {
     loadData();
 
     return () => {
+      console.log('[CompanyDashboard] Cleanup function called');
       mounted = false;
     };
   }, []); // Only run once on mount

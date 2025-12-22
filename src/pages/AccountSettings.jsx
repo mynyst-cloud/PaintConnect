@@ -139,6 +139,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
   const [isSettingPassword, setIsSettingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
   const [showPassword, setShowPassword] = useState(false);
+  const [resendingInviteId, setResendingInviteId] = useState(null);
 
   const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner';
   const fileInputRef = useRef(null);
@@ -387,6 +388,7 @@ export default function AccountSettings({ impersonatedCompanyId }) {
 
   // Resend invite
   const handleResendInvite = async (pendingInvite) => {
+    setResendingInviteId(pendingInvite.id);
     try {
       setMessage({ type: '', text: '' });
       const result = await invitePainter({
@@ -402,11 +404,13 @@ export default function AccountSettings({ impersonatedCompanyId }) {
       if (result.error) {
         setMessage({ type: 'error', text: result.error });
       } else {
-        setMessage({ type: 'success', text: 'Uitnodiging opnieuw verstuurd!' });
+        setMessage({ type: 'success', text: `Uitnodiging opnieuw verstuurd naar ${pendingInvite.email}!` });
       }
     } catch (err) {
       console.error('Resend invite error:', err);
       setMessage({ type: 'error', text: 'Kon uitnodiging niet opnieuw versturen.' });
+    } finally {
+      setResendingInviteId(null);
     }
   };
 
@@ -962,11 +966,20 @@ export default function AccountSettings({ impersonatedCompanyId }) {
                             </Badge>
                             {member.type === 'pending' && (
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
                                 onClick={() => handleResendInvite(member)}
+                                disabled={resendingInviteId === member.id}
+                                className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:bg-emerald-900/20"
                               >
-                                <Mail className="w-4 h-4" />
+                                {resendingInviteId === member.id ? (
+                                  <InlineSpinner />
+                                ) : (
+                                  <>
+                                    <Send className="w-4 h-4 mr-1" />
+                                    <span className="hidden sm:inline">Opnieuw versturen</span>
+                                  </>
+                                )}
                               </Button>
                             )}
                             {member.id !== user?.id && (

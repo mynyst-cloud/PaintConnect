@@ -708,8 +708,45 @@ export const finalizeProject = async ({ project_id }) => {
 }
 
 export const handleProjectUpdate = async (params) => {
-  console.log('handleProjectUpdate:', params)
-  return { success: true }
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:entry',message:'handleProjectUpdate called',data:{params},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
+  
+  try {
+    const { DailyUpdate } = await import('@/lib/supabase')
+    
+    // Create the daily update record
+    const updateData = {
+      project_id: params.project_id,
+      company_id: params.company_id,
+      painter_name: params.painter_name,
+      painter_email: params.painter_email,
+      work_notes: params.work_notes,
+      photo_urls: params.photo_urls || [],
+      work_date: params.work_date || new Date().toISOString().split('T')[0],
+      visible_to_client: params.visible_to_client ?? true,
+      check_in_time: new Date().toISOString(),
+      check_out_time: new Date().toISOString()
+    }
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:beforeCreate',message:'About to create DailyUpdate',data:{updateData},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    
+    const createdUpdate = await DailyUpdate.create(updateData)
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:afterCreate',message:'DailyUpdate created',data:{createdUpdate},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    
+    return { data: { success: true, update: createdUpdate }, error: null }
+  } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:error',message:'Error creating update',data:{error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    console.error('handleProjectUpdate error:', error)
+    return { data: null, error }
+  }
 }
 
 export const getProjectStats = async ({ project_ids }) => {

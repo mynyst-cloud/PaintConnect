@@ -207,6 +207,9 @@ function LayoutContent({ children }) {
 
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Get feature access hook
+  const { hasFeature: checkFeature } = useFeatureAccess();
   const { resolvedTheme } = useTheme();
   const paintConnectLogoUrl = resolvedTheme === 'dark' ? paintConnectLogoDarkUrl : paintConnectLogoLightUrl;
 
@@ -628,8 +631,19 @@ function LayoutContent({ children }) {
   
   // Helper to check if user has access to a feature
   const hasAccessToFeature = (item) => {
-    // Super admin always has access - check first!
+    // Super admin always has access - check first! (multiple checks to be safe)
     if (isSuperAdmin) return true;
+    if (isSuperAdminByEmail(user?.email)) return true;
+    if (userCompanyRole === USER_ROLES.SUPER_ADMIN) return true;
+    if (user?.role === 'super_admin') return true;
+    
+    // Check feature access via useFeatureAccess hook if available
+    if (item.feature && checkFeature && typeof checkFeature === 'function') {
+      // Super admin check is already in hasFeature, but double-check
+      if (isSuperAdminByEmail(user?.email)) return true;
+      if (userCompanyRole === USER_ROLES.SUPER_ADMIN) return true;
+      return checkFeature(item.feature);
+    }
     
     // Check role requirement (but not for super admins)
     if (item.requiredRole === 'admin' && isPainter && !isSuperAdmin) return false;
@@ -643,8 +657,13 @@ function LayoutContent({ children }) {
   
   // Handle restricted feature click - show upgrade modal
   const handleRestrictedClick = (item) => {
+    // Never show upgrade modal for super admins
+    if (isSuperAdmin || isSuperAdminByEmail(user?.email) || userCompanyRole === USER_ROLES.SUPER_ADMIN) {
+      return; // Just navigate normally, don't show modal
+    }
+    
     const featureName = item.name;
-    const requiredTier = item.requiredTier || 'professional';
+    const requiredTier = item.requiredTier || 'starter'; // TeamActiviteit requires starter, not professional
     setUpgradeModalProps({ featureName, requiredTier });
     setShowUpgradeModal(true);
   };

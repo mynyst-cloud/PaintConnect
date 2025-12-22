@@ -273,6 +273,7 @@ serve(async (req) => {
                 console.log('[DEBUG-HYP-E] Found matching attachment:', {
                   hasContent: !!fullAttachment.content,
                   hasData: !!fullAttachment.data,
+                  hasDownloadUrl: !!fullAttachment.download_url,
                   keys: Object.keys(fullAttachment)
                 })
               }
@@ -284,8 +285,22 @@ serve(async (req) => {
                 // Some APIs return data instead of content
                 console.log('[processInboundInvoice] Found attachment data!')
                 pdfContent = Uint8Array.from(atob(fullAttachment.data), c => c.charCodeAt(0))
+              } else if (fullAttachment?.download_url) {
+                // Resend Inbound returns a signed download_url for attachments
+                console.log('[processInboundInvoice] Fetching PDF from download_url...')
+                console.log('[DEBUG-FIX] download_url:', fullAttachment.download_url.substring(0, 100))
+                
+                const pdfResponse = await fetch(fullAttachment.download_url)
+                
+                if (pdfResponse.ok) {
+                  const pdfBuffer = await pdfResponse.arrayBuffer()
+                  pdfContent = new Uint8Array(pdfBuffer)
+                  console.log('[DEBUG-FIX] PDF downloaded successfully, size:', pdfContent.length, 'bytes')
+                } else {
+                  console.error('[DEBUG-FIX] Failed to download PDF:', pdfResponse.status, await pdfResponse.text())
+                }
               } else {
-                console.log('[DEBUG-HYP-E] Attachment found but no content field:', Object.keys(fullAttachment || {}))
+                console.log('[DEBUG-HYP-E] Attachment found but no content/download_url:', Object.keys(fullAttachment || {}))
               }
             } else {
               const errorText = await attachmentsResponse.text()

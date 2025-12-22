@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,16 +50,16 @@ export default function CompanyDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    loadAnalyticsData();
-  }, [selectedPeriod]);
-
-  const loadAnalyticsData = async () => {
+  // FIXED: Use useCallback to prevent infinite loops
+  const loadAnalyticsData = useCallback(async () => {
     try {
       const user = await User.me();
       setCurrentUser(user);
       
-      if (!user.company_id) return;
+      if (!user.company_id) {
+        setIsLoading(false);
+        return;
+      }
 
       const [projectsData, materialsData, damagesData, paintersData, timeEntriesData] = await Promise.all([
         Project.filter({ 
@@ -87,7 +87,11 @@ export default function CompanyDashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // Empty deps - only load once on mount
+
+  useEffect(() => {
+    loadAnalyticsData();
+  }, [loadAnalyticsData, selectedPeriod]);
 
   const calculateKPIs = () => {
     const totalProjects = projects.length;
@@ -394,11 +398,11 @@ export default function CompanyDashboard() {
                 <CardTitle>Project Status Verdeling</CardTitle>
               </CardHeader>
               <CardContent>
-                {generateProjectStatusData().length > 0 ? (
+                {projectStatusData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={generateProjectStatusData()}
+                        data={projectStatusData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -407,7 +411,7 @@ export default function CompanyDashboard() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {generateProjectStatusData().map((entry, index) => (
+                        {projectStatusData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -446,7 +450,7 @@ export default function CompanyDashboard() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={generateMonthlyProjectData()}>
+                <BarChart data={monthlyProjectData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
@@ -464,7 +468,7 @@ export default function CompanyDashboard() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={generateMaterialCostsData()}>
+                <BarChart data={materialCostsData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />

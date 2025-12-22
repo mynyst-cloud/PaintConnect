@@ -261,6 +261,13 @@ export default function CompanyDashboard() {
       }));
   };
 
+  // Memoize calculations to prevent unnecessary re-renders and infinite loops
+  const kpis = useMemo(() => calculateKPIs(), [projects, materialRequests, damages, painters, timeEntries]);
+  const performanceMetrics = useMemo(() => generatePerformanceMetrics(), [projects, damages, materialRequests]);
+  const projectStatusData = useMemo(() => generateProjectStatusData(), [projects]);
+  const monthlyProjectData = useMemo(() => generateMonthlyProjectData(), [projects]);
+  const materialCostsData = useMemo(() => generateMaterialCostsData(), [materialRequests]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -268,9 +275,6 @@ export default function CompanyDashboard() {
       </div>
     );
   }
-
-  const kpis = calculateKPIs();
-  const performanceMetrics = generatePerformanceMetrics();
 
   return (
     <div className="space-y-6">

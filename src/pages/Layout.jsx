@@ -932,10 +932,11 @@ function LayoutContent({ children }) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-gray-600 dark:text-gray-300 relative h-10 w-10"
+              className="relative h-10 w-10 hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={handleTeamChatClick}
+              title="Team Chat"
             >
-              <MessageCircle className={`h-5 w-5 ${unreadMessages > 0 ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+              <MessageCircle className={`h-5 w-5 ${unreadMessages > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`} />
               {unreadMessages > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white shadow-lg">
                   {unreadMessages > 9 ? '9+' : unreadMessages}

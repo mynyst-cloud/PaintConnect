@@ -53,19 +53,6 @@ export default function TeamActivityFeed({ isCompactIcon = false }) {
   const [debugInfo, setDebugInfo] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(new Date()); // NIEUW: lastRefresh state
 
-  // NIEUW: Auto-refresh timer - alleen wanneer sidebar open is
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const refreshInterval = setInterval(() => {
-      console.log('[TeamActivityFeed] Auto-refreshing sidebar data');
-      loadCheckIns();
-      setLastRefresh(new Date());
-    }, 60000); // Elke 60 seconden
-
-    return () => clearInterval(refreshInterval);
-  }, [isOpen]);
-
   const loadCheckIns = async () => {
     setIsLoading(true);
     setError(null);
@@ -96,12 +83,26 @@ export default function TeamActivityFeed({ isCompactIcon = false }) {
     }
   };
 
+  // Load check-ins when sheet opens
   useEffect(() => {
     if (isOpen) {
       console.log('[TeamActivityFeed] Sheet opened, loading check-ins');
       loadCheckIns();
     }
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-refresh timer - alleen wanneer sidebar open is
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const refreshInterval = setInterval(() => {
+      console.log('[TeamActivityFeed] Auto-refreshing sidebar data');
+      loadCheckIns();
+      setLastRefresh(new Date());
+    }, 60000); // Elke 60 seconden
+
+    return () => clearInterval(refreshInterval);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // New renderCheckInCard function
   const renderCheckInCard = (checkIn, isCompleted = false) => (

@@ -19,22 +19,20 @@ export default function CheckOutButton({ currentUser, onCheckOutSuccess }) {
 
   useEffect(() => {
     checkActiveCheckIn();
-    
-    // Update duration every minute
-    const interval = setInterval(() => {
-      if (activeCheckIn) {
-        updateDuration();
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser?.id]); // Use ID to prevent unnecessary re-runs
 
   useEffect(() => {
     if (activeCheckIn) {
       updateDuration();
+      
+      // Update duration every minute
+      const interval = setInterval(() => {
+        updateDuration();
+      }, 60000);
+
+      return () => clearInterval(interval);
     }
-  }, [activeCheckIn]);
+  }, [activeCheckIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateDuration = () => {
     if (!activeCheckIn) return;

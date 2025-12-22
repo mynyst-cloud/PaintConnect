@@ -136,6 +136,7 @@ export default function TeamActiviteit() {
     }
   };
 
+  // FIXED: Load data directly in useEffect to prevent infinite loops
   const loadTeamActivity = useCallback(async (user = currentUser, comp = company, page = null) => {
     if (!user || !comp) {
       console.log('[TeamActiviteit] Missing user or company data, skipping load');
@@ -186,19 +187,21 @@ export default function TeamActiviteit() {
     }
   }, [filters, currentUser, company]);
 
-  // Load data when filters or user/company change
+  // FIXED: Load data when filters or user/company change - remove loadTeamActivity from deps to prevent loop
   useEffect(() => {
     if (currentUser && company) {
       loadTeamActivity(currentUser, company, 1);
     }
-  }, [filters, currentUser, company, loadTeamActivity]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, currentUser?.id, company?.id]); // Use IDs instead of full objects to prevent unnecessary re-renders
   
   // Handle pagination changes separately
   useEffect(() => {
     if (currentUser && company && pagination.page > 1) {
       loadTeamActivity(currentUser, company, pagination.page);
     }
-  }, [pagination.page]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagination.page]);
 
   // Role check - show modal for painters (must be before any conditional returns!)
   useEffect(() => {
@@ -361,7 +364,7 @@ export default function TeamActiviteit() {
       setShowEditModal(false);
       setEditingRecord(null);
       setEditFormData({ check_in_time: '', check_out_time: '', notes: '', reason: '' });
-      loadTeamActivity();
+      loadTeamActivity(currentUser, company);
     } catch (error) {
       console.error('[TeamActiviteit] Update error:', error);
       toast.error('Bijwerken mislukt: ' + error.message);
@@ -390,7 +393,7 @@ export default function TeamActiviteit() {
       setShowDeleteModal(false);
       setDeletingRecord(null);
       setDeleteReason('');
-      loadTeamActivity();
+      loadTeamActivity(currentUser, company);
     } catch (error) {
       console.error('[TeamActiviteit] Delete error:', error);
       toast.error('Verwijderen mislukt: ' + error.message);
@@ -511,7 +514,7 @@ export default function TeamActiviteit() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => loadTeamActivity()}
+              onClick={() => loadTeamActivity(currentUser, company)}
               disabled={isLoading}
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />

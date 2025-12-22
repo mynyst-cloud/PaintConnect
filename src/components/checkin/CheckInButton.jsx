@@ -20,8 +20,10 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
   const [activeCheckIn, setActiveCheckIn] = useState(null);
 
   useEffect(() => {
-    checkActiveCheckIn();
-  }, [currentUser]);
+    if (currentUser?.id) {
+      checkActiveCheckIn();
+    }
+  }, [currentUser?.id]); // Use ID to prevent unnecessary re-runs
 
   const checkActiveCheckIn = async () => {
     try {

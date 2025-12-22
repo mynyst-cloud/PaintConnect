@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { User } from '@/api/entities';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import CompanyDashboard from '../components/analytics/CompanyDashboard';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorBoundary from '@/components/ui/ErrorBoundary';
 import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
+import { isSuperAdminByEmail } from '@/config/roles';
 import UpgradeModal from '@/components/ui/UpgradeModal';
 
 export default function Analytics() {
@@ -22,6 +23,7 @@ export default function Analytics() {
   const [isLoading, setIsLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { hasFeature, isLoading: featureLoading, isSuperAdmin } = useFeatureAccess();
+  const modalShownRef = useRef(false);
 
   useEffect(() => {
     loadUser();
@@ -44,13 +46,38 @@ export default function Analytics() {
 
   // Permission check - Analytics is only for Professional+ subscriptions
   // Show modal on first render if no access, then redirect
-  React.useEffect(() => {
-    if (!featureLoading && !hasFeature('page_analytics')) {
-      setShowUpgradeModal(true);
+  // FIXED: Use ref to prevent infinite loop, check feature value not function
+  useEffect(() => {
+    if (modalShownRef.current) return;
+    if (featureLoading) return;
+    
+    // Super admins always have access
+    const isSuperAdminUser = 
+      (isSuperAdmin && isSuperAdmin()) || 
+      (currentUser?.email && isSuperAdminByEmail(currentUser.email)) ||
+      currentUser?.company_role === 'super_admin';
+    
+    if (isSuperAdminUser) {
+      setShowUpgradeModal(false);
+      return;
     }
-  }, [featureLoading, hasFeature]);
+    
+    // Check feature access
+    const hasAnalyticsAccess = hasFeature('page_analytics');
+    if (!hasAnalyticsAccess) {
+      setShowUpgradeModal(true);
+      modalShownRef.current = true;
+    }
+  }, [featureLoading, currentUser, isSuperAdmin]); // Removed hasFeature from dependencies
 
-  if (!hasFeature('page_analytics')) {
+  // Super admins always have access - check this first
+  const isSuperAdminUser = 
+    (isSuperAdmin && isSuperAdmin()) || 
+    (currentUser?.email && isSuperAdminByEmail(currentUser.email)) ||
+    currentUser?.company_role === 'super_admin';
+  
+  // Only block if not super admin and no feature access
+  if (!isSuperAdminUser && !hasFeature('page_analytics')) {
     return (
       <>
         <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">

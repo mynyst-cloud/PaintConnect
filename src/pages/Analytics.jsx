@@ -86,7 +86,12 @@ export default function Analytics() {
     currentUser?.company_role === 'super_admin';
   
   // Only block if not super admin and no feature access
-  if (!isSuperAdminUser && !hasFeature('page_analytics')) {
+  // FIXED: Safe check for hasFeature to prevent infinite loops
+  const hasAnalyticsAccess = hasFeature && typeof hasFeature === 'function' 
+    ? hasFeature('page_analytics') 
+    : false;
+  
+  if (!isSuperAdminUser && !hasAnalyticsAccess) {
     return (
       <>
         <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">

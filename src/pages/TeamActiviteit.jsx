@@ -203,9 +203,13 @@ export default function TeamActiviteit() {
   useEffect(() => {
     // Never show for super admins or if user already dismissed it
     if (modalDismissedRef.current) return;
-    if (isSuperAdmin && isSuperAdmin()) return;
     
-    if (!featureLoading && isPainter()) {
+    // Check super admin status first
+    const isSuperAdminUser = isSuperAdmin && isSuperAdmin();
+    if (isSuperAdminUser) return;
+    
+    // Only show modal for painters (not admins or super admins)
+    if (!featureLoading && isPainter && isPainter()) {
       setShowAccessModal(true);
     }
   }, [featureLoading, isPainter, isSuperAdmin]);
@@ -415,7 +419,11 @@ export default function TeamActiviteit() {
     );
   }
 
-  if (isPainter()) {
+  // Super admins always have access - check this first
+  const isSuperAdminUser = isSuperAdmin && isSuperAdmin();
+  
+  // Only block painters, not super admins
+  if (!isSuperAdminUser && isPainter && isPainter()) {
     return (
       <>
         <div className="p-4 sm:p-6 bg-gray-50 dark:bg-slate-950 min-h-screen">

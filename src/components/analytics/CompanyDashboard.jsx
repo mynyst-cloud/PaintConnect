@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -50,51 +50,64 @@ export default function CompanyDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [currentUser, setCurrentUser] = useState(null);
 
-  // FIXED: Use useCallback to prevent infinite loops
+  // FIXED: Load data directly in useEffect to prevent infinite loops
   // selectedPeriod is not used in data loading, so we only load once on mount
-  const loadAnalyticsData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const user = await User.me();
-      setCurrentUser(user);
-      
-      if (!user.company_id) {
-        setIsLoading(false);
-        return;
-      }
-
-      const [projectsData, materialsData, damagesData, paintersData, timeEntriesData] = await Promise.all([
-        Project.filter({ 
-          company_id: user.company_id,
-          is_dummy: { $ne: true } // Exclude dummy projects from the initial fetch
-        }),
-        MaterialRequest.filter({ company_id: user.company_id }),
-        Damage.filter({ company_id: user.company_id }),
-        User.filter({ company_id: user.company_id, is_painter: true }),
-        TimeEntry.filter({ company_id: user.company_id }).catch(() => [])
-      ]);
-
-      // Extra safeguard: filter again client-side to exclude dummy projects
-      const realProjects = (projectsData || []).filter(p => p && p.is_dummy !== true);
-      
-      console.log('[Analytics] Loaded projects:', realProjects.length, 'real projects (excluding dummies)');
-
-      setProjects(realProjects);
-      setMaterialRequests(materialsData || []);
-      setDamages(damagesData || []);
-      setPainters(paintersData || []);
-      setTimeEntries(timeEntriesData || []);
-    } catch (error) {
-      console.error('Error loading analytics data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []); // Empty deps - only load once on mount
-
-  // FIXED: Only load data once on mount, selectedPeriod is for filtering/display only
   useEffect(() => {
-    loadAnalyticsData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let mounted = true;
+    
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const user = await User.me();
+        if (!mounted) return;
+        
+        setCurrentUser(user);
+        
+        if (!user.company_id) {
+          setIsLoading(false);
+          return;
+        }
+
+        const [projectsData, materialsData, damagesData, paintersData, timeEntriesData] = await Promise.all([
+          Project.filter({ 
+            company_id: user.company_id,
+            is_dummy: { $ne: true } // Exclude dummy projects from the initial fetch
+          }),
+          MaterialRequest.filter({ company_id: user.company_id }),
+          Damage.filter({ company_id: user.company_id }),
+          User.filter({ company_id: user.company_id, is_painter: true }),
+          TimeEntry.filter({ company_id: user.company_id }).catch(() => [])
+        ]);
+
+        if (!mounted) return;
+
+        // Extra safeguard: filter again client-side to exclude dummy projects
+        const realProjects = (projectsData || []).filter(p => p && p.is_dummy !== true);
+        
+        console.log('[Analytics] Loaded projects:', realProjects.length, 'real projects (excluding dummies)');
+
+        setProjects(realProjects);
+        setMaterialRequests(materialsData || []);
+        setDamages(damagesData || []);
+        setPainters(paintersData || []);
+        setTimeEntries(timeEntriesData || []);
+      } catch (error) {
+        console.error('Error loading analytics data:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      mounted = false;
+    };
   }, []); // Only run once on mount
 
   const calculateKPIs = () => {

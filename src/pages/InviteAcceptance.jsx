@@ -115,52 +115,50 @@ function InviteAcceptanceContent() {
         setIsRegistering(true);
 
         try {
-            // Step 1: Create user with Supabase Auth (email + password)
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                email: inviteData.email,
-                password: password,
-                options: {
-                    data: {
-                        full_name: inviteData.full_name || inviteData.email.split('@')[0]
-                    }
+            console.log('[InviteAcceptance] Starting registration for:', inviteData.email);
+            
+            // Step 1: Call registerPainter Edge Function
+            // This uses admin API to create user without email confirmation
+            const { data: registerData, error: registerError } = await supabase.functions.invoke('registerPainter', {
+                body: {
+                    email: inviteData.email,
+                    password: password,
+                    full_name: inviteData.full_name || inviteData.email.split('@')[0],
+                    invite_token: token
                 }
             });
 
-            if (signUpError) {
-                // Check if user already exists
-                if (signUpError.message.includes('already registered') || signUpError.message.includes('already exists')) {
-                    // Try to sign in instead
-                    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                        email: inviteData.email,
-                        password: password
-                    });
+            console.log('[InviteAcceptance] registerPainter result:', registerData);
 
-                    if (signInError) {
-                        if (signInError.message.includes('Invalid login credentials')) {
-                            setRegistrationError('Dit e-mailadres is al geregistreerd. Log in met uw bestaande wachtwoord of gebruik "Wachtwoord vergeten".');
-                        } else {
-                            setRegistrationError(signInError.message);
-                        }
-                        setIsRegistering(false);
-                        return;
-                    }
-                } else {
-                    setRegistrationError(signUpError.message);
-                    setIsRegistering(false);
-                    return;
-                }
+            if (registerError) {
+                console.error('[InviteAcceptance] registerPainter error:', registerError);
+                setRegistrationError(registerError.message || 'Registratie mislukt. Probeer het opnieuw.');
+                setIsRegistering(false);
+                return;
             }
 
-            // Step 2: Accept invitation to link user to company
-            const { data: acceptData } = await acceptInvitation({ token });
+            if (!registerData?.success) {
+                setRegistrationError(registerData?.error || 'Registratie mislukt. Probeer het opnieuw.');
+                setIsRegistering(false);
+                return;
+            }
 
-            if (!acceptData?.success) {
-                setRegistrationError(acceptData?.error || 'Kon uitnodiging niet accepteren.');
+            // Step 2: Sign in with the new password
+            console.log('[InviteAcceptance] Signing in with new password...');
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: inviteData.email,
+                password: password
+            });
+
+            if (signInError) {
+                console.error('[InviteAcceptance] signIn error:', signInError);
+                setRegistrationError('Account aangemaakt maar inloggen mislukt. Probeer in te loggen op de login pagina.');
                 setIsRegistering(false);
                 return;
             }
 
             // Step 3: Success!
+            console.log('[InviteAcceptance] Registration complete! Redirecting...');
             setSuccess(true);
             setTimeout(() => {
                 window.location.href = createPageUrl('Dashboard');

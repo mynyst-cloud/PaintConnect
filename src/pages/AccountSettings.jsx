@@ -155,8 +155,21 @@ export default function AccountSettings({ impersonatedCompanyId }) {
       
       // Check if user logged in with Google OAuth
       const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      // Debug: Log auth user structure
+      console.log('[AccountSettings] Auth user data:', {
+        provider: authUser?.app_metadata?.provider,
+        providers: authUser?.app_metadata?.providers,
+        identities: authUser?.identities?.map(id => ({ provider: id.provider, identity_id: id.identity_id })),
+        email: authUser?.email
+      });
+      
+      // Check multiple ways user could have logged in with Google
       const isGoogle = authUser?.app_metadata?.provider === 'google' || 
+                       authUser?.app_metadata?.providers?.includes('google') ||
                        authUser?.identities?.some(id => id.provider === 'google');
+      
+      console.log('[AccountSettings] isGoogleUser:', isGoogle);
       setIsGoogleUser(isGoogle);
       
       const nameParts = (userData.full_name || '').trim().split(/\s+/);

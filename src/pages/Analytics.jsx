@@ -19,30 +19,51 @@ import { isSuperAdminByEmail } from '@/config/roles';
 import UpgradeModal from '@/components/ui/UpgradeModal';
 
 export default function Analytics() {
+  console.log('[Analytics] Component rendering - START');
+  
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  
+  console.log('[Analytics] About to call useFeatureAccess hook');
   const { hasFeature, isLoading: featureLoading, isSuperAdmin } = useFeatureAccess();
+  console.log('[Analytics] useFeatureAccess hook completed', {
+    hasFeatureType: typeof hasFeature,
+    featureLoading,
+    isSuperAdminType: typeof isSuperAdmin
+  });
+  
   const modalShownRef = useRef(false);
 
   useEffect(() => {
+    console.log('[Analytics] Initial useEffect - calling loadUser');
     loadUser();
   }, []);
 
   const loadUser = async () => {
+    console.log('[Analytics] loadUser called');
     try {
+      console.log('[Analytics] Calling User.me()...');
       const user = await User.me();
+      console.log('[Analytics] User.me() completed', { userId: user?.id, email: user?.email });
       setCurrentUser(user);
+      console.log('[Analytics] currentUser state updated');
     } catch (error) {
-      console.error('Error loading user:', error);
+      console.error('[Analytics] Error loading user:', error);
     } finally {
+      console.log('[Analytics] Setting isLoading to false');
       setIsLoading(false);
     }
   };
 
+  console.log('[Analytics] Render check - isLoading:', isLoading, 'featureLoading:', featureLoading);
+  
   if (isLoading || featureLoading) {
+    console.log('[Analytics] Showing loading spinner');
     return <LoadingSpinner overlay text="Analytics laden..." />;
   }
+  
+  console.log('[Analytics] Past loading check, rendering main content');
 
   // Permission check - Analytics is only for Professional+ subscriptions
   // Show modal on first render if no access, then redirect

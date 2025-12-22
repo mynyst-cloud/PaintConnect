@@ -41,6 +41,8 @@ import { motion } from 'framer-motion';
 const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
 
 export default function CompanyDashboard() {
+  console.log('[CompanyDashboard] Component rendering - START');
+  
   const [projects, setProjects] = useState([]);
   const [materialRequests, setMaterialRequests] = useState([]);
   const [damages, setDamages] = useState([]);
@@ -49,6 +51,8 @@ export default function CompanyDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('monthly');
   const [currentUser, setCurrentUser] = useState(null);
+  
+  console.log('[CompanyDashboard] State initialized, isLoading:', isLoading);
 
   // FIXED: Load data directly in useEffect to prevent infinite loops
   // selectedPeriod is not used in data loading, so we only load once on mount

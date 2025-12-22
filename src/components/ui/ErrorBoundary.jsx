@@ -34,7 +34,20 @@ class ErrorBoundary extends React.Component {
       props: this.props || {}
     };
     
-    console.error('🚨 ErrorBoundary Details:', errorDetails);
+    // Force console.error to show immediately
+    console.error('🚨 ErrorBoundary Caught Error 🚨');
+    console.error('Error ID:', errorId);
+    console.error('Error Message:', error?.message);
+    console.error('Error Name:', error?.name);
+    console.error('Error Stack:', error?.stack);
+    console.error('Component Stack:', errorInfo?.componentStack);
+    console.error('Full Error Details:', errorDetails);
+    
+    // Also try to log to window for debugging
+    if (typeof window !== 'undefined') {
+      window.lastErrorBoundaryError = errorDetails;
+      console.error('Error saved to window.lastErrorBoundaryError');
+    }
     
     this.setState({
       error,

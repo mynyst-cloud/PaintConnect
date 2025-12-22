@@ -41,11 +41,14 @@ import CheckInButton from '@/components/checkin/CheckInButton';
 import CheckOutButton from '@/components/checkin/CheckOutButton';
 import TeamActivityFeed from '@/components/checkin/TeamActivityFeed';
 import PushNotificationPrompt from '@/components/notifications/PushNotificationPrompt';
+import { useTeamChat } from '@/contexts/TeamChatContext';
 
 
-export default function Dashboard({ impersonatedCompanyId, onOpenTeamChat, unreadMessages }) {
+export default function Dashboard() {
+  // Get TeamChat props from context instead of props
+  const { onOpenTeamChat, unreadMessages, impersonatedCompanyId } = useTeamChat();
   // #region agent log
-  console.log('[DEBUG-HYP-A] Dashboard props:', { hasOnOpenTeamChat: !!onOpenTeamChat, typeOfOnOpenTeamChat: typeof onOpenTeamChat, unreadMessages, impersonatedCompanyId });
+  console.log('[DEBUG-HYP-A] Dashboard context:', { hasOnOpenTeamChat: !!onOpenTeamChat, typeOfOnOpenTeamChat: typeof onOpenTeamChat, unreadMessages, impersonatedCompanyId });
   // #endregion
   const location = useLocation();
   const navigate = useNavigate();

@@ -26,6 +26,7 @@ import PWAInstallPrompt from '@/components/ui/PWAInstallPrompt';
 import { usePWA } from '@/components/utils/usePWA';
 import TeamChatSidebar from '@/components/chat/TeamChatSidebar';
 import AISupportWidget from '@/components/support/AISupportWidget';
+import { TeamChatProvider } from '@/contexts/TeamChatContext';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useFeatureAccess, TrialBanner } from '@/hooks/useFeatureAccess';
 import { USER_ROLES, isSuperAdminByEmail } from '@/config/roles';
@@ -992,9 +993,11 @@ function LayoutContent({ children }) {
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 md:p-4 lg:p-4 bg-gray-50 dark:bg-gray-900">
           {/* #region agent log */}
-          {(()=>{console.log('[DEBUG-HYP-B] Layout passing props:', { hasHandleTeamChatClick: !!handleTeamChatClick, childrenType: children?.type?.name || 'unknown', unreadMessages });return null;})()}
+          {(()=>{console.log('[DEBUG-HYP-B] Layout passing props via Context:', { hasHandleTeamChatClick: !!handleTeamChatClick, unreadMessages, impersonatedCompanyId });return null;})()}
           {/* #endregion */}
-          {React.cloneElement(children, { impersonatedCompanyId, onOpenTeamChat: handleTeamChatClick, unreadMessages })}
+          <TeamChatProvider value={{ onOpenTeamChat: handleTeamChatClick, unreadMessages, impersonatedCompanyId }}>
+            {children}
+          </TeamChatProvider>
         </main>
 
         <footer className="relative md:sticky md:bottom-0 bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">

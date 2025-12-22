@@ -247,6 +247,14 @@ export default function AccountSettings({ impersonatedCompanyId }) {
       try {
         const userData = await User.me();
         setUser(userData);
+        
+        // Check if user logged in with Google OAuth
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const isGoogle = authUser?.app_metadata?.provider === 'google' || 
+                         authUser?.app_metadata?.providers?.includes('google') ||
+                         authUser?.identities?.some(id => id.provider === 'google');
+        setIsGoogleUser(isGoogle);
+        
         const nameParts = (userData.full_name || '').trim().split(/\s+/);
         setUserFormData({
           first_name: nameParts[0] || '',

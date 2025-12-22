@@ -13,6 +13,9 @@ const paintConnectIconUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1
 
 // Ping sound for new messages (base64 encoded short ping)
 const playPingSound = () => {
+  // #region agent log
+  console.log('[DEBUG-HYP-B] playPingSound called');
+  // #endregion
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -29,8 +32,11 @@ const playPingSound = () => {
     
     oscillator.start(audioContext.currentTime);
     oscillator.stop(audioContext.currentTime + 0.3);
+    // #region agent log
+    console.log('[DEBUG-HYP-B] Ping sound played successfully');
+    // #endregion
   } catch (error) {
-    console.warn('Could not play ping sound:', error);
+    console.warn('[DEBUG-HYP-B] Could not play ping sound:', error);
   }
 };
 
@@ -62,9 +68,25 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
       );
       const reversedMessages = (chatMessages || []).reverse();
       
+      // #region agent log
+      console.log('[DEBUG-HYP-A] loadMessages:', { 
+        isFirstLoad: isFirstLoadRef.current, 
+        prevCount: previousMessageCountRef.current, 
+        newCount: reversedMessages.length,
+        currentUserEmail: currentUser?.email
+      });
+      // #endregion
+      
       // Play ping sound if new messages arrived (not on first load, not own messages)
       if (!isFirstLoadRef.current && reversedMessages.length > previousMessageCountRef.current) {
         const newestMessage = reversedMessages[reversedMessages.length - 1];
+        // #region agent log
+        console.log('[DEBUG-HYP-D] New message detected:', { 
+          newestSender: newestMessage?.sender_email, 
+          currentUser: currentUser?.email,
+          shouldPlaySound: newestMessage?.sender_email !== currentUser?.email 
+        });
+        // #endregion
         // Only play sound if the newest message is not from the current user
         if (newestMessage && newestMessage.sender_email !== currentUser.email) {
           playPingSound();
@@ -145,10 +167,17 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
       // Send notification to other team members (fire and forget)
       User.filter({ company_id: companyId, status: 'active' })
         .then(teamMembers => {
+          // #region agent log
+          console.log('[DEBUG-HYP-C] Team members found:', { count: teamMembers?.length, members: teamMembers?.map(u => u.email) });
+          // #endregion
           if (teamMembers && teamMembers.length > 0) {
             const recipientEmails = teamMembers
               .map(u => u.email)
               .filter(email => email && email.toLowerCase() !== currentUser.email.toLowerCase());
+            
+            // #region agent log
+            console.log('[DEBUG-HYP-C] Recipient emails after filter:', { recipientEmails, senderEmail: currentUser.email });
+            // #endregion
             
             if (recipientEmails.length > 0) {
               notifyTeamChatMessage({
@@ -157,11 +186,19 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
                 message_preview: newMessage.trim(),
                 recipient_emails: recipientEmails,
                 sender_email: currentUser.email
-              }).catch(err => console.warn('Chat notification failed:', err));
+              }).then(result => {
+                // #region agent log
+                console.log('[DEBUG-HYP-C] notifyTeamChatMessage result:', result);
+                // #endregion
+              }).catch(err => console.warn('[DEBUG-HYP-C] Chat notification failed:', err));
+            } else {
+              // #region agent log
+              console.log('[DEBUG-HYP-C] No recipients after filtering sender');
+              // #endregion
             }
           }
         })
-        .catch(err => console.warn('Failed to fetch team members for notification:', err));
+        .catch(err => console.warn('[DEBUG-HYP-C] Failed to fetch team members for notification:', err));
       
       setNewMessage('');
       setSelectedProject('all');

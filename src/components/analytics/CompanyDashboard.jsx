@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -265,13 +265,6 @@ export default function CompanyDashboard() {
       }));
   };
 
-  // Memoize calculations to prevent unnecessary re-renders and infinite loops
-  const kpis = useMemo(() => calculateKPIs(), [projects, materialRequests, damages, painters, timeEntries]);
-  const performanceMetrics = useMemo(() => generatePerformanceMetrics(), [projects, damages, materialRequests]);
-  const projectStatusData = useMemo(() => generateProjectStatusData(), [projects]);
-  const monthlyProjectData = useMemo(() => generateMonthlyProjectData(), [projects]);
-  const materialCostsData = useMemo(() => generateMaterialCostsData(), [materialRequests]);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -279,6 +272,13 @@ export default function CompanyDashboard() {
       </div>
     );
   }
+
+  // Calculate data during render (simple calculations, no need for memoization)
+  const kpis = calculateKPIs();
+  const performanceMetrics = generatePerformanceMetrics();
+  const projectStatusData = generateProjectStatusData();
+  const monthlyProjectData = generateMonthlyProjectData();
+  const materialCostsData = generateMaterialCostsData();
 
   return (
     <div className="space-y-6">

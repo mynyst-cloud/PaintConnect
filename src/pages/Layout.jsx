@@ -927,14 +927,33 @@ function LayoutContent({ children }) {
 
           <div className="hidden lg:flex items-center gap-4">
             <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{formattedDate}</p>
-            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-              {user?.full_name?.charAt(0) || 'U'}
-            </div>
+            
+            {/* Team Chat Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-gray-600 dark:text-gray-300 relative h-10 w-10"
+              onClick={handleTeamChatClick}
+            >
+              <MessageCircle className={`h-5 w-5 ${unreadMessages > 0 ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-white shadow-lg">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </span>
+              )}
+            </Button>
+            
+            {/* Notifications */}
             <NotificationDropdown
               notifications={notifications}
               unreadCount={unreadNotifications}
               onMarkAsRead={handleMarkAsRead}
               onRefresh={() => loadNotifications()} />
+            
+            {/* User Avatar */}
+            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+              {user?.full_name?.charAt(0) || 'U'}
+            </div>
           </div>
 
           <div className="lg:hidden flex items-center gap-2">

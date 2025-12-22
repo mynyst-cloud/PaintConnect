@@ -32,6 +32,7 @@ import {
   Lock
 } from 'lucide-react';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { isSuperAdminByEmail } from '@/config/roles';
 import UpgradeModal from '@/components/ui/UpgradeModal';
 import { format, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -204,15 +205,31 @@ export default function TeamActiviteit() {
     // Never show for super admins or if user already dismissed it
     if (modalDismissedRef.current) return;
     
-    // Check super admin status first
+    // Wait for feature loading to complete
+    if (featureLoading) return;
+    
+    // Check super admin status first - multiple checks to be safe
     const isSuperAdminUser = isSuperAdmin && isSuperAdmin();
-    if (isSuperAdminUser) return;
+    if (isSuperAdminUser) {
+      // Make sure modal is closed for super admins
+      setShowAccessModal(false);
+      return;
+    }
+    
+    // Also check currentUser directly if available
+    if (currentUser?.email && isSuperAdminByEmail(currentUser.email)) {
+      setShowAccessModal(false);
+      return;
+    }
     
     // Only show modal for painters (not admins or super admins)
-    if (!featureLoading && isPainter && isPainter()) {
+    if (isPainter && isPainter()) {
       setShowAccessModal(true);
+    } else {
+      // Make sure modal is closed for admins
+      setShowAccessModal(false);
     }
-  }, [featureLoading, isPainter, isSuperAdmin]);
+  }, [featureLoading, isPainter, isSuperAdmin, currentUser]);
   
   // Handler to close modal and remember dismissal
   const handleCloseAccessModal = () => {

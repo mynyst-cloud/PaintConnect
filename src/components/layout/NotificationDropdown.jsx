@@ -33,6 +33,7 @@ const getNotificationVisuals = (notification) => {
     'update_reply': { icon: Reply, color: 'text-violet-600 dark:text-violet-400' },
     'check_in_reminder': { icon: Clock, color: 'text-emerald-600 dark:text-emerald-400' },
     'check_out_reminder': { icon: Clock, color: 'text-emerald-600 dark:text-emerald-400' },
+    'invoice_received': { icon: FileText, color: 'text-blue-600 dark:text-blue-400' },
     'generic': { icon: Bell, color: 'text-gray-600 dark:text-gray-400' }
   };
   

@@ -16,6 +16,8 @@ supabase secrets set GOOGLE_MAPS_API_KEY=<your-google-maps-api-key>
 supabase secrets set RESEND_API_KEY=<your-resend-api-key>
 supabase secrets set ONESIGNAL_APP_ID=<your-onesignal-app-id>
 supabase secrets set ONESIGNAL_REST_API_KEY=<your-onesignal-rest-api-key>
+supabase secrets set GOOGLE_VISION_API_KEY=<your-google-vision-api-key>
+supabase secrets set ANTHROPIC_API_KEY=<your-anthropic-claude-api-key>
 ```
 
 Of via het Dashboard: Project Settings → Edge Functions → Secrets
@@ -50,6 +52,9 @@ supabase functions deploy sendMagicLink
 supabase functions deploy verifyMagicLink
 supabase functions deploy getInviteDetails
 supabase functions deploy sendNotification
+supabase functions deploy registerPainter
+supabase functions deploy registerCompany
+supabase functions deploy processInboundInvoice
 ```
 
 ### Of via een enkele opdracht:
@@ -115,6 +120,9 @@ Voer `add_check_in_records.sql` uit in de Supabase SQL Editor.
 | `verifyMagicLink` | Verifieer magic link en maak sessie aan |
 | `getInviteDetails` | Haal uitnodiging details op (publieke toegang) |
 | `sendNotification` | Maak in-app notificaties + optioneel email |
+| `registerPainter` | Registreer uitgenodigde schilder met wachtwoord |
+| `registerCompany` | Registreer nieuw bedrijf met inbound email generatie |
+| `processInboundInvoice` | Verwerk inkomende factuur emails (Resend Inbound webhook) |
 
 ## Database Migraties
 
@@ -124,6 +132,8 @@ Voer de volgende SQL scripts uit in de Supabase SQL Editor:
 2. `add_magic_links_table.sql` - Maakt de magic_links tabel aan  
 3. `add_check_in_records.sql` - Maakt de check_in_records tabel aan
 4. `create_push_notifications_tables.sql` - Push subscriptions & log tabellen voor OneSignal
+5. `add_inbound_email_column.sql` - Voegt inbound email adres kolom toe aan companies
+6. `add_invoice_processing_columns.sql` - Voegt nieuwe kolommen toe voor factuurverwerking
 
 ## OneSignal Setup
 

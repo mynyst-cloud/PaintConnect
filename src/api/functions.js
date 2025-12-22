@@ -717,7 +717,10 @@ export const getProjectStats = async ({ project_ids }) => {
 
 // ====== AUTH FUNCTIONS ======
 
-export const registerCompany = notImplemented('registerCompany')
+export const registerCompany = async (companyData) => {
+  const { supabase } = await import('@/lib/supabase')
+  return supabase.functions.invoke('registerCompany', { body: companyData })
+}
 export const authVerifyEmail = notImplemented('authVerifyEmail')
 export const resendVerificationEmail = notImplemented('resendVerificationEmail')
 

@@ -111,6 +111,7 @@ export const seedDummyProjects = async ({ companyId }) => {
 /**
  * Send in-app notifications to multiple recipients
  * Uses the sendNotification Edge Function
+ * Automatically determines if push should be sent based on notification type
  */
 export const sendNotification = async ({
   recipient_emails,
@@ -122,6 +123,7 @@ export const sendNotification = async ({
   company_id,
   data = {},
   send_email = false,
+  send_push = false,
   triggering_user_name
 }) => {
   return supabaseFunctions.invoke('sendNotification', {
@@ -135,6 +137,7 @@ export const sendNotification = async ({
       company_id,
       data,
       send_email,
+      send_push,
       triggering_user_name
     }
   })
@@ -331,9 +334,64 @@ export const deleteSupplier = async ({ supplier_id }) => {
   }
 }
 
-export const handleDamageReport = async (params) => {
-  console.log('handleDamageReport called:', params)
-  return { success: true }
+/**
+ * Handle damage report - creates damage record and notifies admins
+ * @param {Object} params - Object containing damageData, project, and currentUser
+ */
+export const handleDamageReport = async ({ damageData, project, currentUser }) => {
+  try {
+    const { Damage, User, supabase } = await import('@/lib/supabase')
+    
+    // Create the damage record
+    const createdDamage = await Damage.create(damageData)
+    
+    if (!createdDamage) {
+      return { data: null, error: { message: 'Failed to create damage record' } }
+    }
+    
+    // Get admin emails for notification
+    const companyId = project?.company_id || damageData.company_id
+    let adminEmails = []
+    
+    try {
+      const { data: admins } = await supabase
+        .from('users')
+        .select('email')
+        .eq('company_id', companyId)
+        .eq('company_role', 'admin')
+        .eq('status', 'active')
+      
+      if (admins && admins.length > 0) {
+        adminEmails = admins.map(a => a.email).filter(Boolean)
+      }
+    } catch (adminError) {
+      console.warn('handleDamageReport: Could not fetch admin emails:', adminError)
+    }
+    
+    // Send notification to admins
+    if (adminEmails.length > 0) {
+      try {
+        await sendNotification({
+          recipient_emails: adminEmails,
+          type: 'damage_reported',
+          title: 'Nieuwe beschadiging gemeld',
+          message: `${currentUser?.full_name || currentUser?.email || 'Onbekend'} heeft een beschadiging gemeld${project?.project_name ? ` bij project ${project.project_name}` : ''}: ${damageData.title}`,
+          link_to: project?.id ? `/Projecten?id=${project.id}&tab=beschadigingen` : '/Beschadigingen',
+          project_id: project?.id || damageData.project_id,
+          company_id: companyId,
+          send_push: true, // Admin push type
+          triggering_user_name: currentUser?.full_name || currentUser?.email
+        })
+      } catch (notifError) {
+        console.warn('handleDamageReport: Failed to send notifications:', notifError)
+      }
+    }
+    
+    return { data: { success: true, damage: createdDamage }, error: null }
+  } catch (error) {
+    console.error('handleDamageReport error:', error)
+    return { data: null, error: { message: error.message } }
+  }
 }
 
 export const createDamageInteraction = async (params) => {
@@ -356,9 +414,330 @@ export const createDailyUpdateInteraction = async (params) => {
   }
 }
 
-export const handleMaterialRequest = async (params) => {
-  console.log('handleMaterialRequest called:', params)
-  return { success: true }
+/**
+ * Handle material request - creates material request record and notifies admins
+ * @param {Object} submissionData - The material request data
+ */
+export const handleMaterialRequest = async (submissionData) => {
+  try {
+    const { MaterialRequest, supabase } = await import('@/lib/supabase')
+    
+    // Create the material request record
+    const createdRequest = await MaterialRequest.create(submissionData)
+    
+    if (!createdRequest) {
+      return { data: null, error: { message: 'Failed to create material request' } }
+    }
+    
+    // Get admin emails for notification
+    const companyId = submissionData.company_id
+    let adminEmails = []
+    
+    try {
+      const { data: admins } = await supabase
+        .from('users')
+        .select('email')
+        .eq('company_id', companyId)
+        .eq('company_role', 'admin')
+        .eq('status', 'active')
+      
+      if (admins && admins.length > 0) {
+        adminEmails = admins.map(a => a.email).filter(Boolean)
+      }
+    } catch (adminError) {
+      console.warn('handleMaterialRequest: Could not fetch admin emails:', adminError)
+    }
+    
+    // Send notification to admins
+    if (adminEmails.length > 0) {
+      try {
+        await sendNotification({
+          recipient_emails: adminEmails,
+          type: 'material_requested',
+          title: 'Nieuwe materiaalaanvraag',
+          message: `${submissionData.requested_by || 'Onbekend'} vraagt materiaal aan${submissionData.project_name ? ` voor project ${submissionData.project_name}` : ''}: ${submissionData.material_name} (${submissionData.quantity} ${submissionData.unit || 'stuks'})`,
+          link_to: '/MateriaalBeheer',
+          project_id: submissionData.project_id,
+          company_id: companyId,
+          send_push: true, // Admin push type
+          triggering_user_name: submissionData.requested_by
+        })
+      } catch (notifError) {
+        console.warn('handleMaterialRequest: Failed to send notifications:', notifError)
+      }
+    }
+    
+    return { data: { success: true, request: createdRequest }, error: null }
+  } catch (error) {
+    console.error('handleMaterialRequest error:', error)
+    return { data: null, error: { message: error.message } }
+  }
+}
+
+/**
+ * Notify admins when a client logs into the portal
+ */
+export const notifyClientLogin = async ({
+  company_id,
+  project_id,
+  project_name,
+  client_name,
+  admin_emails
+}) => {
+  if (!admin_emails || admin_emails.length === 0) {
+    return { success: false, error: 'No admin emails' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: admin_emails,
+      type: 'client_logged_in',
+      title: 'Klant ingelogd op portaal',
+      message: `${client_name} is ingelogd op het klantenportaal${project_name ? ` voor project ${project_name}` : ''}.`,
+      link_to: project_id ? `/Projecten?id=${project_id}` : '/Dashboard',
+      project_id,
+      company_id,
+      send_push: true // Admin push type
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyClientLogin error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify when invited painter activates their account
+ */
+export const notifyPainterActivated = async ({
+  company_id,
+  painter_name,
+  painter_email,
+  admin_emails
+}) => {
+  if (!admin_emails || admin_emails.length === 0) {
+    return { success: false, error: 'No admin emails' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: admin_emails,
+      type: 'painter_activated',
+      title: 'Schilder heeft account geactiveerd',
+      message: `${painter_name} (${painter_email}) heeft hun account geactiveerd en is nu lid van je team.`,
+      link_to: '/AccountSettings',
+      company_id,
+      send_push: true // Admin push type
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyPainterActivated error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify team chat message
+ */
+export const notifyTeamChatMessage = async ({
+  company_id,
+  sender_name,
+  message_preview,
+  recipient_emails,
+  exclude_sender = true,
+  sender_email
+}) => {
+  // Filter out sender if needed
+  let emails = recipient_emails || []
+  if (exclude_sender && sender_email) {
+    emails = emails.filter(e => e.toLowerCase() !== sender_email.toLowerCase())
+  }
+  
+  if (emails.length === 0) {
+    return { success: true, skipped: true }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: emails,
+      type: 'team_message',
+      title: 'Nieuw teambericht',
+      message: `${sender_name}: ${message_preview.substring(0, 100)}${message_preview.length > 100 ? '...' : ''}`,
+      link_to: '/TeamChat',
+      company_id,
+      send_push: true,
+      triggering_user_name: sender_name
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyTeamChatMessage error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify painter of planning change
+ */
+export const notifyPlanningChange = async ({
+  company_id,
+  project_id,
+  project_name,
+  change_description,
+  painter_emails,
+  changer_name
+}) => {
+  if (!painter_emails || painter_emails.length === 0) {
+    return { success: false, error: 'No painter emails' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: painter_emails,
+      type: 'planning_change',
+      title: 'Planning gewijzigd',
+      message: `De planning voor ${project_name} is gewijzigd: ${change_description}`,
+      link_to: '/Planning',
+      project_id,
+      company_id,
+      send_push: true, // Painter push type
+      triggering_user_name: changer_name
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyPlanningChange error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify painter when admin replies to their daily update
+ */
+export const notifyUpdateReply = async ({
+  company_id,
+  project_id,
+  project_name,
+  replier_name,
+  reply_preview,
+  painter_email
+}) => {
+  if (!painter_email) {
+    return { success: false, error: 'No painter email' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: [painter_email],
+      type: 'update_reply',
+      title: 'Reactie op je update',
+      message: `${replier_name} heeft gereageerd op je update${project_name ? ` voor ${project_name}` : ''}: ${reply_preview.substring(0, 80)}...`,
+      link_to: project_id ? `/Projecten?id=${project_id}&tab=updates` : '/Dashboard',
+      project_id,
+      company_id,
+      send_push: true, // Painter push type
+      triggering_user_name: replier_name
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyUpdateReply error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Send check-in reminder to painter
+ */
+export const sendCheckInReminder = async ({
+  company_id,
+  project_id,
+  project_name,
+  painter_email,
+  painter_name,
+  scheduled_time
+}) => {
+  if (!painter_email) {
+    return { success: false, error: 'No painter email' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: [painter_email],
+      type: 'check_in_reminder',
+      title: 'Check-in herinnering',
+      message: `Vergeet niet in te checken voor ${project_name}! Geplande starttijd: ${scheduled_time}`,
+      link_to: '/Dashboard',
+      project_id,
+      company_id,
+      send_push: true // Painter push type
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('sendCheckInReminder error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Send check-out reminder to painter
+ */
+export const sendCheckOutReminder = async ({
+  company_id,
+  project_id,
+  project_name,
+  painter_email
+}) => {
+  if (!painter_email) {
+    return { success: false, error: 'No painter email' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: [painter_email],
+      type: 'check_out_reminder',
+      title: 'Check-out herinnering',
+      message: `Vergeet niet uit te checken voor ${project_name}!`,
+      link_to: '/Dashboard',
+      project_id,
+      company_id,
+      send_push: true // Painter push type
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('sendCheckOutReminder error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify admins when painter hasn't checked in 15 min after scheduled time
+ */
+export const notifyPainterNotCheckedIn = async ({
+  company_id,
+  project_id,
+  project_name,
+  painter_name,
+  scheduled_time,
+  admin_emails
+}) => {
+  if (!admin_emails || admin_emails.length === 0) {
+    return { success: false, error: 'No admin emails' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: admin_emails,
+      type: 'painter_not_checked_in',
+      title: 'Schilder niet ingecheckt',
+      message: `${painter_name} heeft nog niet ingecheckt voor ${project_name}. Geplande starttijd was ${scheduled_time}.`,
+      link_to: '/TeamActiviteit',
+      project_id,
+      company_id,
+      send_push: true // Admin push type
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyPainterNotCheckedIn error:', error)
+    return { success: false, error: error.message }
+  }
 }
 
 // ====== NOTIFICATION MANAGEMENT ======

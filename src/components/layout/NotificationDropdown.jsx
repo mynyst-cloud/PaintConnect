@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Bell, CheckCheck, FileText, Package, AlertTriangle, CheckCircle, AlertCircle, Calendar, Users, MessageCircle } from "lucide-react";
+import { Bell, CheckCheck, FileText, Package, AlertTriangle, CheckCircle, AlertCircle, Calendar, Users, MessageCircle, UserPlus, Clock, LogIn, Reply } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl, formatDateTime } from '@/components/utils';
@@ -17,13 +17,22 @@ const getNotificationVisuals = (notification) => {
   // Bepaal icoon op basis van type
   const iconMap = {
     'material_requested': { icon: Package, color: 'text-blue-600 dark:text-blue-400' },
+    'material_approved': { icon: CheckCircle, color: 'text-green-600 dark:text-green-400' },
     'damage_reported': { icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400' },
     'project_update': { icon: Calendar, color: 'text-emerald-600 dark:text-emerald-400' },
+    'project_assigned': { icon: Calendar, color: 'text-emerald-600 dark:text-emerald-400' },
     'planning_change': { icon: Calendar, color: 'text-purple-600 dark:text-purple-400' },
     'materials_confirmed': { icon: CheckCircle, color: 'text-green-600 dark:text-green-400' },
     'hours_confirmed': { icon: CheckCircle, color: 'text-green-600 dark:text-green-400' },
-    'client_logged_in': { icon: Users, color: 'text-indigo-600 dark:text-indigo-400' },
+    'client_logged_in': { icon: LogIn, color: 'text-indigo-600 dark:text-indigo-400' },
+    'client_message': { icon: MessageCircle, color: 'text-pink-600 dark:text-pink-400' },
+    'team_message': { icon: MessageCircle, color: 'text-cyan-600 dark:text-cyan-400' },
     'team_chat_message': { icon: MessageCircle, color: 'text-pink-600 dark:text-pink-400' },
+    'painter_activated': { icon: UserPlus, color: 'text-emerald-600 dark:text-emerald-400' },
+    'painter_not_checked_in': { icon: Clock, color: 'text-amber-600 dark:text-amber-400' },
+    'update_reply': { icon: Reply, color: 'text-violet-600 dark:text-violet-400' },
+    'check_in_reminder': { icon: Clock, color: 'text-emerald-600 dark:text-emerald-400' },
+    'check_out_reminder': { icon: Clock, color: 'text-emerald-600 dark:text-emerald-400' },
     'generic': { icon: Bell, color: 'text-gray-600 dark:text-gray-400' }
   };
   

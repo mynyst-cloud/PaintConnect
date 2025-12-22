@@ -275,7 +275,7 @@ serve(async (req) => {
               }
             }
 
-            // Mark invite as accepted
+            // Mark invite as accepted and notify admins
             if (companyLinked) {
               const { error: acceptError } = await supabase
                 .from('pending_invites')
@@ -287,6 +287,45 @@ serve(async (req) => {
               
               autoLinkDebug.acceptError = acceptError?.message
               console.log('[AUTO-LINK] Marked invite as accepted')
+              
+              // Send notification to admins that painter activated their account
+              try {
+                // Get admin emails for this company
+                const { data: admins } = await supabase
+                  .from('users')
+                  .select('email')
+                  .eq('company_id', invite.company_id)
+                  .eq('company_role', 'admin')
+                  .eq('status', 'active')
+                
+                if (admins && admins.length > 0) {
+                  const adminEmails = admins.map(a => a.email).filter(Boolean)
+                  const painterName = invite.full_name || magicLink.email.split('@')[0]
+                  
+                  // Create in-app notifications for admins
+                  for (const adminEmail of adminEmails) {
+                    await supabase
+                      .from('notifications')
+                      .insert({
+                        recipient_email: adminEmail,
+                        type: 'painter_activated',
+                        title: 'Schilder heeft account geactiveerd',
+                        message: `${painterName} (${magicLink.email}) heeft hun account geactiveerd en is nu lid van je team.`,
+                        link_to: '/AccountSettings',
+                        company_id: invite.company_id,
+                        read: false,
+                        created_date: new Date().toISOString(),
+                        created_at: new Date().toISOString()
+                      })
+                  }
+                  
+                  console.log('[AUTO-LINK] Sent painter_activated notifications to', adminEmails.length, 'admins')
+                  autoLinkDebug.notificationsSent = adminEmails.length
+                }
+              } catch (notifyError) {
+                console.error('[AUTO-LINK] Failed to send activation notifications:', notifyError)
+                autoLinkDebug.notifyError = notifyError?.message
+              }
             }
           }
         } else {

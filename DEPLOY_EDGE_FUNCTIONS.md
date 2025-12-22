@@ -123,5 +123,31 @@ Voer de volgende SQL scripts uit in de Supabase SQL Editor:
 1. `create_notifications_table.sql` - Maakt de notifications tabel aan
 2. `add_magic_links_table.sql` - Maakt de magic_links tabel aan  
 3. `add_check_in_records.sql` - Maakt de check_in_records tabel aan
-4. `add_push_notifications_system.sql` - Push notification infrastructuur
+4. `create_push_notifications_tables.sql` - Push subscriptions & log tabellen voor OneSignal
+
+## OneSignal Setup
+
+Om push notificaties te laten werken:
+
+1. Maak een OneSignal account aan op https://onesignal.com
+2. Maak een nieuwe app aan
+3. Kopieer de App ID en REST API Key naar de Supabase secrets
+4. Integreer de OneSignal SDK in de frontend (zie `src/lib/onesignal.js`)
+
+### Push Notificatie Types
+
+**Voor Admins:**
+- `material_requested` - Nieuwe materiaalaanvraag
+- `damage_reported` - Nieuwe beschadiging gemeld
+- `team_message` - Nieuw teambericht
+- `painter_activated` - Schilder heeft account geactiveerd
+- `client_logged_in` - Klant ingelogd op portaal
+- `painter_not_checked_in` - Schilder niet ingecheckt 15min na starttijd
+
+**Voor Schilders:**
+- `planning_change` - Planning gewijzigd
+- `project_assigned` - Nieuw project toegewezen
+- `update_reply` - Reactie op dagelijkse update
+- `check_in_reminder` - Check-in herinnering
+- `check_out_reminder` - Check-out herinnering
 

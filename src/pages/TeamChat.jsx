@@ -12,7 +12,7 @@ import { notifyAdmins } from "@/components/utils/notificationManager";
 import { createPageUrl } from "@/components/utils";
 import { format, parseISO, isValid } from "date-fns";
 import { nl } from "date-fns/locale";
-import { clearTeamChat } from "@/api/functions";
+import { clearTeamChat, notifyTeamChatMessage } from "@/api/functions";
 import { base44 } from "@/api/base44Client";
 
 const MESSAGES_PER_PAGE = 20; // Reduced from 50 to 20 for better performance
@@ -316,19 +316,28 @@ export default function TeamChat() {
         setNewMessage(''); 
         scrollToBottom(); 
 
-        // Send notification to admins
+        // Send notification to other team members
         try {
-            await fetch('https://base44.app/api/apps/688ddf9fafec117afa44cb01/functions/sendNotification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    company_id: currentUser.company_id,
-                    type: 'new_chat_message',
-                    message: `${currentUser.full_name} heeft een nieuw bericht geplaatst in Team Chat.`,
-                    link: createPageUrl('TeamChat'),
-                    triggering_user_name: currentUser.full_name
-                })
+            const teamMembers = await User.filter({ 
+                company_id: currentUser.company_id, 
+                status: 'active' 
             });
+            
+            if (teamMembers && teamMembers.length > 0) {
+                const recipientEmails = teamMembers
+                    .map(u => u.email)
+                    .filter(email => email && email.toLowerCase() !== currentUser.email.toLowerCase());
+                
+                if (recipientEmails.length > 0) {
+                    await notifyTeamChatMessage({
+                        company_id: currentUser.company_id,
+                        sender_name: currentUser.full_name || currentUser.email,
+                        message_preview: newMessage.trim(),
+                        recipient_emails: recipientEmails,
+                        sender_email: currentUser.email
+                    });
+                }
+            }
         } catch (notifError) {
             console.error('Failed to send team chat notification:', notifError);
         }

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, MessageCircle, Briefcase } from 'lucide-react';
 import { ChatMessage, User, Project } from '@/api/entities';
+import { notifyTeamChatMessage } from '@/api/functions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -102,6 +103,28 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
       }
 
       await ChatMessage.create(messageData);
+      
+      // Send notification to other team members (fire and forget)
+      User.filter({ company_id: companyId, status: 'active' })
+        .then(teamMembers => {
+          if (teamMembers && teamMembers.length > 0) {
+            const recipientEmails = teamMembers
+              .map(u => u.email)
+              .filter(email => email && email.toLowerCase() !== currentUser.email.toLowerCase());
+            
+            if (recipientEmails.length > 0) {
+              notifyTeamChatMessage({
+                company_id: companyId,
+                sender_name: currentUser.full_name || currentUser.email,
+                message_preview: newMessage.trim(),
+                recipient_emails: recipientEmails,
+                sender_email: currentUser.email
+              }).catch(err => console.warn('Chat notification failed:', err));
+            }
+          }
+        })
+        .catch(err => console.warn('Failed to fetch team members for notification:', err));
+      
       setNewMessage('');
       setSelectedProject('all');
       await loadMessages();

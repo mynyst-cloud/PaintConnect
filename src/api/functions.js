@@ -106,23 +106,64 @@ export const seedDummyProjects = async ({ companyId }) => {
   return []
 }
 
-// ====== NOTIFICATION FUNCTIONS - Use Supabase directly ======
+// ====== NOTIFICATION FUNCTIONS - Use Edge Functions ======
 
-export const notifyAssignedPainters = async ({ projectId, projectName, newlyAssignedEmails }) => {
-  // Create notifications directly in database
+/**
+ * Send in-app notifications via Edge Function
+ * Optionally sends email and push notifications
+ */
+export const sendNotification = async ({
+  recipient_emails,
+  type = 'generic',
+  title,
+  message,
+  link_to,
+  project_id,
+  company_id,
+  data = {},
+  send_email = false,
+  send_push = false,
+  triggering_user_name
+}) => {
   try {
-    const { Notification } = await import('@/lib/supabase')
-    for (const email of newlyAssignedEmails || []) {
-      await Notification.create({
-        user_email: email,
-        type: 'project_assigned',
-        title: 'Nieuw project toegewezen',
-        message: `Je bent toegewezen aan project: ${projectName}`,
-        data: { project_id: projectId },
-        read: false
-      })
-    }
+    return await supabaseFunctions.invoke('sendNotification', {
+      body: {
+        recipient_emails,
+        type,
+        title,
+        message,
+        link_to,
+        project_id,
+        company_id,
+        data,
+        send_email,
+        send_push,
+        triggering_user_name
+      }
+    })
+  } catch (error) {
+    console.error('sendNotification error:', error)
+    return { data: null, error }
+  }
+}
+
+export const notifyAssignedPainters = async ({ projectId, projectName, newlyAssignedEmails, companyId }) => {
+  if (!newlyAssignedEmails || newlyAssignedEmails.length === 0) {
     return { success: true }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: newlyAssignedEmails,
+      type: 'project_assigned',
+      title: 'Nieuw project toegewezen',
+      message: `Je bent toegewezen aan project: ${projectName}`,
+      link_to: '/Planning',
+      project_id: projectId,
+      company_id: companyId,
+      send_push: true // Painters get push for project assignment
+    })
+    return result.data || { success: true }
   } catch (error) {
     console.warn('notifyAssignedPainters failed:', error)
     return { success: false, error: error.message }
@@ -299,9 +340,55 @@ export const deleteSupplier = async ({ supplier_id }) => {
   }
 }
 
-export const handleDamageReport = async (params) => {
-  console.log('handleDamageReport called:', params)
-  return { success: true }
+/**
+ * Handle damage report - creates record and notifies admins
+ * Called from DamageForm.jsx
+ */
+export const handleDamageReport = async ({ damageData, project, currentUser }) => {
+  try {
+    // Dynamic import to avoid circular dependencies - only when function is called
+    const { Damage, supabase } = await import('@/lib/supabase')
+    
+    // Create the damage record
+    const createdDamage = await Damage.create(damageData)
+    
+    if (!createdDamage) {
+      return { data: null, error: { message: 'Failed to create damage record' } }
+    }
+    
+    // Get admin emails for notification (async, non-blocking)
+    const companyId = project?.company_id || damageData.company_id
+    
+    // Fire and forget - don't block on notification
+    supabase
+      .from('users')
+      .select('email')
+      .eq('company_id', companyId)
+      .eq('company_role', 'admin')
+      .eq('status', 'active')
+      .then(({ data: admins }) => {
+        if (admins && admins.length > 0) {
+          const adminEmails = admins.map(a => a.email).filter(Boolean)
+          sendNotification({
+            recipient_emails: adminEmails,
+            type: 'damage_reported',
+            title: 'Nieuwe beschadiging gemeld',
+            message: `${currentUser?.full_name || 'Onbekend'} heeft een beschadiging gemeld: ${damageData.title}`,
+            link_to: project?.id ? `/Projecten?id=${project.id}&tab=beschadigingen` : '/Beschadigingen',
+            project_id: project?.id,
+            company_id: companyId,
+            send_push: true,
+            triggering_user_name: currentUser?.full_name
+          }).catch(err => console.warn('Damage notification failed:', err))
+        }
+      })
+      .catch(err => console.warn('Failed to fetch admins for notification:', err))
+    
+    return { data: { success: true, damage: createdDamage }, error: null }
+  } catch (error) {
+    console.error('handleDamageReport error:', error)
+    return { data: null, error: { message: error.message } }
+  }
 }
 
 export const createDamageInteraction = async (params) => {
@@ -324,41 +411,209 @@ export const createDailyUpdateInteraction = async (params) => {
   }
 }
 
-export const handleMaterialRequest = async (params) => {
-  console.log('handleMaterialRequest called:', params)
-  return { success: true }
+/**
+ * Handle material request - creates record and notifies admins
+ * Called from MaterialRequestForm.jsx
+ */
+export const handleMaterialRequest = async (submissionData) => {
+  try {
+    // Dynamic import to avoid circular dependencies
+    const { MaterialRequest, supabase } = await import('@/lib/supabase')
+    
+    // Create the material request record
+    const createdRequest = await MaterialRequest.create(submissionData)
+    
+    if (!createdRequest) {
+      return { data: null, error: { message: 'Failed to create material request' } }
+    }
+    
+    // Get admin emails for notification (fire and forget)
+    const companyId = submissionData.company_id
+    
+    supabase
+      .from('users')
+      .select('email')
+      .eq('company_id', companyId)
+      .eq('company_role', 'admin')
+      .eq('status', 'active')
+      .then(({ data: admins }) => {
+        if (admins && admins.length > 0) {
+          const adminEmails = admins.map(a => a.email).filter(Boolean)
+          sendNotification({
+            recipient_emails: adminEmails,
+            type: 'material_requested',
+            title: 'Nieuwe materiaalaanvraag',
+            message: `${submissionData.requested_by || 'Onbekend'} vraagt materiaal aan: ${submissionData.material_name}`,
+            link_to: '/MateriaalBeheer',
+            project_id: submissionData.project_id,
+            company_id: companyId,
+            send_push: true,
+            triggering_user_name: submissionData.requested_by
+          }).catch(err => console.warn('Material notification failed:', err))
+        }
+      })
+      .catch(err => console.warn('Failed to fetch admins for notification:', err))
+    
+    return { data: { success: true, request: createdRequest }, error: null }
+  } catch (error) {
+    console.error('handleMaterialRequest error:', error)
+    return { data: null, error: { message: error.message } }
+  }
 }
 
 // ====== NOTIFICATION MANAGEMENT ======
 
-export const markAllNotificationsAsRead = async ({ user_id }) => {
+/**
+ * Mark all notifications as read for current user
+ */
+export const markAllNotificationsAsRead = async () => {
   try {
     const { supabase } = await import('@/lib/supabase')
+    
+    // Get current user's email
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user?.email) {
+      return { success: false, error: 'Not authenticated' }
+    }
+    
+    // Update by recipient_email (not user_id)
     await supabase
       .from('notifications')
-      .update({ read: true })
-      .eq('user_id', user_id)
+      .update({ read: true, read_at: new Date().toISOString() })
+      .eq('recipient_email', user.email)
       .eq('read', false)
+    
     return { success: true }
   } catch (error) {
+    console.error('markAllNotificationsAsRead error:', error)
     return { success: false, error: error.message }
   }
 }
 
-export const notifyAllTeam = async ({ company_id, message, type }) => {
-  console.log('notifyAllTeam called:', { company_id, message, type })
-  return { success: true }
+/**
+ * Send notification to all team members of a company
+ */
+export const notifyAllTeam = async ({ company_id, message, type = 'generic', title, link_to, send_email = false }) => {
+  try {
+    const { supabase } = await import('@/lib/supabase')
+    
+    // Get all users in the company
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('email')
+      .eq('company_id', company_id)
+      .eq('status', 'active')
+    
+    if (error || !users || users.length === 0) {
+      console.warn('notifyAllTeam: No users found for company', company_id)
+      return { success: false, error: 'No users found' }
+    }
+    
+    const emails = users.map(u => u.email).filter(Boolean)
+    
+    if (emails.length === 0) {
+      return { success: false, error: 'No valid emails found' }
+    }
+    
+    const result = await sendNotification({
+      recipient_emails: emails,
+      type,
+      title,
+      message,
+      link_to,
+      company_id,
+      send_email
+    })
+    
+    return result.data || { success: true, notified: emails.length }
+  } catch (error) {
+    console.error('notifyAllTeam error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify team chat message to other team members
+ */
+export const notifyTeamChatMessage = async ({
+  company_id,
+  sender_name,
+  message_preview,
+  recipient_emails,
+  sender_email
+}) => {
+  // Filter out sender
+  let emails = recipient_emails || []
+  if (sender_email) {
+    emails = emails.filter(e => e.toLowerCase() !== sender_email.toLowerCase())
+  }
+  
+  if (emails.length === 0) {
+    return { success: true, skipped: true }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: emails,
+      type: 'team_message',
+      title: 'Nieuw teambericht',
+      message: `${sender_name}: ${message_preview.substring(0, 100)}${message_preview.length > 100 ? '...' : ''}`,
+      link_to: '/TeamChat',
+      company_id,
+      send_push: true,
+      triggering_user_name: sender_name
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyTeamChatMessage error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Notify painter of planning change
+ */
+export const notifyPlanningChange = async ({
+  company_id,
+  project_id,
+  project_name,
+  change_description,
+  painter_emails,
+  changer_name
+}) => {
+  if (!painter_emails || painter_emails.length === 0) {
+    return { success: false, error: 'No painter emails' }
+  }
+  
+  try {
+    const result = await sendNotification({
+      recipient_emails: painter_emails,
+      type: 'planning_change',
+      title: 'Planning gewijzigd',
+      message: `De planning voor ${project_name} is gewijzigd: ${change_description}`,
+      link_to: '/Planning',
+      project_id,
+      company_id,
+      send_push: true,
+      triggering_user_name: changer_name
+    })
+    return result.data || { success: true }
+  } catch (error) {
+    console.error('notifyPlanningChange error:', error)
+    return { success: false, error: error.message }
+  }
 }
 
 // ====== PROJECT FUNCTIONS ======
 
 export const notifyHoursConfirmed = async (params) => {
-  console.log('notifyHoursConfirmed:', params)
+  // Hours confirmation is replaced by check-in system
+  console.log('notifyHoursConfirmed (deprecated):', params)
   return { success: true }
 }
 
 export const notifyMaterialsConfirmed = async (params) => {
-  console.log('notifyMaterialsConfirmed:', params)
+  console.log('notifyMaterialsConfirmed (deprecated):', params)
   return { success: true }
 }
 

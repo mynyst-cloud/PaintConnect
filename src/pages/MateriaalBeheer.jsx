@@ -330,11 +330,21 @@ export default function MateriaalBeheer() {
         if (!currentUser?.company_id && !currentUser?.current_company_id) return;
 
         try {
+            const companyIdForQuery = currentUser.current_company_id || currentUser.company_id;
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:loadInvoices',message:'Fetching invoices',data:{companyId:companyIdForQuery},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
             const invoiceList = await SupplierInvoice.filter({
-                company_id: currentUser.current_company_id || currentUser.company_id
+                company_id: companyIdForQuery
             }, '-created_date');
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:loadInvoices',message:'Invoices loaded',data:{count:invoiceList?.length||0,invoices:invoiceList?.slice(0,3).map(i=>({id:i.id,supplier:i.supplier_name,status:i.status}))},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
             setInvoices(invoiceList || []);
         } catch (error) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:loadInvoices',message:'Error loading invoices',data:{error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
             console.error("Error loading invoices:", error);
         }
     }, [currentUser]);
@@ -414,9 +424,15 @@ export default function MateriaalBeheer() {
                 setCurrentUser(user);
 
                 const companyId = user.current_company_id || user.company_id;
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:init',message:'User loaded',data:{userId:user.id,companyId,email:user.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
                 if (companyId) {
                     const companyData = await base44.entities.Company.get(companyId);
                     setCompany(companyData);
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:init',message:'Company loaded',data:{companyId:companyData.id,companyName:companyData.name,inboundEmail:companyData.inbound_email_address},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
                 }
             } catch (error) {
                 console.error("Error initializing:", error);

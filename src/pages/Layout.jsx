@@ -799,7 +799,7 @@ function LayoutContent({ children }) {
               : 'text-gray-400 dark:text-gray-500'
         }`} />
         {item.name}
-        {!hasAccess && <Lock className="ml-auto h-3 w-3 text-gray-400 dark:text-gray-500" />}
+        {!hasAccess && <Lock className="ml-auto h-3 w-3 text-orange-600 dark:text-orange-400" />}
       </Link>
     );
   };

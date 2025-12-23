@@ -85,6 +85,7 @@ export default function Dashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [projectDetailsInitialTab, setProjectDetailsInitialTab] = useState(null);
   const [checkInRefreshTrigger, setCheckInRefreshTrigger] = useState(0);
+  const [checkOutRefreshTrigger, setCheckOutRefreshTrigger] = useState(0);
 
   // FIXED: Also include 'owner' role (legacy) - same as isCurrentUserAdmin
   const isAdmin = currentUser?.company_role === 'admin' || currentUser?.company_role === 'owner' || currentUser?.role === 'admin';
@@ -893,13 +894,16 @@ export default function Dashboard() {
                   refreshTrigger={checkInRefreshTrigger}
                   onCheckInSuccess={(record) => {
                     // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:onCheckInSuccess',message:'onCheckInSuccess callback called',data:{hasRecord:!!record},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:onCheckInSuccess',message:'onCheckInSuccess callback called, triggering CheckOutButton refresh',data:{hasRecord:!!record,currentCheckOutTrigger:checkOutRefreshTrigger},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
                     // #endregion
+                    // Trigger CheckOutButton to refresh its state
+                    setCheckOutRefreshTrigger(prev => prev + 1);
                     loadDashboardData(true);
                   }} 
                 />
                 <CheckOutButton 
-                  currentUser={currentUser} 
+                  currentUser={currentUser}
+                  refreshTrigger={checkOutRefreshTrigger}
                   onCheckOutSuccess={(record) => {
                     // #region agent log
                     fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:onCheckOutSuccess',message:'onCheckOutSuccess callback called',data:{hasRecord:!!record},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});

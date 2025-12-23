@@ -9,7 +9,7 @@ import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-export default function CheckOutButton({ currentUser, onCheckOutSuccess, onCheckOutComplete }) {
+export default function CheckOutButton({ currentUser, onCheckOutSuccess, onCheckOutComplete, refreshTrigger }) {
   const [showModal, setShowModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState('idle');
@@ -20,6 +20,16 @@ export default function CheckOutButton({ currentUser, onCheckOutSuccess, onCheck
   useEffect(() => {
     checkActiveCheckIn();
   }, [currentUser?.id]); // Use ID to prevent unnecessary re-runs
+
+  // Respond to refresh trigger from parent (e.g., after check-in)
+  useEffect(() => {
+    if (currentUser?.id && refreshTrigger !== undefined && refreshTrigger !== null) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckOutButton.jsx:refreshTrigger',message:'Refresh trigger changed, checking active check-in',data:{refreshTrigger,hasActiveCheckIn:!!activeCheckIn},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      checkActiveCheckIn();
+    }
+  }, [refreshTrigger, currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (activeCheckIn) {
@@ -150,8 +160,15 @@ export default function CheckOutButton({ currentUser, onCheckOutSuccess, onCheck
 
   // Don't show button if no active check-in
   if (!activeCheckIn) {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckOutButton.jsx:render',message:'CheckOutButton: returning null (no active check-in)',data:{hasActiveCheckIn:false,refreshTrigger},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     return null;
   }
+  
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckOutButton.jsx:render',message:'CheckOutButton: rendering button (has active check-in)',data:{hasActiveCheckIn:true,refreshTrigger,projectName:activeCheckIn?.project_name},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
 
   return (
     <>

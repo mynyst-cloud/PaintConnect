@@ -173,14 +173,14 @@ serve(async (req) => {
 
     // Link user to company using UPSERT
     // Build base user data - always include these fields
+    // Note: created_date is handled automatically by Supabase or set by User.me(), don't include it
     const userData: Record<string, any> = {
       id: user.id,
       email: user.email,
       full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
       company_id: company.id,
       company_role: 'admin',
-      status: 'active',
-      created_date: new Date().toISOString()
+      status: 'active'
     }
 
     // Try to upsert with user_type first (if column exists)

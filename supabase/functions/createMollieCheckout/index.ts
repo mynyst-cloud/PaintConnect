@@ -200,7 +200,7 @@ serve(async (req) => {
           value: pricing.amount,
         },
         description: pricing.description,
-        redirectUrl: `${APP_URL}/Subscription?mollie_checkout=success&plan=${planType}`,
+        redirectUrl: `${APP_URL}/Subscription?mollie_checkout=return&plan=${planType}`,
         webhookUrl: `${SUPABASE_URL}/functions/v1/mollieWebhook`,
         metadata: paymentMetadata,
         customerId: mollieCustomerId,

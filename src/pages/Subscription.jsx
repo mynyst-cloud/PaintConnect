@@ -678,12 +678,63 @@ export default function Subscription() {
       setCompany(companyData);
 
       const urlParams = new URLSearchParams(location.search);
-      if (urlParams.get('mollie_checkout') === 'success' || urlParams.get('session_id') || urlParams.get('payment') === 'success') {
-        toast({
-          title: "🎉 Betaling succesvol!",
-          description: "Welkom bij PaintConnect. Je abonnement is nu actief.",
-        });
-        navigate(location.pathname, { replace: true });
+      const mollieReturn = urlParams.get('mollie_checkout');
+      const isPaymentReturn = mollieReturn === 'success' || 
+                              mollieReturn === 'return' ||
+                              urlParams.get('session_id') || 
+                              urlParams.get('payment') === 'success';
+      
+      if (isPaymentReturn) {
+        // Check the actual subscription status from the database
+        // The webhook may not have processed yet
+        if (companyData.subscription_status === 'active') {
+          toast({
+            title: "🎉 Betaling succesvol!",
+            description: "Welkom bij PaintConnect. Je abonnement is nu actief.",
+          });
+          navigate(location.pathname, { replace: true });
+        } else {
+          // Webhook hasn't processed yet - start polling
+          toast({
+            title: "⏳ Betaling wordt verwerkt...",
+            description: "Even geduld, we controleren je betaling.",
+            duration: 5000,
+          });
+          
+          // Poll for status update (webhook may take a few seconds)
+          let pollCount = 0;
+          const maxPolls = 10;
+          const pollInterval = setInterval(async () => {
+            pollCount++;
+            try {
+              const refreshedCompany = await Company.get(user.company_id);
+              if (refreshedCompany.subscription_status === 'active') {
+                clearInterval(pollInterval);
+                setCompany(refreshedCompany);
+                toast({
+                  title: "🎉 Betaling succesvol!",
+                  description: "Je abonnement is nu actief.",
+                });
+                navigate(location.pathname, { replace: true });
+              } else if (pollCount >= maxPolls) {
+                clearInterval(pollInterval);
+                toast({
+                  title: "⚠️ Status onbekend",
+                  description: "We konden de betalingsstatus niet bevestigen. Controleer je email of ververs de pagina later.",
+                  variant: "destructive",
+                  duration: 10000,
+                });
+                navigate(location.pathname, { replace: true });
+              }
+            } catch (e) {
+              console.error('Polling error:', e);
+              if (pollCount >= maxPolls) {
+                clearInterval(pollInterval);
+                navigate(location.pathname, { replace: true });
+              }
+            }
+          }, 2000); // Poll every 2 seconds
+        }
       }
     } catch (err) {
       setError(err.message);

@@ -293,7 +293,8 @@ function LayoutContent({ children }) {
           impersonatedCompany = await Company.get(impersonatedCompanyId);
         }
 
-        const isAdmin = user?.company_role === 'admin' || user?.role === 'admin';
+        // Also include 'owner' for legacy users
+        const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner' || user?.role === 'admin';
 
         // Check trial expiration - don't show modal if subscription is active or pending_activation
         let showTrialExpired = false;
@@ -948,9 +949,6 @@ function LayoutContent({ children }) {
       </div>
 
       <div className="flex flex-col flex-1 overflow-x-hidden">
-        {/* Trial Banner */}
-        <TrialBanner />
-        
         {impersonatedCompany &&
         <div className="bg-indigo-600 text-white text-sm text-center py-2 px-4 flex items-center justify-center gap-4">
             <Eye className="w-5 h-5" />
@@ -1032,6 +1030,9 @@ function LayoutContent({ children }) {
             </Link>
           </div>
         </header>
+        
+        {/* Trial Banner - placed AFTER header for better UX */}
+        <TrialBanner />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-2 sm:p-4 md:p-4 lg:p-4 bg-gray-50 dark:bg-gray-900">
           <TeamChatProvider value={{ onOpenTeamChat: handleTeamChatClick, unreadMessages, impersonatedCompanyId }}>

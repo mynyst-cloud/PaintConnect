@@ -6,6 +6,7 @@ import { Star, Zap, Wrench, Megaphone, Gift, X, ArrowRight, ChevronRight } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 const iconMap = {
   star: { icon: Star, color: 'text-yellow-500 bg-yellow-100' },
@@ -16,8 +17,11 @@ const iconMap = {
 };
 
 const paintConnectLogoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
+const paintConnectLogoDarkUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png';
 
 export default function PlatformUpdates() {
+  const { resolvedTheme } = useTheme();
+  const logoUrl = resolvedTheme === 'dark' ? paintConnectLogoDarkUrl : paintConnectLogoUrl;
   const [updates, setUpdates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
@@ -81,7 +85,7 @@ export default function PlatformUpdates() {
         <Card className="bg-white dark:bg-gray-800 shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between py-3 px-4 border-b">
             <div className="flex items-center gap-2">
-              <img src={paintConnectLogoUrl} alt="PaintConnect" className="h-7 w-auto" />
+              <img src={logoUrl} alt="PaintConnect" className="h-7 w-auto" />
               <span className="text-gray-800 font-medium opacity-85 dark:text-gray-200">Platform Updates</span>
             </div>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDismiss}>

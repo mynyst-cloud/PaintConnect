@@ -7,8 +7,10 @@ import { Progress } from '@/components/ui/progress';
 import { X, Users, Briefcase, CheckCircle, Circle, PaintBucket, ChevronDown, ChevronUp } from 'lucide-react';
 import { User, Project, Company } from '@/api/entities';
 import InviteUserForm from '@/components/admin/InviteUserForm';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 const paintConnectLogoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
+const paintConnectLogoDarkUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png';
 
 // Storage key for collapsed state
 const COLLAPSED_STORAGE_KEY = 'onboarding_checklist_collapsed';
@@ -19,6 +21,8 @@ export default function OnboardingChecklist({
   onCreateProject, 
   onComplete 
 }) {
+  const { resolvedTheme } = useTheme();
+  const logoUrl = resolvedTheme === 'dark' ? paintConnectLogoDarkUrl : paintConnectLogoUrl;
   const [hasTeamMembers, setHasTeamMembers] = useState(false);
   const [hasProjects, setHasProjects] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -163,7 +167,7 @@ export default function OnboardingChecklist({
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-center gap-3">
                   <img 
-                    src={paintConnectLogoUrl} 
+                    src={logoUrl} 
                     alt="PaintConnect" 
                     className="h-8 w-auto"
                   />
@@ -234,7 +238,7 @@ export default function OnboardingChecklist({
         >
           <div className="flex items-center gap-3">
             <img 
-              src={paintConnectLogoUrl} 
+              src={logoUrl} 
               alt="PaintConnect" 
               className="h-6 w-auto"
             />

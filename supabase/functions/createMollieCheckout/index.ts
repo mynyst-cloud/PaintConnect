@@ -104,11 +104,11 @@ serve(async (req) => {
     console.log('[createMollieCheckout] Initializing Supabase client...')
     const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
-    // Get company data
+    // Get company data with full billing details
     console.log('[createMollieCheckout] Fetching company:', companyId)
     const { data: company, error: companyError } = await supabaseAdmin
       .from('companies')
-      .select('id, name, mollie_customer_id, subscription_tier, subscription_status')
+      .select('id, name, email, vat_number, street, house_number, postal_code, city, country, phone_number, mollie_customer_id, subscription_tier, subscription_status, billing_email')
       .eq('id', companyId)
       .single()
 
@@ -136,6 +136,9 @@ serve(async (req) => {
     if (!mollieCustomerId) {
       console.log('[createMollieCheckout] Creating new Mollie customer for:', company.name)
       
+      // Use billing_email if set, otherwise company email
+      const customerEmail = company.billing_email || company.email
+      
       const createCustomerResponse = await fetch('https://api.mollie.com/v2/customers', {
         method: 'POST',
         headers: {
@@ -144,8 +147,14 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           name: company.name,
+          email: customerEmail, // Email for invoice delivery
           metadata: {
             company_id: companyId,
+            vat_number: company.vat_number || null,
+            address: company.street ? `${company.street} ${company.house_number || ''}`.trim() : null,
+            postal_code: company.postal_code || null,
+            city: company.city || null,
+            country: company.country || 'NL',
           },
         }),
       })

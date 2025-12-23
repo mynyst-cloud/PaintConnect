@@ -50,7 +50,8 @@ export default function Planning({ impersonatedCompanyId }) {
       if (!companyId) throw new Error("No company");
 
       const company = await Company.get(companyId);
-      const isAdmin = user?.company_role === 'admin' || user?.role === 'admin';
+      // Include 'owner' for legacy users
+      const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner' || user?.role === 'admin';
 
       const [allProjects, allEvents] = await Promise.all([
         isAdmin

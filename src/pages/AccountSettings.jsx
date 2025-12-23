@@ -142,7 +142,8 @@ export default function AccountSettings({ impersonatedCompanyId }) {
   const [resendingInviteId, setResendingInviteId] = useState(null);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
 
-  const isAdmin = user?.company_role === 'admin' || user?.role === 'admin';
+  // Include 'owner' for legacy users who may still have that role
+  const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner' || user?.role === 'admin';
   const fileInputRef = useRef(null);
   const { theme, setTheme } = useTheme();
   const activeCompanyId = impersonatedCompanyId || user?.current_company_id || user?.company_id;
@@ -226,13 +227,27 @@ export default function AccountSettings({ impersonatedCompanyId }) {
     }
   }, [activeCompanyId]);
 
-  // Load invoices
+  // Load subscription invoices
   const loadInvoices = useCallback(async () => {
     if (!company?.id) return;
     setIsLoadingInvoices(true);
     try {
-      const invoiceData = await Invoice.filter({ company_id: company.id }, '-invoice_date', 100);
-      setInvoices(invoiceData || []);
+      // Try subscription_invoices first, fall back to invoices for backwards compatibility
+      const { data: subscriptionInvoices, error: subError } = await supabase
+        .from('subscription_invoices')
+        .select('*')
+        .eq('company_id', company.id)
+        .order('invoice_date', { ascending: false })
+        .limit(100);
+      
+      if (subError) {
+        console.warn('subscription_invoices not available, trying invoices table:', subError);
+        // Fall back to old invoices table
+        const invoiceData = await Invoice.filter({ company_id: company.id }, '-invoice_date', 100);
+        setInvoices(invoiceData || []);
+      } else {
+        setInvoices(subscriptionInvoices || []);
+      }
     } catch (error) {
       console.error('Error loading invoices:', error);
     } finally {

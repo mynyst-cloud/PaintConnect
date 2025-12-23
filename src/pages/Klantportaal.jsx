@@ -89,7 +89,8 @@ export default function Klantportaal() {
                     }
                 }
                 // SCENARIO B: Geen JWT maar wel admin/super admin -> Admin overzicht
-                else if (user && (user.company_role === 'admin' || user.role === 'admin')) {
+                // Include 'owner' for legacy users
+                else if (user && (user.company_role === 'admin' || user.company_role === 'owner' || user.role === 'admin')) {
                     console.log('[Klantportaal] Admin flow - loading all client portals');
                     setIsAdminView(true);
                     
@@ -396,7 +397,7 @@ export default function Klantportaal() {
                                 </div>
                             </div>
                             <div className="flex gap-2 flex-shrink-0">
-                                {currentUser && (currentUser.company_role === 'admin' || currentUser.role === 'admin') && (
+                                {currentUser && (currentUser.company_role === 'admin' || currentUser.company_role === 'owner' || currentUser.role === 'admin') && (
                                     <Button
                                         onClick={handleBackToOverview}
                                         variant="outline"
@@ -415,14 +416,14 @@ export default function Klantportaal() {
                                 >
                                     <LogOut className="w-4 h-4" />
                                     <span className="hidden sm:inline">
-                                        {currentUser && (currentUser.company_role === 'admin' || currentUser.role === 'admin') ? 'Dashboard' : 'Uitloggen'}
+                                        {currentUser && (currentUser.company_role === 'admin' || currentUser.company_role === 'owner' || currentUser.role === 'admin') ? 'Dashboard' : 'Uitloggen'}
                                     </span>
                                 </Button>
                             </div>
                         </div>
                         
                         {/* Mobile back button for admin */}
-                        {currentUser && (currentUser.company_role === 'admin' || currentUser.role === 'admin') && (
+                        {currentUser && (currentUser.company_role === 'admin' || currentUser.company_role === 'owner' || currentUser.role === 'admin') && (
                             <Button
                                 onClick={handleBackToOverview}
                                 variant="outline"

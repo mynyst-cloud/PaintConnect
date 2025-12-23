@@ -55,7 +55,8 @@ export default function Projecten() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const isAdmin = useMemo(() => currentUser?.company_role === 'admin' || currentUser?.role === 'admin', [currentUser]);
+  // Include 'owner' for legacy users
+  const isAdmin = useMemo(() => currentUser?.company_role === 'admin' || currentUser?.company_role === 'owner' || currentUser?.role === 'admin', [currentUser]);
 
   // Track projects currently being deleted to prevent double-clicks
   const [deletingIds, setDeletingIds] = useState(new Set());
@@ -209,7 +210,7 @@ export default function Projecten() {
 
       console.log('[Projecten] Fetching projects directly from entities...');
       
-      const userIsAdmin = user?.company_role === 'admin' || user?.role === 'admin';
+      const userIsAdmin = user?.company_role === 'admin' || user?.company_role === 'owner' || user?.role === 'admin';
       let projectsData = [];
 
       if (userIsAdmin) {

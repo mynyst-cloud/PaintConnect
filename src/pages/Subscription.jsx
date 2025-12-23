@@ -685,44 +685,112 @@ export default function Subscription() {
                               urlParams.get('payment') === 'success';
       
       if (isPaymentReturn) {
-        // Check the actual subscription status from the database
-        // The webhook may not have processed yet
-        if (companyData.subscription_status === 'active') {
-          toast({
-            title: "🎉 Betaling succesvol!",
-            description: "Welkom bij PaintConnect. Je abonnement is nu actief.",
-          });
-          navigate(location.pathname, { replace: true });
-        } else {
-          // Webhook hasn't processed yet - start polling
+        // Store pre-checkout state for comparison
+        const preCheckoutTier = companyData.subscription_tier;
+        const preCheckoutStatus = companyData.subscription_status;
+        const pendingSub = companyData.pending_subscription;
+        
+        console.log('[Subscription] Payment return detected:', {
+          preCheckoutTier,
+          preCheckoutStatus,
+          pendingSub,
+        });
+        
+        // Check if this was a checkout attempt
+        if (pendingSub && !pendingSub.status) {
+          // There's a pending subscription without failure status - poll for result
           toast({
             title: "⏳ Betaling wordt verwerkt...",
             description: "Even geduld, we controleren je betaling.",
             duration: 5000,
           });
           
-          // Poll for status update (webhook may take a few seconds)
+          const expectedTier = pendingSub.plan_type;
+          const expectedCycle = pendingSub.billing_cycle;
           let pollCount = 0;
-          const maxPolls = 10;
+          const maxPolls = 15;
+          
           const pollInterval = setInterval(async () => {
             pollCount++;
             try {
               const refreshedCompany = await Company.get(user.company_id);
-              if (refreshedCompany.subscription_status === 'active') {
+              const newPending = refreshedCompany.pending_subscription;
+              
+              console.log('[Subscription] Poll #' + pollCount, {
+                newPending,
+                newTier: refreshedCompany.subscription_tier,
+                newStatus: refreshedCompany.subscription_status,
+              });
+              
+              // Check if pending_subscription was processed
+              if (!newPending || newPending.status === 'failed') {
+                clearInterval(pollInterval);
+                setCompany(refreshedCompany);
+                
+                // Payment failed
+                if (newPending?.status === 'failed') {
+                  console.log('[Subscription] Payment failed:', newPending.failure_reason);
+                  toast({
+                    title: "❌ Betaling mislukt",
+                    description: "Je betaling kon niet worden verwerkt. Probeer het opnieuw of gebruik een andere betaalmethode.",
+                    variant: "destructive",
+                    duration: 10000,
+                  });
+                  
+                  // Clear the failed pending_subscription after showing message
+                  try {
+                    await Company.update(user.company_id, { pending_subscription: null });
+                  } catch (e) {
+                    console.error('Failed to clear pending_subscription:', e);
+                  }
+                  
+                  navigate(location.pathname, { replace: true });
+                  return;
+                }
+                
+                // Pending cleared - check what changed
+                const tierChanged = refreshedCompany.subscription_tier !== preCheckoutTier;
+                const statusChanged = refreshedCompany.subscription_status !== preCheckoutStatus;
+                const cycleChanged = refreshedCompany.billing_cycle !== companyData.billing_cycle;
+                const isNowActive = refreshedCompany.subscription_status === 'active';
+                
+                console.log('[Subscription] Changes detected:', { tierChanged, statusChanged, cycleChanged, isNowActive });
+                
+                if (tierChanged && isNowActive) {
+                  // Tier upgrade/downgrade success
+                  toast({
+                    title: "🎉 Abonnement gewijzigd!",
+                    description: `Je bent nu ${refreshedCompany.subscription_tier.charAt(0).toUpperCase() + refreshedCompany.subscription_tier.slice(1)} gebruiker.`,
+                  });
+                } else if (statusChanged && isNowActive) {
+                  // New subscription or trial -> active
+                  toast({
+                    title: "🎉 Betaling succesvol!",
+                    description: "Welkom bij PaintConnect. Je abonnement is nu actief.",
+                  });
+                } else if (cycleChanged) {
+                  // Billing cycle switch
+                  toast({
+                    title: "🎉 Facturatiecyclus gewijzigd!",
+                    description: `Je betaalt nu ${refreshedCompany.billing_cycle === 'yearly' ? 'jaarlijks' : 'maandelijks'}.`,
+                  });
+                } else {
+                  // Something else - but pending is cleared so likely success
+                  toast({
+                    title: "✅ Verwerkt",
+                    description: "Je abonnement is bijgewerkt.",
+                  });
+                }
+                
+                navigate(location.pathname, { replace: true });
+              } else if (pollCount >= maxPolls) {
+                // Timeout - pending still exists without status
                 clearInterval(pollInterval);
                 setCompany(refreshedCompany);
                 toast({
-                  title: "🎉 Betaling succesvol!",
-                  description: "Je abonnement is nu actief.",
-                });
-                navigate(location.pathname, { replace: true });
-              } else if (pollCount >= maxPolls) {
-                clearInterval(pollInterval);
-                toast({
-                  title: "⚠️ Status onbekend",
-                  description: "We konden de betalingsstatus niet bevestigen. Controleer je email of ververs de pagina later.",
-                  variant: "destructive",
-                  duration: 10000,
+                  title: "⚠️ Betaling in behandeling",
+                  description: "De verwerking duurt langer dan verwacht. Je ontvangt een email wanneer je betaling is verwerkt.",
+                  duration: 15000,
                 });
                 navigate(location.pathname, { replace: true });
               }
@@ -730,10 +798,40 @@ export default function Subscription() {
               console.error('Polling error:', e);
               if (pollCount >= maxPolls) {
                 clearInterval(pollInterval);
+                toast({
+                  title: "⚠️ Status onbekend",
+                  description: "Er is iets misgegaan. Ververs de pagina of neem contact op met support.",
+                  variant: "destructive",
+                });
                 navigate(location.pathname, { replace: true });
               }
             }
-          }, 2000); // Poll every 2 seconds
+          }, 2000);
+        } else if (pendingSub?.status === 'failed') {
+          // Payment already marked as failed
+          toast({
+            title: "❌ Betaling mislukt",
+            description: pendingSub.failure_reason === 'canceled' 
+              ? "Je hebt de betaling geannuleerd." 
+              : "Je betaling kon niet worden verwerkt. Probeer het opnieuw.",
+            variant: "destructive",
+            duration: 10000,
+          });
+          
+          // Clear the failed pending_subscription
+          try {
+            await Company.update(user.company_id, { pending_subscription: null });
+          } catch (e) {
+            console.error('Failed to clear pending_subscription:', e);
+          }
+          
+          navigate(location.pathname, { replace: true });
+        } else if (companyData.subscription_status === 'active' && !pendingSub) {
+          // Already active, no pending - probably a page refresh after success
+          navigate(location.pathname, { replace: true });
+        } else {
+          // Trialing without pending - unusual state
+          navigate(location.pathname, { replace: true });
         }
       }
     } catch (err) {

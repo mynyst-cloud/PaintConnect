@@ -99,21 +99,79 @@ serve(async (req) => {
     const payment = await paymentResponse.json()
     console.log('[mollieWebhook] Payment status:', payment.status, 'Metadata:', JSON.stringify(payment.metadata))
 
-    // Only process paid payments
+    const metadata = payment.metadata
+    const companyId = metadata?.company_id
+
+    // Initialize Supabase client early (needed for all paths)
+    const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
+
+    // Handle failed/cancelled/expired payments
+    const failedStatuses = ['canceled', 'cancelled', 'failed', 'expired']
+    if (failedStatuses.includes(payment.status)) {
+      console.log('[mollieWebhook] Payment failed/cancelled, status:', payment.status)
+      
+      if (companyId) {
+        // Clear pending_subscription but DON'T change status/tier
+        // This signals to the frontend that the checkout failed
+        const { error: clearError } = await supabaseAdmin
+          .from('companies')
+          .update({
+            pending_subscription: {
+              ...metadata,
+              status: 'failed',
+              failed_at: new Date().toISOString(),
+              failure_reason: payment.status,
+            },
+          })
+          .eq('id', companyId)
+
+        if (clearError) {
+          console.error('[mollieWebhook] Failed to update pending_subscription:', clearError)
+        } else {
+          console.log('[mollieWebhook] Marked pending_subscription as failed for company:', companyId)
+        }
+
+        // Send notification about failed payment
+        try {
+          const { data: admins } = await supabaseAdmin
+            .from('users')
+            .select('id, email, full_name')
+            .eq('company_id', companyId)
+            .eq('company_role', 'admin')
+
+          if (admins && admins.length > 0) {
+            for (const admin of admins) {
+              await supabaseAdmin.from('notifications').insert({
+                user_id: admin.id,
+                type: 'payment_failed',
+                title: '❌ Betaling mislukt',
+                message: `Je betaling kon niet worden verwerkt. Probeer het opnieuw of neem contact op met support.`,
+                link_to: '/Subscription',
+                read: false,
+              })
+            }
+          }
+        } catch (notifyError) {
+          console.error('[mollieWebhook] Failed to send failure notification:', notifyError)
+        }
+      }
+      
+      return new Response('OK', { status: 200 })
+    }
+
+    // Only process paid payments for subscription activation
     if (payment.status !== 'paid') {
       console.log('[mollieWebhook] Payment not yet paid, status:', payment.status)
       return new Response('OK', { status: 200 })
     }
 
-    const metadata = payment.metadata
-    if (!metadata?.company_id) {
+    // Metadata and companyId already extracted earlier
+    if (!companyId) {
       console.error('[mollieWebhook] No company_id in payment metadata')
       return new Response('No company ID', { status: 400 })
     }
 
-    const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
-
-    const companyId = metadata.company_id
+    // supabaseAdmin already initialized earlier
     const planType = metadata.plan_type || metadata.subscription_tier
     const billingCycle = metadata.billing_cycle || 'monthly'
     const subscriptionTier = PLAN_TO_TIER[planType] || 'starter'
@@ -214,6 +272,72 @@ serve(async (req) => {
     console.log('[mollieWebhook] Company updated:', updatedCompany?.id)
     console.log('[mollieWebhook] New subscription_tier:', updatedCompany?.subscription_tier)
     console.log('[mollieWebhook] New subscription_status:', updatedCompany?.subscription_status)
+
+    // ============================================
+    // CREATE AND STORE INVOICE
+    // ============================================
+    try {
+      console.log('[mollieWebhook] Creating invoice record...')
+      
+      // Generate invoice number: PC-YYYYMM-XXXX
+      const now = new Date()
+      const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase()
+      const invoiceNumber = `PC-${yearMonth}-${randomSuffix}`
+      
+      // Calculate amounts
+      const amountValue = parseFloat(payment.amount.value)
+      const vatRate = 0.21 // 21% BTW
+      const amountExclVat = amountValue / (1 + vatRate)
+      const vatAmount = amountValue - amountExclVat
+      
+      // Calculate period
+      const periodStart = new Date()
+      const periodEnd = new Date(nextBillingDate)
+      
+      // Create invoice record
+      const invoiceData = {
+        company_id: companyId,
+        mollie_payment_id: payment.id,
+        payment_provider: 'mollie',
+        invoice_number: invoiceNumber,
+        invoice_date: new Date().toISOString(),
+        amount: amountValue,
+        amount_due: amountValue,
+        vat_amount: Math.round(vatAmount * 100) / 100,
+        currency: payment.amount.currency || 'EUR',
+        subscription_tier: subscriptionTier,
+        billing_cycle: billingCycle,
+        period_start: periodStart.toISOString(),
+        period_end: periodEnd.toISOString(),
+        description: `PaintConnect ${subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)} - ${billingCycle === 'yearly' ? 'Jaarlijks' : 'Maandelijks'}`,
+        line_items: [{
+          description: `PaintConnect ${subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)} Abonnement`,
+          quantity: 1,
+          unit_price: amountExclVat,
+          vat_rate: '21%',
+          total: amountValue,
+        }],
+        status: 'paid',
+        payment_method: payment.method || 'unknown',
+      }
+      
+      const { data: invoice, error: invoiceError } = await supabaseAdmin
+        .from('subscription_invoices')
+        .insert(invoiceData)
+        .select()
+        .single()
+      
+      if (invoiceError) {
+        console.error('[mollieWebhook] Failed to create invoice:', invoiceError)
+        // Non-critical, continue
+      } else {
+        console.log('[mollieWebhook] Invoice created:', invoice?.id, invoice?.invoice_number)
+      }
+    } catch (invoiceErr) {
+      console.error('[mollieWebhook] Error creating invoice:', invoiceErr)
+      // Non-critical, continue
+    }
 
     // Send notification to admins
     try {

@@ -149,7 +149,7 @@ export default function InvoiceTable({ invoices }) {
                                     <TableCell>
                                         {format(new Date(invoice.invoice_date), 'dd-MM-yyyy', { locale: nl })}
                                     </TableCell>
-                                    <TableCell>€{invoice.amount_due.toFixed(2)}</TableCell>
+                                    <TableCell>€{(invoice.amount_due || invoice.amount || 0).toFixed(2)}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
                                             {invoice.payment_provider === 'stripe' && (

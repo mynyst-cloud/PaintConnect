@@ -187,11 +187,15 @@ export default function Dashboard() {
   }, []);
 
   const checkOnboardingStatus = useCallback(async (company, currentUser) => {
-    if (!company || !currentUser || currentUser.company_role !== 'admin' || impersonatedCompanyId) {
+    // FIXED: Also allow 'owner' role (legacy) - treat it as 'admin'
+    const isAdmin = currentUser?.company_role === 'admin' || currentUser?.company_role === 'owner' || currentUser?.role === 'admin';
+    
+    if (!company || !currentUser || !isAdmin || impersonatedCompanyId) {
       console.log('[checkOnboardingStatus] Skipping check:', {
         hasCompany: !!company,
         hasUser: !!currentUser,
         userRole: currentUser?.company_role,
+        isAdmin,
         impersonatedCompanyId
       });
       return;
@@ -232,7 +236,9 @@ export default function Dashboard() {
         setShowOnboardingChecklist(true);
       } else if (hasTeamMembers && hasProjects && company.onboarding_status !== 'completed') {
         // Only company admins can update Company entity
-        if (currentUser.company_role === 'admin') {
+        // FIXED: Also allow 'owner' role (legacy)
+        const isAdmin = currentUser.company_role === 'admin' || currentUser.company_role === 'owner' || currentUser.role === 'admin';
+        if (isAdmin) {
           try {
             await Company.update(company.id, { onboarding_status: 'completed' });
             console.log('[checkOnboardingStatus] Marked onboarding as completed');

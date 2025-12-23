@@ -1,14 +1,17 @@
 
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { X, Users, Briefcase, CheckCircle, Circle, PaintBucket } from 'lucide-react';
+import { X, Users, Briefcase, CheckCircle, Circle, PaintBucket, ChevronDown, ChevronUp } from 'lucide-react';
 import { User, Project, Company } from '@/api/entities';
 import InviteUserForm from '@/components/admin/InviteUserForm';
 
 const paintConnectLogoUrl = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
+
+// Storage key for collapsed state
+const COLLAPSED_STORAGE_KEY = 'onboarding_checklist_collapsed';
 
 export default function OnboardingChecklist({ 
   companyId, 
@@ -20,6 +23,48 @@ export default function OnboardingChecklist({
   const [hasProjects, setHasProjects] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showInviteForm, setShowInviteForm] = useState(false);
+  
+  // Collapsed state - check localStorage first
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const autoCollapseTimerRef = useRef(null);
+  
+  // Auto-collapse after 4 seconds if not already collapsed
+  useEffect(() => {
+    if (!isCollapsed && !isLoading) {
+      autoCollapseTimerRef.current = setTimeout(() => {
+        setIsCollapsed(true);
+        try {
+          localStorage.setItem(COLLAPSED_STORAGE_KEY, 'true');
+        } catch {}
+      }, 4000);
+    }
+    
+    return () => {
+      if (autoCollapseTimerRef.current) {
+        clearTimeout(autoCollapseTimerRef.current);
+      }
+    };
+  }, [isCollapsed, isLoading]);
+  
+  // Toggle collapsed state
+  const toggleCollapsed = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    try {
+      localStorage.setItem(COLLAPSED_STORAGE_KEY, String(newState));
+    } catch {}
+    
+    // Clear auto-collapse timer when manually toggling
+    if (autoCollapseTimerRef.current) {
+      clearTimeout(autoCollapseTimerRef.current);
+    }
+  };
 
   // Check completion status
   useEffect(() => {
@@ -179,126 +224,132 @@ export default function OnboardingChecklist({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="mb-6"
+      className="mb-4"
     >
-      <Card className="border-2 border-emerald-200 dark:border-emerald-800 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 shadow-sm">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <img 
-                src={paintConnectLogoUrl} 
-                alt="PaintConnect" 
-                className="h-8 w-auto"
-              />
-              <div>
-                <h3 className="font-bold text-gray-900 dark:text-gray-100">
-                  Welkom bij PaintConnect! 🎉
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Voltooi deze 2 stappen om aan de slag te gaan
-                </p>
-              </div>
+      <Card className="border border-emerald-200 dark:border-emerald-800 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 shadow-sm overflow-hidden">
+        {/* Collapsed header - always visible, clickable to expand */}
+        <button
+          onClick={toggleCollapsed}
+          className="w-full flex items-center justify-between p-3 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <img 
+              src={paintConnectLogoUrl} 
+              alt="PaintConnect" 
+              className="h-6 w-auto"
+            />
+            <div className="text-left">
+              <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                Aan de slag met PaintConnect
+              </span>
+              <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
+                {completedTasks}/{totalTasks} stappen voltooid
+              </span>
             </div>
-            {/* Progress circle or checkmark */}
-            <div className="flex-shrink-0">
-              {completedTasks === totalTasks ? (
-                <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-              ) : (
-                <div className="relative w-8 h-8">
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Mini progress bar */}
+            <div className="hidden sm:block w-20 bg-emerald-100 dark:bg-emerald-900/50 rounded-full h-1.5">
+              <div 
+                className="h-1.5 rounded-full bg-emerald-500 transition-all duration-300" 
+                style={{ width: `${progressPercentage}%` }} 
+              />
+            </div>
+            {isCollapsed ? (
+              <ChevronDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <ChevronUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            )}
+          </div>
+        </button>
+        
+        {/* Expandable content */}
+        <AnimatePresence>
+          {!isCollapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CardContent className="p-4 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                {/* Progress bar */}
+                <div className="mb-4">
                   <Progress 
                     value={progressPercentage} 
-                    className="w-8 h-8 rotate-[-90deg]"
+                    className="h-2 bg-emerald-100 dark:bg-emerald-900/50"
                   />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                      {completedTasks}/{totalTasks}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mb-4">
-            <Progress 
-              value={progressPercentage} 
-              className="h-2 bg-emerald-100 dark:bg-emerald-900/50"
-            />
-            <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
-              {completedTasks} van {totalTasks} taken voltooid ({Math.round(progressPercentage)}%)
-            </p>
-          </div>
-
-          {/* Task list */}
-          <div className="space-y-3">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                  task.completed
-                    ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700'
-                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 flex items-center justify-center rounded-full ${
-                    task.completed 
-                      ? 'bg-emerald-500 text-white' 
-                      : 'border-2 border-gray-300 dark:border-gray-600'
-                  }`}>
-                    {task.completed ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : (
-                      <Circle className="w-4 h-4" />
-                    )}
-                  </div>
-                  <div>
-                    <p className={`font-medium text-sm ${
-                      task.completed 
-                        ? 'text-emerald-800 dark:text-emerald-200' 
-                        : 'text-gray-900 dark:text-gray-100'
-                    }`}>
-                      {task.title}
-                    </p>
-                    <p className={`text-xs ${
-                      task.completed 
-                        ? 'text-emerald-600 dark:text-emerald-300' 
-                        : 'text-gray-500 dark:text-gray-400'
-                    }`}>
-                      {task.completed ? '✅ Voltooid' : task.description}
-                    </p>
-                  </div>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
+                    {completedTasks} van {totalTasks} taken voltooid
+                  </p>
                 </div>
 
-                {!task.completed && (
-                  <Button
-                    size="sm"
-                    onClick={task.action}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3"
+                {/* Task list */}
+                <div className="space-y-2">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className={`flex items-center justify-between p-2.5 rounded-lg border transition-all ${
+                        task.completed
+                          ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-5 h-5 flex items-center justify-center rounded-full ${
+                          task.completed 
+                            ? 'bg-emerald-500 text-white' 
+                            : 'border-2 border-gray-300 dark:border-gray-600'
+                        }`}>
+                          {task.completed ? (
+                            <CheckCircle className="w-3 h-3" />
+                          ) : (
+                            <Circle className="w-3 h-3" />
+                          )}
+                        </div>
+                        <div>
+                          <p className={`font-medium text-sm ${
+                            task.completed 
+                              ? 'text-emerald-800 dark:text-emerald-200' 
+                              : 'text-gray-900 dark:text-gray-100'
+                          }`}>
+                            {task.title}
+                          </p>
+                        </div>
+                      </div>
+
+                      {!task.completed && (
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            task.action();
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 h-7"
+                        >
+                          <task.icon className="w-3 h-3 mr-1" />
+                          {task.buttonText}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {completedTasks === totalTasks && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-3 p-2.5 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 rounded-lg text-center"
                   >
-                    <task.icon className="w-3 h-3 mr-1" />
-                    {task.buttonText}
-                  </Button>
+                    <p className="text-emerald-800 dark:text-emerald-200 font-medium text-sm">
+                      🎉 Klaar voor gebruik!
+                    </p>
+                  </motion.div>
                 )}
-              </div>
-            ))}
-          </div>
-
-          {completedTasks === totalTasks && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="mt-4 p-3 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 rounded-lg text-center"
-            >
-              <p className="text-emerald-800 dark:text-emerald-200 font-medium text-sm">
-                🎉 Gefeliciteerd! Je PaintConnect omgeving is klaar voor gebruik.
-              </p>
+              </CardContent>
             </motion.div>
           )}
-        </CardContent>
+        </AnimatePresence>
       </Card>
     </motion.div>
   );

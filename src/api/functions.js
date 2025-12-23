@@ -240,10 +240,123 @@ export const generateCompanyInboundEmail = notImplemented('generateCompanyInboun
 
 // ====== PAYMENT FUNCTIONS ======
 
+/**
+ * Create Mollie checkout session for subscription
+ */
+export const createMollieCheckout = async ({ planType, companyId, billingCycle = 'monthly', userId, action = 'new' }) => {
+  try {
+    const { supabase } = await import('@/lib/supabase')
+    
+    const { data, error } = await supabase.functions.invoke('createMollieCheckout', {
+      body: { planType, companyId, billingCycle, userId, action }
+    })
+    
+    if (error) {
+      console.error('[createMollieCheckout] Error:', error)
+      throw error
+    }
+    
+    return { data }
+  } catch (error) {
+    console.error('[createMollieCheckout] Error:', error)
+    throw error
+  }
+}
+
+/**
+ * Create Stripe checkout session for subscription
+ */
+export const createCheckoutSession = async ({ priceId, planName, billingCycle = 'monthly', companyId, userId, action = 'new' }) => {
+  try {
+    const { supabase, User } = await import('@/lib/supabase')
+    
+    // Get current user's company if not provided
+    let resolvedCompanyId = companyId
+    let resolvedUserId = userId
+    
+    if (!resolvedCompanyId || !resolvedUserId) {
+      const user = await User.me()
+      resolvedCompanyId = resolvedCompanyId || user?.company_id
+      resolvedUserId = resolvedUserId || user?.id
+    }
+    
+    const { data, error } = await supabase.functions.invoke('createStripeCheckout', {
+      body: { priceId, planName, billingCycle, companyId: resolvedCompanyId, userId: resolvedUserId, action }
+    })
+    
+    if (error) {
+      console.error('[createCheckoutSession] Error:', error)
+      throw error
+    }
+    
+    return { data }
+  } catch (error) {
+    console.error('[createCheckoutSession] Error:', error)
+    throw error
+  }
+}
+
+/**
+ * Create Stripe Customer Portal session for managing subscription
+ */
+export const createCustomerPortalSession = async (companyId) => {
+  try {
+    const { supabase, User } = await import('@/lib/supabase')
+    
+    // Get current user's company if not provided
+    let resolvedCompanyId = companyId
+    if (!resolvedCompanyId) {
+      const user = await User.me()
+      resolvedCompanyId = user?.company_id
+    }
+    
+    const { data, error } = await supabase.functions.invoke('createCustomerPortal', {
+      body: { companyId: resolvedCompanyId }
+    })
+    
+    if (error) {
+      console.error('[createCustomerPortalSession] Error:', error)
+      throw error
+    }
+    
+    return { data }
+  } catch (error) {
+    console.error('[createCustomerPortalSession] Error:', error)
+    throw error
+  }
+}
+
+/**
+ * Manage existing subscription (upgrade, downgrade, switch cycle, cancel)
+ */
+export const manageSubscription = async ({ companyId, action, newPlan, newCycle }) => {
+  try {
+    const { supabase, User } = await import('@/lib/supabase')
+    
+    // Get current user's company if not provided
+    let resolvedCompanyId = companyId
+    if (!resolvedCompanyId) {
+      const user = await User.me()
+      resolvedCompanyId = user?.company_id
+    }
+    
+    const { data, error } = await supabase.functions.invoke('manageSubscription', {
+      body: { companyId: resolvedCompanyId, action, newPlan, newCycle }
+    })
+    
+    if (error) {
+      console.error('[manageSubscription] Error:', error)
+      throw error
+    }
+    
+    return { data }
+  } catch (error) {
+    console.error('[manageSubscription] Error:', error)
+    throw error
+  }
+}
+
 export const setupStripePortal = notImplemented('setupStripePortal')
-export const createCheckoutSession = notImplemented('createCheckoutSession')
-export const createMollieCheckout = notImplemented('createMollieCheckout')
-export const createCustomerPortalSession = notImplemented('createCustomerPortalSession')
 
 // ====== INVITE FUNCTIONS ======
 

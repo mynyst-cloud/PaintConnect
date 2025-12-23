@@ -388,9 +388,9 @@ const PaymentMethodSelector = ({ selectedMethod, onSelect, isLoading }) => (
 // PLAN CARD
 // ============================================
 const PlanCard = ({ plan, isCurrentPlan, onChoosePlan, isLoading, billingCycle, paymentMethod }) => {
-  const yearlyPrice = plan.monthlyPrice * 10;
+  const yearlyPrice = plan.monthlyPrice * 10; // 2 maanden gratis
+  const monthlyEquivalentYearly = Math.round(yearlyPrice / 12); // €X/maand bij jaarlijks
   const yearlySavings = plan.monthlyPrice * 2;
-  const displayPrice = billingCycle === 'yearly' ? yearlyPrice : plan.monthlyPrice;
   const Icon = plan.icon;
 
   return (
@@ -434,27 +434,50 @@ const PlanCard = ({ plan, isCurrentPlan, onChoosePlan, isLoading, billingCycle, 
             {plan.badge}
           </Badge>
           
-          {/* Price */}
+          {/* Price - Always show monthly first, yearly savings below */}
           <div className="my-6">
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="text-lg text-gray-500">€</span>
-              <span className={`text-5xl font-extrabold ${plan.highlight ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>
-                {displayPrice}
-              </span>
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {billingCycle === 'yearly' ? 'per jaar' : 'per maand'}
-            </div>
-            {billingCycle === 'yearly' && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mt-2"
-              >
-                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
-                  Bespaar €{yearlySavings}/jaar
-                </Badge>
-              </motion.div>
+            {billingCycle === 'monthly' ? (
+              <>
+                {/* Monthly pricing - clean and simple */}
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-lg text-gray-500">€</span>
+                  <span className={`text-5xl font-extrabold ${plan.highlight ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                    {plan.monthlyPrice}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  per maand
+                </div>
+                {/* Show yearly option as savings */}
+                <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-xs text-green-700 dark:text-green-400">
+                    💡 Jaarlijks: <span className="font-semibold">€{monthlyEquivalentYearly}/maand</span>
+                    <span className="ml-1 text-green-600 dark:text-green-300">(bespaar €{yearlySavings})</span>
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Yearly pricing - show monthly equivalent */}
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-lg text-gray-500">€</span>
+                  <span className={`text-5xl font-extrabold ${plan.highlight ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                    {monthlyEquivalentYearly}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  per maand <span className="text-xs">(jaarlijks gefactureerd)</span>
+                </div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="mt-2"
+                >
+                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-medium">
+                    €{yearlyPrice}/jaar • Bespaar €{yearlySavings}!
+                  </Badge>
+                </motion.div>
+              </>
             )}
           </div>
           
@@ -636,7 +659,7 @@ export default function Subscription() {
   const [error, setError] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('mollie');
   const [currentUser, setCurrentUser] = useState(null);
-  const [billingCycle, setBillingCycle] = useState('yearly'); // Default to yearly for better conversion
+  const [billingCycle, setBillingCycle] = useState('monthly'); // Default to monthly - less intimidating
   const [showComparison, setShowComparison] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -751,7 +774,9 @@ export default function Subscription() {
         const { data } = await createCheckoutSession({ 
           priceId: priceId,
           planName: selectedPlan.name,
-          billingCycle: billingCycle 
+          billingCycle: billingCycle,
+          companyId: currentUser.company_id,
+          userId: currentUser.id
         });
         if (data?.url) {
           window.location.href = data.url;

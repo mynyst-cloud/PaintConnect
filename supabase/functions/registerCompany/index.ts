@@ -134,6 +134,9 @@ serve(async (req) => {
 
     // Create company
     // Note: created_at is handled automatically by Supabase, don't include it
+    const now = new Date()
+    const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000) // 14 days from now
+    
     const companyData: Record<string, any> = {
       name: company_name.trim(),
       email: email || user.email,
@@ -145,52 +148,71 @@ serve(async (req) => {
       city: city || null,
       country: country || 'België',
       inbound_email_address: inboundEmail,
-      subscription_tier: 'free',
-      subscription_status: 'trialing'
+      subscription_tier: 'starter_trial', // FIXED: Use 'starter_trial' instead of 'free'
+      subscription_status: 'trialing',
+      onboarding_status: 'not_started', // FIXED: Set onboarding status so onboarding can start
+      trial_started_at: now.toISOString(), // FIXED: Set trial start time
+      trial_ends_at: trialEndsAt.toISOString() // FIXED: Set trial end time (14 days)
     }
 
-    // Try to add trial_ends_at - if column doesn't exist, it will fail gracefully
-    // We'll catch the error and retry without it
+    // Try to insert company with all fields
+    // If some columns don't exist, we'll retry without them
     let company = null
     let companyError = null
 
-    // First attempt: with trial_ends_at
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-    const companyDataWithTrial = {
-      ...companyData,
-      trial_ends_at: trialEndsAt
-    }
-
-    const { data: companyWithTrial, error: errorWithTrial } = await supabaseAdmin
+    // First attempt: with all fields (trial_started_at, trial_ends_at, onboarding_status)
+    const { data: companyWithAllFields, error: errorWithAllFields } = await supabaseAdmin
       .from('companies')
-      .insert(companyDataWithTrial)
+      .insert(companyData)
       .select()
       .single()
 
-    if (errorWithTrial) {
-      const errorCode = errorWithTrial.code || ''
-      const errorMessage = errorWithTrial.message || ''
+    if (errorWithAllFields) {
+      const errorCode = errorWithAllFields.code || ''
+      const errorMessage = errorWithAllFields.message || ''
       
-      // If error is about trial_ends_at column, try without it
-      if (errorCode.includes('PGRST') && errorMessage.includes('trial_ends_at')) {
-        console.warn('[registerCompany] trial_ends_at column not found, trying without it...')
+      console.warn('[registerCompany] Insert with all fields failed:', errorCode, errorMessage)
+      
+      // If error is about missing columns, try with minimal fields
+      if (errorCode.includes('PGRST')) {
+        console.warn('[registerCompany] Some columns may not exist, trying with minimal fields...')
         
-        const { data: companyWithoutTrial, error: errorWithoutTrial } = await supabaseAdmin
+        // Minimal company data - only required fields
+        const minimalCompanyData: Record<string, any> = {
+          name: companyData.name,
+          email: companyData.email,
+          inbound_email_address: companyData.inbound_email_address,
+          subscription_tier: companyData.subscription_tier,
+          subscription_status: companyData.subscription_status
+        }
+        
+        // Only add optional fields if they were provided
+        if (companyData.vat_number) minimalCompanyData.vat_number = companyData.vat_number
+        if (companyData.phone_number) minimalCompanyData.phone_number = companyData.phone_number
+        if (companyData.street) minimalCompanyData.street = companyData.street
+        if (companyData.house_number) minimalCompanyData.house_number = companyData.house_number
+        if (companyData.postal_code) minimalCompanyData.postal_code = companyData.postal_code
+        if (companyData.city) minimalCompanyData.city = companyData.city
+        if (companyData.country) minimalCompanyData.country = companyData.country
+        
+        const { data: companyMinimal, error: errorMinimal } = await supabaseAdmin
           .from('companies')
-          .insert(companyData)
+          .insert(minimalCompanyData)
           .select()
           .single()
 
-        if (errorWithoutTrial) {
-          companyError = errorWithoutTrial
+        if (errorMinimal) {
+          companyError = errorMinimal
         } else {
-          company = companyWithoutTrial
+          company = companyMinimal
+          console.log('[registerCompany] Company created with minimal fields, onboarding_status and trial dates may need to be set separately')
         }
       } else {
-        companyError = errorWithTrial
+        companyError = errorWithAllFields
       }
     } else {
-      company = companyWithTrial
+      company = companyWithAllFields
+      console.log('[registerCompany] Company created with all fields including onboarding_status and trial dates')
     }
 
     if (companyError) {

@@ -30,6 +30,14 @@ serve(async (req) => {
   }
 
   try {
+    // Log all environment variables (without sensitive values)
+    console.log('[createMollieCheckout] Environment check:', {
+      hasMOLLIE_API_KEY: !!Deno.env.get('MOLLIE_API_KEY'),
+      hasSUPABASE_URL: !!Deno.env.get('SUPABASE_URL'),
+      hasSUPABASE_SERVICE_ROLE_KEY: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      APP_URL: Deno.env.get('APP_URL') || 'https://paintcon.vercel.app',
+    })
+
     const MOLLIE_API_KEY = Deno.env.get('MOLLIE_API_KEY')
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -43,10 +51,39 @@ serve(async (req) => {
       )
     }
 
-    const { planType, companyId, billingCycle = 'monthly', userId, action = 'new' } = await req.json()
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[createMollieCheckout] Missing Supabase credentials:', {
+        hasURL: !!SUPABASE_URL,
+        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+      })
+      return new Response(
+        JSON.stringify({ success: false, error: 'Supabase credentials niet geconfigureerd' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
+    // Parse request with better error handling
+    let requestBody
+    try {
+      requestBody = await req.json()
+      console.log('[createMollieCheckout] Request body parsed:', { 
+        planType: requestBody.planType, 
+        companyId: requestBody.companyId,
+        billingCycle: requestBody.billingCycle,
+      })
+    } catch (parseError) {
+      console.error('[createMollieCheckout] Failed to parse request body:', parseError)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Ongeldig request body' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    const { planType, companyId, billingCycle = 'monthly', userId, action = 'new' } = requestBody
     console.log('[createMollieCheckout] Request:', { planType, companyId, billingCycle, userId, action })
 
     if (!planType || !companyId) {
+      console.error('[createMollieCheckout] Missing required fields:', { planType, companyId })
       return new Response(
         JSON.stringify({ success: false, error: 'planType en companyId zijn verplicht' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -64,22 +101,34 @@ serve(async (req) => {
     const pricing = planConfig[billingCycle] || planConfig.monthly
 
     // Initialize Supabase admin client
+    console.log('[createMollieCheckout] Initializing Supabase client...')
     const supabaseAdmin = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
     // Get company data
+    console.log('[createMollieCheckout] Fetching company:', companyId)
     const { data: company, error: companyError } = await supabaseAdmin
       .from('companies')
       .select('id, name, mollie_customer_id, subscription_tier, subscription_status')
       .eq('id', companyId)
       .single()
 
-    if (companyError || !company) {
-      console.error('[createMollieCheckout] Company not found:', companyError)
+    if (companyError) {
+      console.error('[createMollieCheckout] Company query error:', companyError)
+      return new Response(
+        JSON.stringify({ success: false, error: `Database error: ${companyError.message || companyError.code}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
+    }
+
+    if (!company) {
+      console.error('[createMollieCheckout] Company not found for ID:', companyId)
       return new Response(
         JSON.stringify({ success: false, error: 'Bedrijf niet gevonden' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       )
     }
+
+    console.log('[createMollieCheckout] Company found:', { id: company.id, name: company.name })
 
     let mollieCustomerId = company.mollie_customer_id
 

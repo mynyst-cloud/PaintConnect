@@ -12,6 +12,7 @@ import { base44 } from "@/api/base44Client";
 import { Damage } from '@/api/entities';
 import { handleDamageReport } from '@/api/functions';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo";
+import { supabase } from '@/lib/supabase';
 
 const PLACEHOLDER_LOGO = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 
@@ -57,19 +58,50 @@ export default React.memo(function DamageForm({ projects, currentUser, damage, o
 
     setUploadingPhotos(true);
     try {
-      const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
-      const results = await Promise.all(uploadPromises);
-      const newPhotoUrls = results.map(result => result.file_url);
+      const uploadedUrls = [];
       
-      setFormData(prev => ({
-        ...prev,
-        photo_urls: [...(prev.photo_urls || []), ...newPhotoUrls]
-      }));
+      for (const file of files) {
+        try {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+          const filePath = `damage-photos/${fileName}`;
+
+          const { data, error } = await supabase.storage
+            .from('project-uploads')
+            .upload(filePath, file);
+
+          if (error) throw error;
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('project-uploads')
+            .getPublicUrl(filePath);
+
+          if (publicUrl) {
+            uploadedUrls.push(publicUrl);
+          }
+        } catch (fileError) {
+          console.error(`Error uploading file ${file.name}:`, fileError);
+          // Continue met de volgende foto's
+        }
+      }
+      
+      if (uploadedUrls.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          photo_urls: [...(prev.photo_urls || []), ...uploadedUrls]
+        }));
+      }
+      
+      if (uploadedUrls.length < files.length) {
+        setErrors(prev => ({ ...prev, photos: `${uploadedUrls.length} van ${files.length} foto's geüpload. Sommige foto's konden niet worden geüpload.` }));
+      }
     } catch (error) {
       console.error("Error uploading photos:", error);
       setErrors(prev => ({ ...prev, photos: "Foto's uploaden mislukt." }));
     } finally {
       setUploadingPhotos(false);
+      event.target.value = ""; // Reset input
     }
   };
 

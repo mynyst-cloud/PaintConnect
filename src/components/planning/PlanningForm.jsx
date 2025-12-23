@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { base44 } from "@/api/base44Client";
 import { geocodeAddress } from "@/api/functions";
 import ProjectsMap from "@/components/projects/ProjectsMap";
+import { supabase } from '@/lib/supabase';
 
 const statusOptions = [
   { value: "nieuw", label: "Nieuw" },
@@ -212,23 +213,53 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
 
       setIsUploading(true);
       try {
-          // Changed to base44.integrations.Core.UploadFile
-          const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
-          const results = await Promise.all(uploadPromises);
-          const newUrls = results.map(res => res.file_url).filter(Boolean);
+          const uploadedUrls = [];
+          
+          for (const file of files) {
+              try {
+                  const fileExt = file.name.split('.').pop();
+                  const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+                  const filePath = `project-photos/${fileName}`;
 
-          setCurrentProject(prev => ({
-              ...prev,
-              photo_urls: [...prev.photo_urls, ...newUrls],
-              // Set first uploaded photo as cover if none exists
-              cover_photo_url: prev.cover_photo_url || newUrls[0] || "",
-              thumbnail_url: prev.thumbnail_url || newUrls[0] || ""
-          }));
+                  const { data, error } = await supabase.storage
+                      .from('project-uploads')
+                      .upload(filePath, file);
+
+                  if (error) throw error;
+
+                  // Get public URL
+                  const { data: { publicUrl } } = supabase.storage
+                      .from('project-uploads')
+                      .getPublicUrl(filePath);
+
+                  if (publicUrl) {
+                      uploadedUrls.push(publicUrl);
+                  }
+              } catch (fileError) {
+                  console.error(`Error uploading file ${file.name}:`, fileError);
+                  // Continue met de volgende foto's
+              }
+          }
+
+          if (uploadedUrls.length > 0) {
+              setCurrentProject(prev => ({
+                  ...prev,
+                  photo_urls: [...prev.photo_urls, ...uploadedUrls],
+                  // Set first uploaded photo as cover if none exists
+                  cover_photo_url: prev.cover_photo_url || uploadedUrls[0] || "",
+                  thumbnail_url: prev.thumbnail_url || uploadedUrls[0] || ""
+              }));
+          }
+          
+          if (uploadedUrls.length < files.length) {
+              alert(`${uploadedUrls.length} van ${files.length} foto's succesvol geüpload. Sommige foto's konden niet worden geüpload.`);
+          }
       } catch (error) {
           console.error("Error uploading photos:", error);
           alert("Kon foto's niet uploaden.");
       } finally {
           setIsUploading(false);
+          e.target.value = ""; // Reset input
       }
   };
 

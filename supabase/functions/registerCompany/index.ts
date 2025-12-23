@@ -205,15 +205,62 @@ serve(async (req) => {
 
     console.log('[registerCompany] Company created:', company.id, company.name)
 
+    // Check if user already exists and what their current company_role is
+    const { data: existingUser } = await supabaseAdmin
+      .from('users')
+      .select('id, company_role, company_id')
+      .eq('id', user.id)
+      .single()
+
+    if (existingUser) {
+      console.log('[registerCompany] Existing user found:', {
+        id: existingUser.id,
+        current_company_role: existingUser.company_role,
+        current_company_id: existingUser.company_id
+      })
+      
+      // If user already has a company, don't allow registration
+      if (existingUser.company_id && existingUser.company_id !== company.id) {
+        // Clean up the company we just created
+        try {
+          await supabaseAdmin.from('companies').delete().eq('id', company.id)
+        } catch (cleanupError) {
+          console.error('[registerCompany] Error cleaning up company:', cleanupError)
+        }
+        
+        return new Response(
+          JSON.stringify({ success: false, error: 'Gebruiker heeft al een bedrijf' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
+      
+      // If existing user has 'owner' role, update it to 'admin' first to satisfy check constraint
+      if (existingUser.company_role === 'owner') {
+        console.log('[registerCompany] Existing user has "owner" role, updating to "admin" first...')
+        const { error: updateRoleError } = await supabaseAdmin
+          .from('users')
+          .update({ company_role: 'admin' })
+          .eq('id', user.id)
+        
+        if (updateRoleError) {
+          console.error('[registerCompany] Error updating company_role from owner to admin:', updateRoleError)
+          // Continue anyway, the upsert will try to set it
+        } else {
+          console.log('[registerCompany] Successfully updated company_role from owner to admin')
+        }
+      }
+    }
+
     // Link user to company using UPSERT
     // Build base user data - always include these fields
     // Note: created_date is handled automatically by Supabase or set by User.me(), don't include it
+    // IMPORTANT: Always set company_role to 'admin' (not 'owner') to satisfy check constraint
     const userData: Record<string, any> = {
       id: user.id,
       email: user.email,
       full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
       company_id: company.id,
-      company_role: 'admin',
+      company_role: 'admin', // Must be 'admin', not 'owner' - check constraint doesn't allow 'owner'
       status: 'active'
     }
 

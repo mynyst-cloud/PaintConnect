@@ -26,34 +26,79 @@ BEGIN
   END IF;
 END $$;
 
--- Add other potentially missing columns
+-- Add all potentially missing columns (for existing tables)
 DO $$
 BEGIN
+  -- event_type
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'planning_events' AND column_name = 'event_type'
+  ) THEN
+    ALTER TABLE planning_events ADD COLUMN event_type TEXT NOT NULL DEFAULT 'feestdag';
+  END IF;
+  
+  -- color
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'planning_events' AND column_name = 'color'
+  ) THEN
+    ALTER TABLE planning_events ADD COLUMN color TEXT DEFAULT 'gray';
+  END IF;
+  
+  -- start_date
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'planning_events' AND column_name = 'start_date'
+  ) THEN
+    ALTER TABLE planning_events ADD COLUMN start_date DATE;
+  END IF;
+  
+  -- end_date
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'planning_events' AND column_name = 'end_date'
+  ) THEN
+    ALTER TABLE planning_events ADD COLUMN end_date DATE;
+  END IF;
+  
+  -- description
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'planning_events' AND column_name = 'description'
+  ) THEN
+    ALTER TABLE planning_events ADD COLUMN description TEXT;
+  END IF;
+  
+  -- is_recurring
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'planning_events' AND column_name = 'is_recurring'
   ) THEN
     ALTER TABLE planning_events ADD COLUMN is_recurring BOOLEAN DEFAULT false;
   END IF;
-END $$;
-
-DO $$
-BEGIN
+  
+  -- created_by
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'planning_events' AND column_name = 'created_by'
   ) THEN
     ALTER TABLE planning_events ADD COLUMN created_by TEXT;
   END IF;
-END $$;
-
-DO $$
-BEGIN
+  
+  -- created_at
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'planning_events' AND column_name = 'description'
+    WHERE table_name = 'planning_events' AND column_name = 'created_at'
   ) THEN
-    ALTER TABLE planning_events ADD COLUMN description TEXT;
+    ALTER TABLE planning_events ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+  END IF;
+  
+  -- updated_at
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'planning_events' AND column_name = 'updated_at'
+  ) THEN
+    ALTER TABLE planning_events ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
   END IF;
 END $$;
 

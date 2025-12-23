@@ -314,7 +314,62 @@ export default function Dashboard() {
         throw new Error('setup');
       }
 
-      const companyPromise = fetchData(`company_${companyId}`, () => Company.get(companyId), 300000, forceRefresh);
+      const companyPromise = fetchData(`company_${companyId}`, async () => {
+        const companyData = await Company.get(companyId);
+        
+        // FIXED: Auto-fix legacy companies with 'free' tier or missing onboarding_status
+        if (companyData && isCurrentUserAdmin && !impersonatedCompanyId) {
+          const needsUpdate = 
+            companyData.subscription_tier === 'free' || 
+            !companyData.onboarding_status ||
+            !companyData.trial_started_at;
+          
+          if (needsUpdate) {
+            console.log('[loadDashboardData] Auto-fixing legacy company:', {
+              companyId: companyData.id,
+              current_tier: companyData.subscription_tier,
+              current_onboarding: companyData.onboarding_status,
+              has_trial_started: !!companyData.trial_started_at
+            });
+            
+            try {
+              const updateData = {};
+              
+              // Fix subscription_tier
+              if (companyData.subscription_tier === 'free' || !companyData.subscription_tier) {
+                updateData.subscription_tier = 'starter_trial';
+                updateData.subscription_status = 'trialing';
+              }
+              
+              // Fix onboarding_status
+              if (!companyData.onboarding_status) {
+                updateData.onboarding_status = 'not_started';
+              }
+              
+              // Fix trial dates if missing
+              if (!companyData.trial_started_at) {
+                const now = new Date();
+                updateData.trial_started_at = now.toISOString();
+                if (!companyData.trial_ends_at) {
+                  const trialEndsAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+                  updateData.trial_ends_at = trialEndsAt.toISOString();
+                }
+              }
+              
+              if (Object.keys(updateData).length > 0) {
+                await Company.update(companyData.id, updateData);
+                console.log('[loadDashboardData] Company updated:', updateData);
+                // Reload company data to get updated values
+                return await Company.get(companyId);
+              }
+            } catch (updateError) {
+              console.warn('[loadDashboardData] Could not auto-fix company:', updateError.message);
+            }
+          }
+        }
+        
+        return companyData;
+      }, 300000, forceRefresh);
 
       let projectsPromise;
       if (isCurrentUserAdmin || impersonatedCompanyId) {

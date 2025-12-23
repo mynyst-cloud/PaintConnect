@@ -212,6 +212,18 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
+    // Build base user data - always include these fields
+    // Note: created_date is handled automatically by Supabase or set by User.me(), don't include it
+    // IMPORTANT: Always set company_role to 'admin' (not 'owner') to satisfy check constraint
+    const userData: Record<string, any> = {
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+      company_id: company.id,
+      company_role: 'admin', // Must be 'admin', not 'owner' - check constraint doesn't allow 'owner'
+      status: 'active'
+    }
+
     if (existingUser) {
       console.log('[registerCompany] Existing user found:', {
         id: existingUser.id,
@@ -234,35 +246,96 @@ serve(async (req) => {
         )
       }
       
-      // If existing user has 'owner' role, update it to 'admin' first to satisfy check constraint
-      if (existingUser.company_role === 'owner') {
-        console.log('[registerCompany] Existing user has "owner" role, updating to "admin" first...')
-        const { error: updateRoleError } = await supabaseAdmin
-          .from('users')
-          .update({ company_role: 'admin' })
-          .eq('id', user.id)
-        
-        if (updateRoleError) {
-          console.error('[registerCompany] Error updating company_role from owner to admin:', updateRoleError)
-          // Continue anyway, the upsert will try to set it
-        } else {
-          console.log('[registerCompany] Successfully updated company_role from owner to admin')
-        }
+      // User exists - use UPDATE instead of UPSERT to ensure all fields are updated
+      // This is critical to override any 'owner' role that might exist
+      console.log('[registerCompany] User exists, using UPDATE instead of UPSERT to ensure company_role is set correctly')
+      
+      // First, try with user_type
+      const userDataWithType = {
+        ...userData,
+        user_type: 'painter_company'
       }
-    }
-
-    // Link user to company using UPSERT
-    // Build base user data - always include these fields
-    // Note: created_date is handled automatically by Supabase or set by User.me(), don't include it
-    // IMPORTANT: Always set company_role to 'admin' (not 'owner') to satisfy check constraint
-    const userData: Record<string, any> = {
-      id: user.id,
-      email: user.email,
-      full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-      company_id: company.id,
-      company_role: 'admin', // Must be 'admin', not 'owner' - check constraint doesn't allow 'owner'
-      status: 'active'
-    }
+      
+      console.log('[registerCompany] Attempting user UPDATE with user_type...')
+      console.log('[registerCompany] User data to update:', JSON.stringify(userDataWithType, null, 2))
+      
+      const { data: updatedUserWithType, error: updateErrorWithType } = await supabaseAdmin
+        .from('users')
+        .update(userDataWithType)
+        .eq('id', user.id)
+        .select()
+        .single()
+      
+      if (updateErrorWithType) {
+        const errorCode = updateErrorWithType.code || ''
+        const errorMessage = updateErrorWithType.message || ''
+        
+        // If error is about user_type column, try without it
+        if (errorCode.includes('PGRST') && errorMessage.includes('user_type')) {
+          console.warn('[registerCompany] Update with user_type failed, trying without it...')
+          
+          console.log('[registerCompany] User data to update (without user_type):', JSON.stringify(userData, null, 2))
+          
+          const { data: updatedUser, error: updateError } = await supabaseAdmin
+            .from('users')
+            .update(userData)
+            .eq('id', user.id)
+            .select()
+            .single()
+          
+          if (updateError) {
+            console.error('[registerCompany] Error updating user:', updateError)
+            console.error('[registerCompany] Error code:', updateError.code)
+            console.error('[registerCompany] Error message:', updateError.message)
+            console.error('[registerCompany] Error details:', JSON.stringify(updateError))
+            
+            // Try to clean up company
+            try {
+              await supabaseAdmin.from('companies').delete().eq('id', company.id)
+            } catch (cleanupError) {
+              console.error('[registerCompany] Error cleaning up company:', cleanupError)
+            }
+            
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                error: `Kon gebruiker niet koppelen aan bedrijf: ${updateError.message || updateError.code || 'Onbekende fout'}` 
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+            )
+          } else {
+            console.log('[registerCompany] User updated successfully (without user_type)')
+          }
+        } else {
+          console.error('[registerCompany] Error updating user:', updateErrorWithType)
+          console.error('[registerCompany] Error code:', updateErrorWithType.code)
+          console.error('[registerCompany] Error message:', updateErrorWithType.message)
+          console.error('[registerCompany] Error details:', JSON.stringify(updateErrorWithType))
+          
+          // Try to clean up company
+          try {
+            await supabaseAdmin.from('companies').delete().eq('id', company.id)
+          } catch (cleanupError) {
+            console.error('[registerCompany] Error cleaning up company:', cleanupError)
+          }
+          
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Kon gebruiker niet koppelen aan bedrijf: ${updateErrorWithType.message || updateErrorWithType.code || 'Onbekende fout'}` 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          )
+        }
+      } else {
+        console.log('[registerCompany] User updated successfully (with user_type)')
+      }
+      
+      // Skip the UPSERT logic below since we already updated
+      // Continue to storage bucket creation
+    } else {
+      // User doesn't exist - use UPSERT to create
+      console.log('[registerCompany] User does not exist, using UPSERT to create')
 
     // Try to upsert with user_type first (if column exists)
     let userUpsertError = null

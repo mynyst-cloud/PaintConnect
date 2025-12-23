@@ -1,0 +1,5 @@
+# Stripe webhook moet publiek toegankelijk zijn (geen JWT verificatie)
+# Stripe kan geen Supabase Authorization header meesturen
+[function]
+verify_jwt = false
+

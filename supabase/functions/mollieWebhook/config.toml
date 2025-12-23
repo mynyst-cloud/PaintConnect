@@ -1,0 +1,5 @@
+# Mollie webhook moet publiek toegankelijk zijn (geen JWT verificatie)
+# Mollie kan geen Authorization header meesturen
+[function]
+verify_jwt = false
+

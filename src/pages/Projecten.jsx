@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Project, User } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, MapIcon, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFeatureAccess, LimitWarning } from "@/hooks/useFeatureAccess";
 
@@ -516,15 +517,26 @@ export default function Projecten() {
               <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-400 mt-1">Beheer al uw schilderprojecten op één plek.</p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowMap(!showMap)}
-                className="w-auto text-sm flex items-center gap-2"
-                disabled={geocodeError !== null && !showMap}
-              >
-                <MapIcon className="w-4 h-4" />
-                {showMap ? 'Kaart Verbergen' : 'Kaart Tonen'}
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowMap(!showMap)}
+                      className="w-auto text-sm flex items-center gap-2"
+                      disabled={geocodeError !== null && !showMap}
+                    >
+                      <MapIcon className="w-4 h-4" />
+                      {showMap ? 'Kaart Verbergen' : 'Kaart Tonen'}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="text-sm">
+                      Bekijk alle projecten op een interactieve kaart. Projecten met een geldig adres worden automatisch op de kaart getoond.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               {isAdmin && (
                 <Button 
                   onClick={() => { setEditingProject(null); setShowForm(true); }} 

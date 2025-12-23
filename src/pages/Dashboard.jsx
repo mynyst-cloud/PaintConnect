@@ -215,10 +215,14 @@ export default function Dashboard() {
       
       const usersResult = await base44.functions.invoke('getCompanyUsers', { company_id: company.id }).catch(() => ({ data: [] }));
       const users = usersResult.data || [];
-      const nonAdminUsers = (users || []).filter((u) => u.company_role !== 'admin');
+      const nonAdminUsers = (users || []).filter((u) => u.company_role !== 'admin' && u.company_role !== 'owner');
       const projectsList = await Project.filter({ company_id: company.id, is_dummy: { '$ne': true } }).catch(() => []);
       const hasTeamMembers = nonAdminUsers.length > 0;
       const hasProjects = (projectsList || []).length > 0;
+      
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:220',message:'Onboarding status check',data:{onboarding_status:company.onboarding_status,hasTeamMembers,hasProjects,teamMemberCount:nonAdminUsers.length,projectCount:projectsList.length,allUsersCount:users.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
       
       console.log('[checkOnboardingStatus] Status check:', {
         onboarding_status: company.onboarding_status,
@@ -228,10 +232,18 @@ export default function Dashboard() {
         projectCount: projectsList.length
       });
       
-      if ((company.onboarding_status === 'not_started' || company.onboarding_status == null) && !hasTeamMembers && !hasProjects) {
-        console.log('[checkOnboardingStatus] Showing OnboardingGuide');
+      // FIXED: Show onboarding guide if not_started and no projects (even if team members exist)
+      // Show checklist if skipped and missing either team members or projects
+      if ((company.onboarding_status === 'not_started' || company.onboarding_status == null) && !hasProjects) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:234',message:'Showing OnboardingGuide',data:{reason:'not_started_and_no_projects',hasTeamMembers},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
+        console.log('[checkOnboardingStatus] Showing OnboardingGuide (not_started, no projects)');
         setShowOnboardingGuide(true);
       } else if (company.onboarding_status === 'skipped' && (!hasTeamMembers || !hasProjects)) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:240',message:'Showing OnboardingChecklist',data:{reason:'skipped_and_missing_items',hasTeamMembers,hasProjects},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         console.log('[checkOnboardingStatus] Showing OnboardingChecklist');
         setShowOnboardingChecklist(true);
       } else if (hasTeamMembers && hasProjects && company.onboarding_status !== 'completed') {

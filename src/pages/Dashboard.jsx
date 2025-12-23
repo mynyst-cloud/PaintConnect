@@ -450,7 +450,21 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadDashboardData(setupComplete);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
+  // FIXED: Also check onboarding when company or currentUser changes
+  // This ensures onboarding starts even if company data loads after initial mount
+  useEffect(() => {
+    if (company && currentUser && mountedRef.current) {
+      console.log('[Dashboard] Company or user changed, re-checking onboarding:', {
+        companyId: company.id,
+        onboarding_status: company.onboarding_status,
+        userRole: currentUser.company_role
+      });
+      checkOnboardingStatus(company, currentUser);
+    }
+  }, [company?.id, company?.onboarding_status, currentUser?.id, currentUser?.company_role, checkOnboardingStatus]);
 
   useEffect(() => {
     const handleUrlParams = async () => {

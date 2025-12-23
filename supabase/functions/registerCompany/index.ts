@@ -250,13 +250,47 @@ serve(async (req) => {
       // This is critical to override any 'owner' role that might exist
       console.log('[registerCompany] User exists, using UPDATE instead of UPSERT to ensure company_role is set correctly')
       
+      // CRITICAL: First, explicitly update company_role to 'admin' in a separate query
+      // This ensures the constraint is satisfied before updating other fields
+      if (existingUser.company_role === 'owner') {
+        console.log('[registerCompany] CRITICAL: User has "owner" role, updating to "admin" first in separate query...')
+        const { error: roleUpdateError } = await supabaseAdmin
+          .from('users')
+          .update({ company_role: 'admin' })
+          .eq('id', user.id)
+        
+        if (roleUpdateError) {
+          console.error('[registerCompany] Error updating company_role from owner to admin:', roleUpdateError)
+          // Try to clean up company
+          try {
+            await supabaseAdmin.from('companies').delete().eq('id', company.id)
+          } catch (cleanupError) {
+            console.error('[registerCompany] Error cleaning up company:', cleanupError)
+          }
+          
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Kon company_role niet updaten: ${roleUpdateError.message || roleUpdateError.code || 'Onbekende fout'}` 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          )
+        } else {
+          console.log('[registerCompany] Successfully updated company_role from owner to admin')
+        }
+      }
+      
+      // Now update all other fields
       // First, try with user_type
       const userDataWithType = {
         ...userData,
         user_type: 'painter_company'
       }
       
-      console.log('[registerCompany] Attempting user UPDATE with user_type...')
+      // Remove company_role from userDataWithType since we already set it
+      delete userDataWithType.company_role
+      
+      console.log('[registerCompany] Attempting user UPDATE with user_type (company_role already set)...')
       console.log('[registerCompany] User data to update:', JSON.stringify(userDataWithType, null, 2))
       
       const { data: updatedUserWithType, error: updateErrorWithType } = await supabaseAdmin
@@ -274,11 +308,15 @@ serve(async (req) => {
         if (errorCode.includes('PGRST') && errorMessage.includes('user_type')) {
           console.warn('[registerCompany] Update with user_type failed, trying without it...')
           
-          console.log('[registerCompany] User data to update (without user_type):', JSON.stringify(userData, null, 2))
+          // Remove company_role from userData since we already set it
+          const userDataWithoutType = { ...userData }
+          delete userDataWithoutType.company_role
+          
+          console.log('[registerCompany] User data to update (without user_type, company_role already set):', JSON.stringify(userDataWithoutType, null, 2))
           
           const { data: updatedUser, error: updateError } = await supabaseAdmin
             .from('users')
-            .update(userData)
+            .update(userDataWithoutType)
             .eq('id', user.id)
             .select()
             .single()

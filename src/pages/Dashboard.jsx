@@ -305,7 +305,8 @@ export default function Dashboard() {
       };
 
       const companyId = impersonatedCompanyId || getCurrentCompanyIdForUser(user);
-      const isCurrentUserAdmin = user.company_role === 'admin' || user.role === 'admin';
+      // FIXED: Also allow 'owner' role (legacy) - treat it as 'admin'
+      const isCurrentUserAdmin = user.company_role === 'admin' || user.company_role === 'owner' || user.role === 'admin';
 
       // FIXED: Check for users without company - redirect to registration
       // If user has no company_id and is not a super admin, they need to register
@@ -338,6 +339,7 @@ export default function Dashboard() {
           const needsUpdate = 
             companyData.subscription_tier === 'free' || 
             !companyData.subscription_tier ||
+            (companyData.subscription_tier && companyData.subscription_tier !== 'starter_trial' && companyData.subscription_tier !== 'starter' && companyData.subscription_tier !== 'professional' && companyData.subscription_tier !== 'enterprise') ||
             !companyData.onboarding_status ||
             !companyData.trial_started_at;
           

@@ -84,20 +84,27 @@ export default function Dashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [projectDetailsInitialTab, setProjectDetailsInitialTab] = useState(null);
 
-  const isAdmin = currentUser?.company_role === 'admin' || currentUser?.role === 'admin';
+  // FIXED: Also include 'owner' role (legacy) - same as isCurrentUserAdmin
+  const isAdmin = currentUser?.company_role === 'admin' || currentUser?.company_role === 'owner' || currentUser?.role === 'admin';
 
   const realProjects = useMemo(() => {
     return Array.isArray(projects) ? projects.filter((p) => p && !p.is_dummy) : [];
   }, [projects]);
 
   const projectsToDisplay = useMemo(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:projectsToDisplay',message:'Calculating projectsToDisplay',data:{realProjectsCount:realProjects.length,allProjectsCount:projects?.length||0,isAdmin,companyRole:currentUser?.company_role,dummyCount:projects?.filter(p=>p&&p.is_dummy)?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     if (realProjects.length > 0) return realProjects.slice(0, 4);
     if (isAdmin && Array.isArray(projects)) {
       const dummyProjects = projects.filter(p => p && p.is_dummy);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:dummyProjects',message:'Returning dummy projects',data:{dummyCount:dummyProjects.length,dummyNames:dummyProjects.map(p=>p.project_name)},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
       return dummyProjects.slice(0, 4);
     }
     return [];
-  }, [realProjects, projects, isAdmin]);
+  }, [realProjects, projects, isAdmin, currentUser?.company_role]);
 
   const isLoadingRef = useRef(false);
   const mountedRef = useRef(false);
@@ -504,6 +511,9 @@ export default function Dashboard() {
       }
 
       if (mountedRef.current) {
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:setProjects',message:'Setting projects state',data:{filteredProjectsCount:filteredProjects?.length||0,hasDummies:filteredProjects?.some(p=>p?.is_dummy),dummyCount:filteredProjects?.filter(p=>p?.is_dummy)?.length||0,projectNames:filteredProjects?.slice(0,5).map(p=>({name:p?.project_name,is_dummy:p?.is_dummy}))},timestamp:Date.now(),sessionId:'debug-session',runId:'post-fix',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
         safeSetState(setCompany, companyDetails || null);
         safeSetState(setProjects, filteredProjects.filter(Boolean));
         safeSetState(setMaterialRequests, (materialsData || []).filter(Boolean));

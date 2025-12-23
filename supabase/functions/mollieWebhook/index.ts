@@ -20,22 +20,65 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // Health check endpoint for testing
+  if (req.method === 'GET') {
+    console.log('[mollieWebhook] Health check request received')
+    return new Response(JSON.stringify({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      message: 'Mollie webhook endpoint is running'
+    }), { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+    })
+  }
+
   try {
+    console.log('[mollieWebhook] ====== WEBHOOK RECEIVED ======')
+    console.log('[mollieWebhook] Method:', req.method)
+    console.log('[mollieWebhook] Headers:', JSON.stringify(Object.fromEntries(req.headers.entries())))
+
     const MOLLIE_API_KEY = Deno.env.get('MOLLIE_API_KEY')
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    console.log('[mollieWebhook] Environment check:', {
+      hasMOLLIE_API_KEY: !!MOLLIE_API_KEY,
+      hasSUPABASE_URL: !!SUPABASE_URL,
+      hasSUPABASE_SERVICE_ROLE_KEY: !!SUPABASE_SERVICE_ROLE_KEY,
+    })
 
     if (!MOLLIE_API_KEY) {
       console.error('[mollieWebhook] Missing MOLLIE_API_KEY')
       return new Response('Configuration error', { status: 500 })
     }
 
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('[mollieWebhook] Missing Supabase credentials')
+      return new Response('Configuration error', { status: 500 })
+    }
+
     // Mollie sends webhook as form data with 'id' parameter
-    const formData = await req.formData()
-    const paymentId = formData.get('id') as string
+    let paymentId: string | null = null
+    
+    try {
+      const formData = await req.formData()
+      paymentId = formData.get('id') as string
+      console.log('[mollieWebhook] Parsed form data, paymentId:', paymentId)
+    } catch (formError) {
+      console.error('[mollieWebhook] Failed to parse form data:', formError)
+      // Try JSON as fallback
+      try {
+        const body = await req.text()
+        console.log('[mollieWebhook] Raw body:', body)
+        const json = JSON.parse(body)
+        paymentId = json.id
+      } catch (jsonError) {
+        console.error('[mollieWebhook] Also failed to parse JSON:', jsonError)
+      }
+    }
 
     if (!paymentId) {
-      console.error('[mollieWebhook] No payment ID in webhook')
+      console.error('[mollieWebhook] No payment ID found in webhook')
       return new Response('No payment ID', { status: 400 })
     }
 
@@ -153,17 +196,24 @@ serve(async (req) => {
     }
 
     // Apply update
-    const { error: updateError } = await supabaseAdmin
+    console.log('[mollieWebhook] Updating company with data:', JSON.stringify(updateData, null, 2))
+    
+    const { data: updatedCompany, error: updateError } = await supabaseAdmin
       .from('companies')
       .update(updateData)
       .eq('id', companyId)
+      .select()
+      .single()
 
     if (updateError) {
       console.error('[mollieWebhook] Failed to update company:', updateError)
-      return new Response('Database update failed', { status: 500 })
+      return new Response(`Database update failed: ${updateError.message}`, { status: 500 })
     }
 
-    console.log('[mollieWebhook] Successfully activated subscription for company:', companyId)
+    console.log('[mollieWebhook] ====== SUCCESS ======')
+    console.log('[mollieWebhook] Company updated:', updatedCompany?.id)
+    console.log('[mollieWebhook] New subscription_tier:', updatedCompany?.subscription_tier)
+    console.log('[mollieWebhook] New subscription_status:', updatedCompany?.subscription_status)
 
     // Send notification to admins
     try {

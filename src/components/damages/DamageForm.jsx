@@ -13,6 +13,7 @@ import { Damage } from '@/api/entities';
 import { handleDamageReport } from '@/api/functions';
 import PlaceholderLogo from "@/components/ui/PlaceholderLogo";
 import { supabase } from '@/lib/supabase';
+import { InlineSpinner } from "@/components/ui/LoadingSpinner";
 
 const PLACEHOLDER_LOGO = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
 

@@ -187,31 +187,62 @@ export default function Dashboard() {
   }, []);
 
   const checkOnboardingStatus = useCallback(async (company, currentUser) => {
-    if (!company || !currentUser || currentUser.company_role !== 'admin' || impersonatedCompanyId) return;
+    if (!company || !currentUser || currentUser.company_role !== 'admin' || impersonatedCompanyId) {
+      console.log('[checkOnboardingStatus] Skipping check:', {
+        hasCompany: !!company,
+        hasUser: !!currentUser,
+        userRole: currentUser?.company_role,
+        impersonatedCompanyId
+      });
+      return;
+    }
+    
     try {
-      if (company.onboarding_status === 'completed') return;
+      console.log('[checkOnboardingStatus] Starting check:', {
+        companyId: company.id,
+        onboarding_status: company.onboarding_status,
+        userId: currentUser.id
+      });
+      
+      if (company.onboarding_status === 'completed') {
+        console.log('[checkOnboardingStatus] Onboarding already completed');
+        return;
+      }
+      
       const usersResult = await base44.functions.invoke('getCompanyUsers', { company_id: company.id }).catch(() => ({ data: [] }));
       const users = usersResult.data || [];
       const nonAdminUsers = (users || []).filter((u) => u.company_role !== 'admin');
       const projectsList = await Project.filter({ company_id: company.id, is_dummy: { '$ne': true } }).catch(() => []);
       const hasTeamMembers = nonAdminUsers.length > 0;
       const hasProjects = (projectsList || []).length > 0;
+      
+      console.log('[checkOnboardingStatus] Status check:', {
+        onboarding_status: company.onboarding_status,
+        hasTeamMembers,
+        hasProjects,
+        teamMemberCount: nonAdminUsers.length,
+        projectCount: projectsList.length
+      });
+      
       if ((company.onboarding_status === 'not_started' || company.onboarding_status == null) && !hasTeamMembers && !hasProjects) {
+        console.log('[checkOnboardingStatus] Showing OnboardingGuide');
         setShowOnboardingGuide(true);
       } else if (company.onboarding_status === 'skipped' && (!hasTeamMembers || !hasProjects)) {
+        console.log('[checkOnboardingStatus] Showing OnboardingChecklist');
         setShowOnboardingChecklist(true);
       } else if (hasTeamMembers && hasProjects && company.onboarding_status !== 'completed') {
         // Only company admins can update Company entity
         if (currentUser.company_role === 'admin') {
           try {
             await Company.update(company.id, { onboarding_status: 'completed' });
+            console.log('[checkOnboardingStatus] Marked onboarding as completed');
           } catch (updateErr) {
             console.warn('Could not update onboarding status:', updateErr.message);
           }
         }
       }
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.error('[checkOnboardingStatus] Error checking onboarding status:', error);
     }
   }, [impersonatedCompanyId]);
 
@@ -391,7 +422,23 @@ export default function Dashboard() {
       }
 
       if (sessionStorage.getItem("deletedProjects")) sessionStorage.removeItem("deletedProjects");
-      if (companyDetails && user && mountedRef.current) await checkOnboardingStatus(companyDetails, user);
+      
+      // FIXED: Always check onboarding status after company data is loaded
+      // This ensures onboarding starts even after hard refresh
+      if (companyDetails && user && mountedRef.current) {
+        console.log('[loadDashboardData] Company loaded, checking onboarding status:', {
+          companyId: companyDetails.id,
+          onboarding_status: companyDetails.onboarding_status,
+          userRole: user.company_role
+        });
+        await checkOnboardingStatus(companyDetails, user);
+      } else {
+        console.log('[loadDashboardData] Skipping onboarding check:', {
+          hasCompany: !!companyDetails,
+          hasUser: !!user,
+          mounted: mountedRef.current
+        });
+      }
 
     } catch (err) {
       if (mountedRef.current) setError({ type: err.message || 'connection' });

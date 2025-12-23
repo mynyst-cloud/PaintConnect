@@ -329,12 +329,21 @@ export default function Dashboard() {
       const companyPromise = fetchData(`company_${companyId}`, async () => {
         const companyData = await Company.get(companyId);
         
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:320',message:'Company data loaded',data:{companyId:companyData?.id,subscription_tier:companyData?.subscription_tier,onboarding_status:companyData?.onboarding_status,has_trial_started:!!companyData?.trial_started_at,isCurrentUserAdmin,impersonatedCompanyId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+        
         // FIXED: Auto-fix legacy companies with 'free' tier or missing onboarding_status
         if (companyData && isCurrentUserAdmin && !impersonatedCompanyId) {
           const needsUpdate = 
             companyData.subscription_tier === 'free' || 
+            !companyData.subscription_tier ||
             !companyData.onboarding_status ||
             !companyData.trial_started_at;
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:330',message:'Checking if company needs update',data:{needsUpdate,subscription_tier:companyData.subscription_tier,has_onboarding:!!companyData.onboarding_status,has_trial_started:!!companyData.trial_started_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
           
           if (needsUpdate) {
             console.log('[loadDashboardData] Auto-fixing legacy company:', {
@@ -368,13 +377,31 @@ export default function Dashboard() {
                 }
               }
               
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:360',message:'Attempting company update',data:{updateData,companyId:companyData.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+              // #endregion
+              
               if (Object.keys(updateData).length > 0) {
                 await Company.update(companyData.id, updateData);
                 console.log('[loadDashboardData] Company updated:', updateData);
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:368',message:'Company update successful, reloading',data:{updateData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
                 // Reload company data to get updated values
-                return await Company.get(companyId);
+                const updatedCompany = await Company.get(companyId);
+                
+                // #region agent log
+                fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:375',message:'Reloaded company data after update',data:{subscription_tier:updatedCompany?.subscription_tier,onboarding_status:updatedCompany?.onboarding_status,has_trial_started:!!updatedCompany?.trial_started_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+                
+                return updatedCompany;
               }
             } catch (updateError) {
+              // #region agent log
+              fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:382',message:'Company update failed',data:{error:updateError.message,stack:updateError.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+              // #endregion
               console.warn('[loadDashboardData] Could not auto-fix company:', updateError.message);
             }
           }

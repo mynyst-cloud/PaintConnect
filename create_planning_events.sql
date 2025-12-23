@@ -34,7 +34,9 @@ BEGIN
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'planning_events' AND column_name = 'event_type'
   ) THEN
-    ALTER TABLE planning_events ADD COLUMN event_type TEXT NOT NULL DEFAULT 'feestdag';
+    ALTER TABLE planning_events ADD COLUMN event_type TEXT DEFAULT 'feestdag';
+    -- Update any existing rows that might be NULL
+    UPDATE planning_events SET event_type = 'feestdag' WHERE event_type IS NULL;
   END IF;
   
   -- color

@@ -133,24 +133,29 @@ serve(async (req) => {
     console.log('[registerCompany] Generated inbound email:', inboundEmail)
 
     // Create company
+    // Note: created_at is handled automatically by Supabase, don't include it
+    const companyData: Record<string, any> = {
+      name: company_name.trim(),
+      email: email || user.email,
+      vat_number: vat_number || null,
+      phone_number: phone_number || null,
+      street: street || null,
+      house_number: house_number || null,
+      postal_code: postal_code || null,
+      city: city || null,
+      country: country || 'België',
+      inbound_email_address: inboundEmail,
+      subscription_tier: 'free',
+      subscription_status: 'trialing'
+    }
+
+    // Only add trial_ends_at if column exists (try-catch will handle if it doesn't)
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    companyData.trial_ends_at = trialEndsAt
+
     const { data: company, error: companyError } = await supabaseAdmin
       .from('companies')
-      .insert({
-        name: company_name.trim(),
-        email: email || user.email,
-        vat_number: vat_number || null,
-        phone_number: phone_number || null,
-        street: street || null,
-        house_number: house_number || null,
-        postal_code: postal_code || null,
-        city: city || null,
-        country: country || 'België',
-        inbound_email_address: inboundEmail,
-        subscription_tier: 'free',
-        subscription_status: 'trialing',
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days trial
-        created_at: new Date().toISOString()
-      })
+      .insert(companyData)
       .select()
       .single()
 

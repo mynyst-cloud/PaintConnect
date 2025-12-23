@@ -225,6 +225,8 @@ serve(async (req) => {
     }
 
     console.log('[registerCompany] Attempting user upsert with user_type...')
+    console.log('[registerCompany] User data to upsert:', JSON.stringify(userDataWithType, null, 2))
+    
     const { data: upsertedUser, error: upsertErrorWithType } = await supabaseAdmin
       .from('users')
       .upsert(userDataWithType, {
@@ -244,6 +246,8 @@ serve(async (req) => {
       // PGRST204 = column not found in schema cache, try without user_type
       if (errorCode.includes('PGRST') && errorMessage.includes('user_type')) {
         console.log('[registerCompany] user_type column not found, trying without it...')
+        
+        console.log('[registerCompany] User data to upsert (without user_type):', JSON.stringify(userData, null, 2))
         
         const { data: upsertedUserNoType, error: upsertErrorNoType } = await supabaseAdmin
           .from('users')

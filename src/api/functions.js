@@ -101,9 +101,146 @@ const notImplemented = (name) => {
 
 // ====== SEED & UTILITY FUNCTIONS ======
 
+// High-end interior photos from Unsplash (free to use)
+const DUMMY_PROJECT_DATA = [
+  {
+    project_name: 'Villa Renovatie - Familie De Groot',
+    client_name: 'Familie De Groot',
+    description: 'Luxe woonkamer en hal volledig opnieuw geschilderd in warm wit en accent kleuren.',
+    status: 'in_uitvoering',
+    progress_percentage: 65,
+    photo_urls: [
+      'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80', // Modern living room
+      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80', // Luxury interior
+    ]
+  },
+  {
+    project_name: 'Penthouse Amsterdam - Interieur',
+    client_name: 'Dhr. Bakker',
+    description: 'Volledig penthouse project met custom kleuradvies en hoogwaardige afwerking.',
+    status: 'planning',
+    progress_percentage: 10,
+    photo_urls: [
+      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80', // Modern apartment
+      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80', // Luxury home
+    ]
+  },
+  {
+    project_name: 'Boutique Hotel Lobby',
+    client_name: 'Hotel Majestic',
+    description: 'Stijlvolle lobby en receptieruimte met klassieke accenten en moderne afwerking.',
+    status: 'nieuw',
+    progress_percentage: 0,
+    photo_urls: [
+      'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&q=80', // Hotel interior
+      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&q=80', // Elegant room
+    ]
+  },
+  {
+    project_name: 'Moderne Loft - Centrum',
+    client_name: 'Mevr. Jansen',
+    description: 'Industriële loft met wit stucwerk en contrast accenten. Plafond en muren.',
+    status: 'afgerond',
+    progress_percentage: 100,
+    photo_urls: [
+      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80', // Loft style
+      'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=800&q=80', // Modern interior
+    ]
+  }
+];
+
 export const seedDummyProjects = async ({ companyId }) => {
-  console.log('Seeding dummy projects voor company:', companyId)
-  return []
+  console.log('[seedDummyProjects] Creating dummy projects for company:', companyId);
+  
+  if (!companyId) {
+    console.error('[seedDummyProjects] No companyId provided');
+    return [];
+  }
+  
+  try {
+    const { Project } = await import('@/api/entities');
+    
+    // Check if dummy projects already exist
+    const existingDummies = await Project.filter({ 
+      company_id: companyId, 
+      is_dummy: true 
+    }).catch(() => []);
+    
+    if (existingDummies && existingDummies.length > 0) {
+      console.log('[seedDummyProjects] Dummy projects already exist:', existingDummies.length);
+      return existingDummies;
+    }
+    
+    // Create dummy projects
+    const createdProjects = [];
+    const today = new Date();
+    
+    for (let i = 0; i < DUMMY_PROJECT_DATA.length; i++) {
+      const data = DUMMY_PROJECT_DATA[i];
+      const startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - (i * 7)); // Stagger start dates
+      
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + 14 + (i * 3)); // Vary end dates
+      
+      try {
+        const project = await Project.create({
+          company_id: companyId,
+          project_name: data.project_name,
+          client_name: data.client_name,
+          client_email: `demo${i + 1}@example.com`,
+          address: `Voorbeeldstraat ${100 + i * 25}, 1000 AA Amsterdam`,
+          start_date: startDate.toISOString().split('T')[0],
+          expected_end_date: endDate.toISOString().split('T')[0],
+          status: data.status,
+          progress_percentage: data.progress_percentage,
+          description: data.description,
+          photo_urls: data.photo_urls,
+          is_dummy: true, // Mark as dummy project
+          estimated_hours: 40 + (i * 10),
+          actual_hours: Math.floor((40 + (i * 10)) * (data.progress_percentage / 100))
+        });
+        
+        createdProjects.push(project);
+        console.log('[seedDummyProjects] Created dummy project:', project.project_name);
+      } catch (createError) {
+        console.error('[seedDummyProjects] Error creating dummy project:', createError);
+      }
+    }
+    
+    console.log('[seedDummyProjects] Created', createdProjects.length, 'dummy projects');
+    return createdProjects;
+  } catch (error) {
+    console.error('[seedDummyProjects] Error:', error);
+    return [];
+  }
+};
+
+// Delete dummy projects when a real project is created
+export const deleteDummyProjects = async ({ companyId }) => {
+  console.log('[deleteDummyProjects] Removing dummy projects for company:', companyId);
+  
+  if (!companyId) return;
+  
+  try {
+    const { Project } = await import('@/api/entities');
+    
+    const dummyProjects = await Project.filter({ 
+      company_id: companyId, 
+      is_dummy: true 
+    }).catch(() => []);
+    
+    for (const dummy of dummyProjects || []) {
+      try {
+        await Project.delete(dummy.id);
+        console.log('[deleteDummyProjects] Deleted dummy project:', dummy.project_name);
+      } catch (deleteError) {
+        console.warn('[deleteDummyProjects] Could not delete:', dummy.id, deleteError.message);
+      }
+    }
+  } catch (error) {
+    console.error('[deleteDummyProjects] Error:', error);
+  }
 }
 
 // ====== NOTIFICATION FUNCTIONS - Use Edge Functions ======

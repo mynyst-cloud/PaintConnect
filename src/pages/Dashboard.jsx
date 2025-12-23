@@ -21,7 +21,7 @@ import PlatformUpdates from '@/components/dashboard/PlatformUpdates';
 import OnboardingGuide from '@/components/dashboard/OnboardingGuide';
 import OnboardingChecklist from '@/components/dashboard/OnboardingChecklist';
 import InviteUserForm from '@/components/admin/InviteUserForm';
-import { seedDummyProjects } from '@/api/functions';
+import { seedDummyProjects, deleteDummyProjects } from '@/api/functions';
 import { notifyAssignedPainters } from '@/api/functions';
 import { useRealtimeData } from '@/components/utils/useRealtimeData';
 import { sendQuickActionEmail } from '@/api/functions';
@@ -215,7 +215,12 @@ export default function Dashboard() {
       
       const usersResult = await base44.functions.invoke('getCompanyUsers', { company_id: company.id }).catch(() => ({ data: [] }));
       const users = usersResult.data || [];
-      const nonAdminUsers = (users || []).filter((u) => u.company_role !== 'admin' && u.company_role !== 'owner');
+      // Only count ACTIVE non-admin users as team members (not pending invites)
+      const nonAdminUsers = (users || []).filter((u) => 
+        u.company_role !== 'admin' && 
+        u.company_role !== 'owner' &&
+        u.status === 'active' // Must be active, not pending
+      );
       const projectsList = await Project.filter({ company_id: company.id, is_dummy: { '$ne': true } }).catch(() => []);
       const hasTeamMembers = nonAdminUsers.length > 0;
       const hasProjects = (projectsList || []).length > 0;
@@ -618,6 +623,8 @@ export default function Dashboard() {
       const dataWithCompany = { ...projectData, company_id: companyId };
       let oldPainterEmails = [];
       let projectIdToNotify;
+      const isNewProject = !editingProject;
+      
       if (editingProject) {
         projectIdToNotify = editingProject.id;
         const originalProject = await Project.get(editingProject.id);
@@ -626,6 +633,14 @@ export default function Dashboard() {
       } else {
         const newProject = await Project.create(dataWithCompany);
         projectIdToNotify = newProject.id;
+        
+        // Delete dummy projects when first real project is created
+        try {
+          await deleteDummyProjects({ companyId });
+          console.log('[Dashboard] Deleted dummy projects after first real project creation');
+        } catch (dummyError) {
+          console.warn('[Dashboard] Could not delete dummy projects:', dummyError);
+        }
       }
       const newPainterEmails = dataWithCompany.assigned_painters || [];
       const newlyAssignedEmails = newPainterEmails.filter((email) => !oldPainterEmails.includes(email));

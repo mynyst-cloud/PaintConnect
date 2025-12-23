@@ -145,6 +145,15 @@ export default function DashboardProjectCard({ project, calculateProgress, onVie
             </>
           )}
           
+          {/* DUMMY badge for demo projects */}
+          {project.is_dummy && (
+            <div className="absolute top-2 left-2 z-20">
+              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-amber-500/90 text-white rounded shadow-lg">
+                Demo
+              </span>
+            </div>
+          )}
+          
           {/* Project info overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
           <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 lg:p-4 text-white max-w-full">

@@ -25,13 +25,26 @@ export default function OnboardingChecklist({
   useEffect(() => {
     const checkCompletionStatus = async () => {
       try {
-        // Check if company has any team members (excluding admin)
+        // Check if company has any ACTIVE team members (excluding admin/owner)
+        // Must have status 'active' and not be the company admin
         const users = await User.filter({ company_id: companyId }).catch(() => []);
-        const nonAdminUsers = (users || []).filter(u => u.company_role !== 'admin');
+        const nonAdminUsers = (users || []).filter(u => 
+          u.company_role !== 'admin' && 
+          u.company_role !== 'owner' &&
+          u.status === 'active' // Only count active users, not pending
+        );
+        console.log('[OnboardingChecklist] Team check:', {
+          totalUsers: users?.length,
+          nonAdminActiveUsers: nonAdminUsers.length,
+          users: users?.map(u => ({ email: u.email, role: u.company_role, status: u.status }))
+        });
         setHasTeamMembers(nonAdminUsers.length > 0);
 
         // AANGEPAST: Check if company has any REAL projects (exclude dummies)
         const projects = await Project.filter({ company_id: companyId, is_dummy: { '$ne': true } }).catch(() => []);
+        console.log('[OnboardingChecklist] Projects check:', {
+          totalProjects: projects?.length
+        });
         setHasProjects((projects || []).length > 0);
 
       } catch (error) {

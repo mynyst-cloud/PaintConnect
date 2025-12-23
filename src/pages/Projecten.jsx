@@ -16,7 +16,7 @@ import { globalCache } from "@/components/utils/cache";
 import { useLocation, useNavigate } from "react-router-dom";
 import { geocodeAddress } from '@/api/functions';
 import ProjectsMap from "@/components/projects/ProjectsMap";
-import { notifyAssignedPainters } from '@/api/functions';
+import { notifyAssignedPainters, deleteDummyProjects } from '@/api/functions';
 import { base44 } from "@/api/base44Client";
 
 const ITEMS_PER_PAGE = 12;
@@ -373,6 +373,14 @@ export default function Projecten() {
           const newProject = await Project.create(dataWithCompany);
           projectId = newProject.id;
           savedProject = newProject;
+          
+          // Delete dummy projects when first real project is created
+          try {
+            await deleteDummyProjects({ companyId });
+            console.log('[Projecten] Deleted dummy projects after first real project creation');
+          } catch (dummyError) {
+            console.warn('[Projecten] Could not delete dummy projects:', dummyError);
+          }
           
           const newlyAssignedEmails = dataWithCompany.assigned_painters || [];
           if (newlyAssignedEmails.length > 0) {

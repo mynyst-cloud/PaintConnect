@@ -177,12 +177,23 @@ const Logo = () => {
 
 const formatSubscriptionPlan = (company) => {
   if (!company) return null;
-  const tier = company.subscription_tier?.toUpperCase() || 'STARTER';
+  const tier = company.subscription_tier || 'starter';
   const status = company.subscription_status;
-  if (status === 'trialing') {
-    return `TRIAL (${tier})`;
+  
+  // Readable tier names
+  const tierNames = {
+    'starter_trial': 'Starter Trial',
+    'starter': 'Starter',
+    'professional': 'Professional',
+    'enterprise': 'Enterprise'
+  };
+  
+  const tierName = tierNames[tier.toLowerCase()] || tier.toUpperCase();
+  
+  if (status === 'trialing' || tier === 'starter_trial') {
+    return `${tierName}`;
   }
-  return tier;
+  return tierName;
 };
 
 function LayoutContent({ children }) {

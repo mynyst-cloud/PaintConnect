@@ -466,24 +466,28 @@ export function TrialBanner() {
   
   if (isExpired) {
     return (
-      <div className="bg-red-500 text-white py-2 px-4 text-center text-sm">
-        <span className="font-semibold">Je proefperiode is verlopen!</span>{' '}
-        <a href="/Subscription" className="underline font-medium">
-          Upgrade nu om door te gaan
+      <div className="bg-gradient-to-r from-red-500 to-rose-500 text-white py-1.5 px-4 text-center text-xs">
+        <span className="font-medium">Je proefperiode is verlopen</span>
+        <span className="mx-2">•</span>
+        <a href="/Subscription" className="underline font-medium hover:text-white/90">
+          Upgrade nu
         </a>
       </div>
     );
   }
   
+  // Subtiele, minder opvallende banner
   return (
-    <div className={`${isUrgent ? 'bg-amber-500' : 'bg-blue-500'} text-white py-2 px-4 text-center text-sm`}>
-      <span className="font-semibold">
-        {trialInfo.daysRemaining === 1 
-          ? 'Nog 1 dag' 
-          : `Nog ${trialInfo.daysRemaining} dagen`} 
-        {' '}in je proefperiode
-      </span>{' '}
-      <a href="/Subscription" className="underline font-medium ml-2">
+    <div className={`${
+      isUrgent 
+        ? 'bg-gradient-to-r from-amber-500/90 to-orange-500/90' 
+        : 'bg-gradient-to-r from-emerald-600 to-teal-600'
+    } text-white py-1.5 px-4 text-center text-xs`}>
+      <span className="font-medium">
+        Nog {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? 'dag' : 'dagen'} in je proefperiode
+      </span>
+      <span className="mx-2 opacity-60">•</span>
+      <a href="/Subscription" className="underline font-medium hover:text-white/90">
         Bekijk abonnementen
       </a>
     </div>

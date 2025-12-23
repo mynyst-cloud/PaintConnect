@@ -615,9 +615,14 @@ function LayoutContent({ children }) {
 
   const handleTeamChatClick = useCallback(() => {
     sessionStorage.setItem('teamchat_last_viewed', new Date().toISOString());
-    setUnreadMessages(0);
     setShowTeamChatSidebar(true);
+    // Unread count will be refreshed when sidebar opens
   }, []);
+
+  const handleTeamChatOpened = useCallback(() => {
+    // Refresh unread count when sidebar is opened
+    loadUnreadMessages();
+  }, [loadUnreadMessages]);
 
   const handleLogout = async () => {
     await User.logout();
@@ -1112,6 +1117,7 @@ function LayoutContent({ children }) {
       <TeamChatSidebar
         isOpen={showTeamChatSidebar}
         onClose={() => setShowTeamChatSidebar(false)}
+        onOpen={handleTeamChatOpened}
         currentUser={user}
         company={company} />
 

@@ -34,7 +34,7 @@ const playPingSound = () => {
   }
 };
 
-export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
+export default function TeamChatSidebar({ isOpen, onClose, currentUser, onOpen }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [selectedProject, setSelectedProject] = useState('all');
@@ -47,7 +47,17 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
   const isFirstLoadRef = useRef(true);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Use ScrollArea's scroll position instead of scrollIntoView
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
+    // Fallback to scrollIntoView if ScrollArea method doesn't work
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
   };
 
   const loadMessages = useCallback(async () => {
@@ -99,9 +109,20 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
       loadMessages();
       loadProjects();
       
+      // Update last viewed time to reset unread count
       sessionStorage.setItem('teamchat_last_viewed', new Date().toISOString());
+      
+      // Notify parent component that sidebar was opened (to refresh unread count)
+      if (onOpen) {
+        onOpen();
+      }
+      
+      // Scroll to bottom after a short delay to ensure messages are rendered
+      setTimeout(() => {
+        scrollToBottom();
+      }, 300);
     }
-  }, [isOpen, currentUser, loadMessages, loadProjects]);
+  }, [isOpen, currentUser, loadMessages, loadProjects, onOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -114,10 +135,13 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
   }, [isOpen, loadMessages]);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
+    if (messages.length > 0 && isOpen) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
     }
-  }, [messages]);
+  }, [messages, isOpen]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -166,6 +190,10 @@ export default function TeamChatSidebar({ isOpen, onClose, currentUser }) {
       setNewMessage('');
       setSelectedProject('all');
       await loadMessages();
+      // Scroll to bottom after sending message
+      setTimeout(() => {
+        scrollToBottom();
+      }, 200);
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {

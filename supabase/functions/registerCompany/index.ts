@@ -154,6 +154,15 @@ serve(async (req) => {
       trial_started_at: now.toISOString(), // FIXED: Set trial start time
       trial_ends_at: trialEndsAt.toISOString() // FIXED: Set trial end time (14 days)
     }
+    
+    console.log('[registerCompany] Creating company with data:', {
+      name: companyData.name,
+      subscription_tier: companyData.subscription_tier,
+      subscription_status: companyData.subscription_status,
+      onboarding_status: companyData.onboarding_status,
+      has_trial_started: !!companyData.trial_started_at,
+      has_trial_ends: !!companyData.trial_ends_at
+    })
 
     // Try to insert company with all fields
     // If some columns don't exist, we'll retry without them
@@ -178,13 +187,19 @@ serve(async (req) => {
         console.warn('[registerCompany] Some columns may not exist, trying with minimal fields...')
         
         // Minimal company data - only required fields
+        // CRITICAL: Always include subscription_tier and subscription_status even in minimal fallback
         const minimalCompanyData: Record<string, any> = {
           name: companyData.name,
           email: companyData.email,
           inbound_email_address: companyData.inbound_email_address,
-          subscription_tier: companyData.subscription_tier,
-          subscription_status: companyData.subscription_status
+          subscription_tier: 'starter_trial', // CRITICAL: Always set to starter_trial
+          subscription_status: 'trialing' // CRITICAL: Always set to trialing
         }
+        
+        console.log('[registerCompany] Using minimal company data (fallback):', {
+          subscription_tier: minimalCompanyData.subscription_tier,
+          subscription_status: minimalCompanyData.subscription_status
+        })
         
         // Only add optional fields if they were provided
         if (companyData.vat_number) minimalCompanyData.vat_number = companyData.vat_number
@@ -203,16 +218,30 @@ serve(async (req) => {
 
         if (errorMinimal) {
           companyError = errorMinimal
+          console.error('[registerCompany] Minimal insert also failed:', errorMinimal)
         } else {
           company = companyMinimal
-          console.log('[registerCompany] Company created with minimal fields, onboarding_status and trial dates may need to be set separately')
+          console.log('[registerCompany] Company created with minimal fields:', {
+            id: company.id,
+            subscription_tier: company.subscription_tier,
+            subscription_status: company.subscription_status
+          })
+          console.warn('[registerCompany] Note: onboarding_status and trial dates may need to be set separately if columns exist')
         }
       } else {
         companyError = errorWithAllFields
       }
     } else {
       company = companyWithAllFields
-      console.log('[registerCompany] Company created with all fields including onboarding_status and trial dates')
+      console.log('[registerCompany] Company created successfully with all fields:', {
+        id: company.id,
+        name: company.name,
+        subscription_tier: company.subscription_tier,
+        subscription_status: company.subscription_status,
+        onboarding_status: company.onboarding_status,
+        has_trial_started: !!company.trial_started_at,
+        has_trial_ends: !!company.trial_ends_at
+      })
     }
 
     if (companyError) {

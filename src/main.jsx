@@ -4,6 +4,7 @@ import App from '@/App.jsx'
 import '@/index.css'
 import QueryProvider from '@/components/providers/QueryProvider.jsx' // als je die hebt
 import AuthProvider from '@/components/providers/AuthProvider.jsx'
+import { FeatureAccessProvider } from '@/hooks/useFeatureAccess'
 
 // Global error handlers for debugging
 window.addEventListener('error', (event) => {
@@ -43,7 +44,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryProvider>
       <AuthProvider>
-        <App />
+        <FeatureAccessProvider>
+          <App />
+        </FeatureAccessProvider>
       </AuthProvider>
     </QueryProvider>
   </React.StrictMode>

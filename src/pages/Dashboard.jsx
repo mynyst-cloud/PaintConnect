@@ -26,6 +26,7 @@ import { notifyAssignedPainters } from '@/api/functions';
 import { useRealtimeData } from '@/components/utils/useRealtimeData';
 import { sendQuickActionEmail } from '@/api/functions';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ProjectDetails = lazy(() => import('@/components/projects/ProjectDetails'));
 const ProjectForm = lazy(() => import('@/components/planning/PlanningForm'));
@@ -779,15 +780,39 @@ export default function Dashboard() {
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
                 {isAdmin && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowProjectForm(true)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                    title="Nieuw Project"
-                  >
-                    <Plus className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                  </Button>
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowProjectForm(true)}
+                          className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors relative ${
+                            realProjects.length === 0 ? 'animate-pulse' : ''
+                          }`}
+                        >
+                          <Plus className={`w-5 h-5 ${realProjects.length === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-300'}`} />
+                          {realProjects.length === 0 && (
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {realProjects.length === 0 ? (
+                        <TooltipContent 
+                          side="bottom" 
+                          className="bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold text-sm px-4 py-3 shadow-xl border-0 max-w-xs animate-in zoom-in-95"
+                          sideOffset={8}
+                        >
+                          <p className="font-bold text-base">🚀 Voeg je eerste project toe!</p>
+                          <p className="text-xs font-normal mt-1.5 opacity-95">Klik hier om te beginnen met je eerste schilderproject</p>
+                        </TooltipContent>
+                      ) : (
+                        <TooltipContent side="bottom" className="text-xs">
+                          Nieuw Project
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
 
                 <Link 

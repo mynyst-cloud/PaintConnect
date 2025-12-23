@@ -9,7 +9,7 @@ import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
-export default function CheckInButton({ currentUser, onCheckInSuccess }) {
+export default function CheckInButton({ currentUser, onCheckInSuccess, refreshTrigger }) {
   const [showModal, setShowModal] = useState(false);
   const [projects, setProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState('');
@@ -25,19 +25,45 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
     }
   }, [currentUser?.id]); // Use ID to prevent unnecessary re-runs
 
+  // Refresh when refreshTrigger changes (e.g., after check-out in CheckOutButton)
+  // Only refresh when refreshTrigger > 0 (initial value is 0, so we skip the first render)
+  useEffect(() => {
+    if (currentUser?.id && refreshTrigger > 0) {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:refreshTrigger',message:'Refresh trigger changed, checking active check-in',data:{refreshTrigger,hasActiveCheckIn:!!activeCheckIn},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
+      checkActiveCheckIn();
+    }
+  }, [refreshTrigger, currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const checkActiveCheckIn = async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:checkActiveCheckIn:entry',message:'Checking active check-in',data:{userId:currentUser?.id,currentActiveCheckIn:!!activeCheckIn},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     try {
       const checkIns = await base44.entities.CheckInRecord.filter({
         user_id: currentUser.id,
         status: 'checked_in'
       });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:checkActiveCheckIn:result',message:'Active check-in query result',data:{foundCount:checkIns?.length || 0,willSet:!!(checkIns && checkIns.length > 0)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
       if (checkIns && checkIns.length > 0) {
         setActiveCheckIn(checkIns[0]);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:checkActiveCheckIn:set',message:'Setting activeCheckIn to found record',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
       } else {
         setActiveCheckIn(null);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:checkActiveCheckIn:clear',message:'Setting activeCheckIn to null',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+        // #endregion
       }
     } catch (error) {
       console.error('[CheckInButton] Error checking active check-in:', error);
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:checkActiveCheckIn:error',message:'Error checking active check-in',data:{error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+      // #endregion
     }
   };
 
@@ -121,6 +147,10 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
     setStatus('submitting');
     setErrorMessage('');
 
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:handleCheckIn:entry',message:'Check-in starting',data:{userId:currentUser?.id,projectId:selectedProject,hasCallback:!!onCheckInSuccess},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+
     try {
       const response = await base44.functions.invoke('checkIn', {
         project_id: selectedProject,
@@ -129,13 +159,28 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
         notes
       });
 
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:handleCheckIn:response',message:'Check-in response received',data:{success:response.data.success,hasRecord:!!response.data.record,hasCallback:!!onCheckInSuccess},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+
       if (response.data.success) {
         setStatus('success');
         toast.success(response.data.message);
         setTimeout(() => {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:handleCheckIn:beforeCheck',message:'Before checkActiveCheckIn and callback',data:{activeCheckInBefore:!!activeCheckIn,hasCallback:!!onCheckInSuccess},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
           setShowModal(false);
           checkActiveCheckIn();
-          if (onCheckInSuccess) onCheckInSuccess(response.data.record);
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:handleCheckIn:afterCheck',message:'After checkActiveCheckIn, before callback',data:{hasCallback:!!onCheckInSuccess},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+          // #endregion
+          if (onCheckInSuccess) {
+            // #region agent log
+            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:handleCheckIn:callback',message:'Calling onCheckInSuccess callback',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            onCheckInSuccess(response.data.record);
+          }
         }, 1500);
       } else {
         setStatus('error');
@@ -149,9 +194,14 @@ export default function CheckInButton({ currentUser, onCheckInSuccess }) {
     }
   };
 
+  // #region agent log
+  // Log render decision
   if (activeCheckIn) {
+    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:render',message:'CheckInButton: returning null (has active check-in)',data:{hasActiveCheckIn:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
     return null;
   }
+  fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'CheckInButton.jsx:render',message:'CheckInButton: rendering button (no active check-in)',data:{hasActiveCheckIn:false,refreshTrigger},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+  // #endregion
 
   return (
     <>

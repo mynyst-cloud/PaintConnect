@@ -827,8 +827,70 @@ export default function Subscription() {
           
           navigate(location.pathname, { replace: true });
         } else if (companyData.subscription_status === 'active' && !pendingSub) {
-          // Already active, no pending - probably a page refresh after success
-          navigate(location.pathname, { replace: true });
+          // No pending subscription - webhook may have already processed it OR this is a page refresh
+          // Check URL parameter to see what plan was attempted
+          const urlPlan = urlParams.get('plan');
+          
+          if (urlPlan && urlPlan !== preCheckoutTier) {
+            // There's a plan in URL that differs from current tier - webhook might still be processing
+            // Poll to see if tier changes
+            console.log('[Subscription] URL plan differs from current tier, polling for changes...', {
+              urlPlan,
+              currentTier: preCheckoutTier,
+            });
+            
+            toast({
+              title: "⏳ Betaling wordt verwerkt...",
+              description: "Even geduld, we controleren je betaling.",
+              duration: 5000,
+            });
+            
+            let pollCount = 0;
+            const maxPolls = 10;
+            
+            const pollInterval = setInterval(async () => {
+              pollCount++;
+              try {
+                const refreshedCompany = await Company.get(user.company_id);
+                
+                console.log('[Subscription] Poll #' + pollCount, {
+                  urlPlan,
+                  currentTier: refreshedCompany.subscription_tier,
+                  status: refreshedCompany.subscription_status,
+                });
+                
+                // Check if tier changed to match URL plan
+                if (refreshedCompany.subscription_tier === urlPlan) {
+                  clearInterval(pollInterval);
+                  setCompany(refreshedCompany);
+                  toast({
+                    title: "🎉 Abonnement gewijzigd!",
+                    description: `Je bent nu ${urlPlan.charAt(0).toUpperCase() + urlPlan.slice(1)} gebruiker.`,
+                  });
+                  navigate(location.pathname, { replace: true });
+                } else if (pollCount >= maxPolls) {
+                  // Timeout - tier didn't change, webhook might have failed or already processed
+                  clearInterval(pollInterval);
+                  setCompany(refreshedCompany);
+                  toast({
+                    title: "⚠️ Betaling in behandeling",
+                    description: "De verwerking duurt langer dan verwacht. Check je email of ververs de pagina later.",
+                    duration: 15000,
+                  });
+                  navigate(location.pathname, { replace: true });
+                }
+              } catch (e) {
+                console.error('Polling error:', e);
+                if (pollCount >= maxPolls) {
+                  clearInterval(pollInterval);
+                  navigate(location.pathname, { replace: true });
+                }
+              }
+            }, 2000);
+          } else {
+            // No plan in URL or plan matches current tier - probably just a refresh
+            navigate(location.pathname, { replace: true });
+          }
         } else {
           // Trialing without pending - unusual state
           navigate(location.pathname, { replace: true });

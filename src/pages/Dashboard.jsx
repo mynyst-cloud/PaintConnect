@@ -852,23 +852,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {trialInfo && isAdmin ? (
-                <div className="mt-2 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600 dark:text-slate-400">
-                      Nog <span className={`font-semibold ${trialInfo.isExpiringSoon ? 'text-red-600' : 'text-emerald-600'}`}>
-                        {trialInfo.remainingDays} dagen
-                      </span> van je gratis proefperiode
-                    </p>
-                    <Link to={createPageUrl("Subscription")} className="text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
-                      Upgrade nu →
-                    </Link>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                    <div className={`h-2 rounded-full transition-all duration-500 ${trialInfo.isExpiringSoon ? 'bg-red-500' : 'bg-emerald-500'}`} style={{ width: `${trialInfo.progress}%` }} />
-                  </div>
-                </div>
-              ) : null}
+              {/* Trial info is now shown in the TrialBanner component under the header */}
               
               {/* Push Notification Prompt */}
               <div className="mt-3">

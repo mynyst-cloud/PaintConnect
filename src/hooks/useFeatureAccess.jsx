@@ -454,7 +454,7 @@ export function SuperAdminOnly({ children, fallback = null }) {
 }
 
 // ============================================
-// TRIAL BANNER COMPONENT
+// TRIAL BANNER COMPONENT - With progress bar
 // ============================================
 export function TrialBanner() {
   const { trialInfo, isOnTrial } = useFeatureAccess();
@@ -464,32 +464,51 @@ export function TrialBanner() {
   const isUrgent = trialInfo.daysRemaining <= 3;
   const isExpired = trialInfo.isExpired;
   
+  // Calculate progress percentage (14 days = 100%, 0 days = 0%)
+  const totalDays = 14;
+  const progressPercentage = Math.max(0, Math.min(100, (trialInfo.daysRemaining / totalDays) * 100));
+  
   if (isExpired) {
     return (
-      <div className="bg-gradient-to-r from-red-500 to-rose-500 text-white py-1.5 px-4 text-center text-xs">
-        <span className="font-medium">Je proefperiode is verlopen</span>
-        <span className="mx-2">•</span>
-        <a href="/Subscription" className="underline font-medium hover:text-white/90">
-          Upgrade nu
-        </a>
+      <div className="bg-gradient-to-r from-red-500 to-rose-500 text-white py-2 px-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 flex-1">
+            <span className="text-xs font-medium whitespace-nowrap">Je proefperiode is verlopen</span>
+            <div className="flex-1 max-w-xs bg-white/20 rounded-full h-1.5">
+              <div className="h-1.5 rounded-full bg-white/60" style={{ width: '0%' }} />
+            </div>
+          </div>
+          <a href="/Subscription" className="text-xs underline font-medium hover:text-white/90 whitespace-nowrap">
+            Upgrade nu
+          </a>
+        </div>
       </div>
     );
   }
   
-  // Subtiele, minder opvallende banner
+  // Banner with progress bar
   return (
     <div className={`${
       isUrgent 
-        ? 'bg-gradient-to-r from-amber-500/90 to-orange-500/90' 
+        ? 'bg-gradient-to-r from-amber-500 to-orange-500' 
         : 'bg-gradient-to-r from-emerald-600 to-teal-600'
-    } text-white py-1.5 px-4 text-center text-xs`}>
-      <span className="font-medium">
-        Nog {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? 'dag' : 'dagen'} in je proefperiode
-      </span>
-      <span className="mx-2 opacity-60">•</span>
-      <a href="/Subscription" className="underline font-medium hover:text-white/90">
-        Bekijk abonnementen
-      </a>
+    } text-white py-2 px-4`}>
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <span className="text-xs font-medium whitespace-nowrap">
+            Nog <span className="font-bold">{trialInfo.daysRemaining}</span> {trialInfo.daysRemaining === 1 ? 'dag' : 'dagen'} in je proefperiode
+          </span>
+          <div className="flex-1 max-w-xs bg-white/20 rounded-full h-1.5 hidden sm:block">
+            <div 
+              className={`h-1.5 rounded-full transition-all duration-500 ${isUrgent ? 'bg-white' : 'bg-white/80'}`} 
+              style={{ width: `${progressPercentage}%` }} 
+            />
+          </div>
+        </div>
+        <a href="/Subscription" className="text-xs underline font-medium hover:text-white/90 whitespace-nowrap">
+          Bekijk abonnementen
+        </a>
+      </div>
     </div>
   );
 }

@@ -149,15 +149,49 @@ serve(async (req) => {
       subscription_status: 'trialing'
     }
 
-    // Only add trial_ends_at if column exists (try-catch will handle if it doesn't)
-    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-    companyData.trial_ends_at = trialEndsAt
+    // Try to add trial_ends_at - if column doesn't exist, it will fail gracefully
+    // We'll catch the error and retry without it
+    let company = null
+    let companyError = null
 
-    const { data: company, error: companyError } = await supabaseAdmin
+    // First attempt: with trial_ends_at
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    const companyDataWithTrial = {
+      ...companyData,
+      trial_ends_at: trialEndsAt
+    }
+
+    const { data: companyWithTrial, error: errorWithTrial } = await supabaseAdmin
       .from('companies')
-      .insert(companyData)
+      .insert(companyDataWithTrial)
       .select()
       .single()
+
+    if (errorWithTrial) {
+      const errorCode = errorWithTrial.code || ''
+      const errorMessage = errorWithTrial.message || ''
+      
+      // If error is about trial_ends_at column, try without it
+      if (errorCode.includes('PGRST') && errorMessage.includes('trial_ends_at')) {
+        console.warn('[registerCompany] trial_ends_at column not found, trying without it...')
+        
+        const { data: companyWithoutTrial, error: errorWithoutTrial } = await supabaseAdmin
+          .from('companies')
+          .insert(companyData)
+          .select()
+          .single()
+
+        if (errorWithoutTrial) {
+          companyError = errorWithoutTrial
+        } else {
+          company = companyWithoutTrial
+        }
+      } else {
+        companyError = errorWithTrial
+      }
+    } else {
+      company = companyWithTrial
+    }
 
     if (companyError) {
       console.error('[registerCompany] Error creating company:', companyError)

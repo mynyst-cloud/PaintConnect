@@ -6,6 +6,20 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
+// Genereer een unieke tab ID voor deze sessie
+// Dit zorgt ervoor dat elke tab zijn eigen storage key heeft
+const getTabId = () => {
+  if (typeof window === 'undefined') return 'server'
+  let tabId = sessionStorage.getItem('tab_id')
+  if (!tabId) {
+    tabId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    sessionStorage.setItem('tab_id', tabId)
+  }
+  return tabId
+}
+
+const tabId = getTabId()
+
 // Helper functie om te bepalen of een key auth-gerelateerd is
 const isAuthKey = (key) => {
   if (!key) return false
@@ -18,63 +32,53 @@ const isAuthKey = (key) => {
   )
 }
 
-// Migreer bestaande auth data van localStorage naar sessionStorage (eenmalig)
-// Dit zorgt ervoor dat bestaande sessies niet verloren gaan
-const migrateAuthToSessionStorage = () => {
-  try {
-    const migrationKey = 'auth_migrated_to_session'
-    if (sessionStorage.getItem(migrationKey)) {
-      // Al gemigreerd
-      return
-    }
-
-    // Zoek alle auth-gerelateerde keys in localStorage
-    const authKeys = []
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (isAuthKey(key)) {
-        authKeys.push(key)
+// Blokkeer storage events voor auth keys om cross-tab synchronisatie te voorkomen
+// Dit voorkomt dat storage events van andere tabs deze tab beïnvloeden
+if (typeof window !== 'undefined') {
+  const originalAddEventListener = window.addEventListener.bind(window)
+  window.addEventListener = function(type, listener, options) {
+    if (type === 'storage') {
+      // Wrap de storage event listener om auth-gerelateerde events te blokkeren
+      const wrappedListener = (event) => {
+        // Blokkeer storage events voor auth-gerelateerde keys
+        if (event.key && isAuthKey(event.key)) {
+          console.log('[Supabase Storage] Blocked cross-tab storage event for:', event.key)
+          return // Blokkeer dit event
+        }
+        // Laat andere storage events door
+        if (listener && typeof listener === 'function') {
+          listener(event)
+        }
       }
+      return originalAddEventListener(type, wrappedListener, options)
     }
-
-    // Kopieer naar sessionStorage
-    authKeys.forEach(key => {
-      const value = localStorage.getItem(key)
-      if (value) {
-        sessionStorage.setItem(key, value)
-        // Optioneel: verwijder uit localStorage (maar laat het staan voor nu voor veiligheid)
-        // localStorage.removeItem(key)
-      }
-    })
-
-    // Markeer als gemigreerd
-    if (authKeys.length > 0) {
-      sessionStorage.setItem(migrationKey, 'true')
-      console.log(`[Supabase Storage] Migrated ${authKeys.length} auth keys to sessionStorage`)
-    }
-  } catch (error) {
-    console.warn('[Supabase Storage] Migration error:', error)
+    return originalAddEventListener(type, listener, options)
   }
 }
 
-// Voer migratie uit bij het laden
-migrateAuthToSessionStorage()
-
 // Custom storage adapter die sessionStorage gebruikt voor auth
-// Dit zorgt ervoor dat elke tab zijn eigen sessie heeft en onafhankelijk kan uitloggen
+// Met een unieke key per tab om volledige isolatie te garanderen
 const customStorage = {
   getItem: (key) => {
     if (isAuthKey(key)) {
-      // Eerst checken in sessionStorage
-      const value = sessionStorage.getItem(key)
+      // Gebruik tab-specifieke key voor volledige isolatie
+      const tabSpecificKey = `${key}_${tabId}`
+      const value = sessionStorage.getItem(tabSpecificKey)
       if (value) return value
       
-      // Fallback: check localStorage (voor migratie van oude sessies)
-      const fallbackValue = localStorage.getItem(key)
+      // Fallback: check zonder tab ID (voor backward compatibility)
+      const fallbackValue = sessionStorage.getItem(key)
       if (fallbackValue) {
-        // Migreer naar sessionStorage
-        sessionStorage.setItem(key, fallbackValue)
+        // Migreer naar tab-specifieke key
+        sessionStorage.setItem(tabSpecificKey, fallbackValue)
         return fallbackValue
+      }
+      
+      // Laatste fallback: check localStorage (voor migratie)
+      const localStorageValue = localStorage.getItem(key)
+      if (localStorageValue) {
+        sessionStorage.setItem(tabSpecificKey, localStorageValue)
+        return localStorageValue
       }
       return null
     }
@@ -83,8 +87,16 @@ const customStorage = {
   },
   setItem: (key, value) => {
     if (isAuthKey(key)) {
-      sessionStorage.setItem(key, value)
-      // Verwijder ook uit localStorage als het daar nog staat
+      // Gebruik tab-specifieke key
+      const tabSpecificKey = `${key}_${tabId}`
+      sessionStorage.setItem(tabSpecificKey, value)
+      
+      // Verwijder oude keys zonder tab ID
+      if (sessionStorage.getItem(key)) {
+        sessionStorage.removeItem(key)
+      }
+      
+      // Verwijder ook uit localStorage
       if (localStorage.getItem(key)) {
         localStorage.removeItem(key)
       }
@@ -94,8 +106,12 @@ const customStorage = {
   },
   removeItem: (key) => {
     if (isAuthKey(key)) {
+      // Verwijder tab-specifieke key
+      const tabSpecificKey = `${key}_${tabId}`
+      sessionStorage.removeItem(tabSpecificKey)
+      
+      // Verwijder ook oude keys
       sessionStorage.removeItem(key)
-      // Verwijder ook uit localStorage voor volledigheid
       localStorage.removeItem(key)
     } else {
       localStorage.removeItem(key)
@@ -103,12 +119,19 @@ const customStorage = {
   }
 }
 
+// Genereer een unieke storage key per tab
+// Dit voorkomt dat Supabase storage events tussen tabs synchroniseert
+const projectRef = supabaseUrl.split('//')[1]?.split('.')[0] || 'default'
+const storageKey = `sb-${projectRef}-auth-token-${tabId}`
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: customStorage,
+    storageKey: storageKey, // Unieke key per tab
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce' // Gebruik PKCE flow voor betere security en isolatie
   }
 })
 

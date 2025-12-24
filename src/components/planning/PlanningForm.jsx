@@ -540,6 +540,13 @@ export default function PlanningForm({ project, selectedDate, onSubmit, onCancel
             </div>
 
             {/* Werktijden voor check-in reminders */}
+            <div className="md:col-span-2 mb-2">
+              <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                <span>Het instellen van starttijd en eindtijd is belangrijk voor het ontvangen van check-in herinneringen</span>
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="work_start_time" className="flex items-center gap-1">
                 <Clock className="w-3 h-3 text-amber-600" />

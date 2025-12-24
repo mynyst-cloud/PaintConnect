@@ -6,7 +6,111 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Helper functie om te bepalen of een key auth-gerelateerd is
+const isAuthKey = (key) => {
+  if (!key) return false
+  return (
+    key.includes('auth') || 
+    key.includes('supabase') ||
+    key.startsWith('sb-') ||
+    key.includes('auth-token') ||
+    key.includes('auth.refresh')
+  )
+}
+
+// Migreer bestaande auth data van localStorage naar sessionStorage (eenmalig)
+// Dit zorgt ervoor dat bestaande sessies niet verloren gaan
+const migrateAuthToSessionStorage = () => {
+  try {
+    const migrationKey = 'auth_migrated_to_session'
+    if (sessionStorage.getItem(migrationKey)) {
+      // Al gemigreerd
+      return
+    }
+
+    // Zoek alle auth-gerelateerde keys in localStorage
+    const authKeys = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (isAuthKey(key)) {
+        authKeys.push(key)
+      }
+    }
+
+    // Kopieer naar sessionStorage
+    authKeys.forEach(key => {
+      const value = localStorage.getItem(key)
+      if (value) {
+        sessionStorage.setItem(key, value)
+        // Optioneel: verwijder uit localStorage (maar laat het staan voor nu voor veiligheid)
+        // localStorage.removeItem(key)
+      }
+    })
+
+    // Markeer als gemigreerd
+    if (authKeys.length > 0) {
+      sessionStorage.setItem(migrationKey, 'true')
+      console.log(`[Supabase Storage] Migrated ${authKeys.length} auth keys to sessionStorage`)
+    }
+  } catch (error) {
+    console.warn('[Supabase Storage] Migration error:', error)
+  }
+}
+
+// Voer migratie uit bij het laden
+migrateAuthToSessionStorage()
+
+// Custom storage adapter die sessionStorage gebruikt voor auth
+// Dit zorgt ervoor dat elke tab zijn eigen sessie heeft en onafhankelijk kan uitloggen
+const customStorage = {
+  getItem: (key) => {
+    if (isAuthKey(key)) {
+      // Eerst checken in sessionStorage
+      const value = sessionStorage.getItem(key)
+      if (value) return value
+      
+      // Fallback: check localStorage (voor migratie van oude sessies)
+      const fallbackValue = localStorage.getItem(key)
+      if (fallbackValue) {
+        // Migreer naar sessionStorage
+        sessionStorage.setItem(key, fallbackValue)
+        return fallbackValue
+      }
+      return null
+    }
+    // Andere data blijft in localStorage voor cross-tab sharing
+    return localStorage.getItem(key)
+  },
+  setItem: (key, value) => {
+    if (isAuthKey(key)) {
+      sessionStorage.setItem(key, value)
+      // Verwijder ook uit localStorage als het daar nog staat
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key)
+      }
+    } else {
+      localStorage.setItem(key, value)
+    }
+  },
+  removeItem: (key) => {
+    if (isAuthKey(key)) {
+      sessionStorage.removeItem(key)
+      // Verwijder ook uit localStorage voor volledigheid
+      localStorage.removeItem(key)
+    } else {
+      localStorage.removeItem(key)
+    }
+  }
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: customStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+})
 
 // ============================================
 // ENTITY CLASS - Base44 Compatible
@@ -294,6 +398,15 @@ export const MaterialPriceApproval = new Entity('material_price_approvals')
 export const MaterialUsage = MaterialsUsage // alias voor compatibiliteit
 export const CheckInRecord = new Entity('check_in_records')
 
+// Week Planning entities
+export const CompanyVehicle = new Entity('company_vehicles')
+export const VehicleAssignment = new Entity('vehicle_assignments')
+export const Subcontractor = new Entity('subcontractors')
+export const SubcontractorAssignment = new Entity('subcontractor_assignments')
+export const ProjectTask = new Entity('project_tasks')
+export const EmployeeDaySchedule = new Entity('employee_day_schedules')
+export const MaterialDelivery = new Entity('material_deliveries')
+
 export const functions = {
   async invoke(functionName, params) {
     try {
@@ -363,7 +476,14 @@ export const base44 = {
     AppError,
     SupplierInvoice,
     MaterialPriceApproval,
-    CheckInRecord
+    CheckInRecord,
+    CompanyVehicle,
+    VehicleAssignment,
+    Subcontractor,
+    SubcontractorAssignment,
+    ProjectTask,
+    EmployeeDaySchedule,
+    MaterialDelivery
   }
 }
 

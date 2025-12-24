@@ -12,8 +12,9 @@ CREATE TABLE magic_links (
   redirect_to TEXT DEFAULT '/Dashboard',
   used BOOLEAN DEFAULT false,
   used_at TIMESTAMPTZ,
-  expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '15 minutes',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '10 minutes',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  ip_address TEXT -- Store IP for rate limiting
 );
 
 -- Create index for fast token lookups
@@ -21,12 +22,15 @@ CREATE INDEX idx_magic_links_token ON magic_links(token);
 
 -- Create index for cleanup queries
 CREATE INDEX idx_magic_links_expires_at ON magic_links(expires_at);
+-- Create index for rate limiting queries
+CREATE INDEX idx_magic_links_email_created ON magic_links(email, created_at);
+CREATE INDEX idx_magic_links_ip_created ON magic_links(ip_address, created_at);
 
 -- Add comments
 COMMENT ON TABLE magic_links IS 'Stores magic link tokens for passwordless login via Resend';
 COMMENT ON COLUMN magic_links.token IS 'Unique token sent in the magic link email';
 COMMENT ON COLUMN magic_links.used IS 'Whether the token has been used';
-COMMENT ON COLUMN magic_links.expires_at IS 'Token expires after 15 minutes';
+COMMENT ON COLUMN magic_links.expires_at IS 'Token expires after 10 minutes';
 
 -- Enable RLS
 ALTER TABLE magic_links ENABLE ROW LEVEL SECURITY;

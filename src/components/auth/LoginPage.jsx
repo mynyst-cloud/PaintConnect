@@ -57,6 +57,114 @@ const stats = [
   { value: '99.9%', label: 'Uptime' },
 ];
 
+// Rate limiting en account lockout utility
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minuten
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuut
+const MAX_REQUESTS_PER_WINDOW = 5; // Max 5 login pogingen per minuut
+
+const getStorageKey = (email) => `login_attempts_${email.toLowerCase()}`;
+const getRateLimitKey = (email) => `rate_limit_${email.toLowerCase()}`;
+
+const checkRateLimit = (email) => {
+  const key = getRateLimitKey(email);
+  const now = Date.now();
+  const stored = localStorage.getItem(key);
+  
+  if (!stored) {
+    localStorage.setItem(key, JSON.stringify([now]));
+    return true;
+  }
+  
+  const requests = JSON.parse(stored);
+  const recentRequests = requests.filter((time) => now - time < RATE_LIMIT_WINDOW);
+  
+  if (recentRequests.length >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+  
+  recentRequests.push(now);
+  localStorage.setItem(key, JSON.stringify(recentRequests));
+  return true;
+};
+
+const recordLoginAttempt = (email, success) => {
+  const key = getStorageKey(email);
+  const now = Date.now();
+  
+  if (success) {
+    // Reset bij succesvolle login
+    localStorage.removeItem(key);
+    localStorage.removeItem(getRateLimitKey(email));
+    return { locked: false, attemptsRemaining: MAX_LOGIN_ATTEMPTS };
+  }
+  
+  const stored = localStorage.getItem(key);
+  const attempts = stored ? JSON.parse(stored) : { count: 0, lockoutUntil: null };
+  
+  // Check if still locked
+  if (attempts.lockoutUntil && now < attempts.lockoutUntil) {
+    const minutesRemaining = Math.ceil((attempts.lockoutUntil - now) / (60 * 1000));
+    return { 
+      locked: true, 
+      minutesRemaining,
+      attemptsRemaining: 0 
+    };
+  }
+  
+  // Reset if lockout expired
+  if (attempts.lockoutUntil && now >= attempts.lockoutUntil) {
+    attempts.count = 0;
+    attempts.lockoutUntil = null;
+  }
+  
+  attempts.count++;
+  const attemptsRemaining = Math.max(0, MAX_LOGIN_ATTEMPTS - attempts.count);
+  
+  if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
+    attempts.lockoutUntil = now + LOCKOUT_DURATION;
+  }
+  
+  localStorage.setItem(key, JSON.stringify(attempts));
+  
+  return {
+    locked: attempts.count >= MAX_LOGIN_ATTEMPTS,
+    attemptsRemaining,
+    minutesRemaining: attempts.lockoutUntil ? Math.ceil((attempts.lockoutUntil - now) / (60 * 1000)) : null
+  };
+};
+
+const getLoginAttempts = (email) => {
+  const key = getStorageKey(email);
+  const stored = localStorage.getItem(key);
+  if (!stored) {
+    return { locked: false, attemptsRemaining: MAX_LOGIN_ATTEMPTS };
+  }
+  
+  const attempts = JSON.parse(stored);
+  const now = Date.now();
+  
+  if (attempts.lockoutUntil && now < attempts.lockoutUntil) {
+    const minutesRemaining = Math.ceil((attempts.lockoutUntil - now) / (60 * 1000));
+    return { 
+      locked: true, 
+      minutesRemaining,
+      attemptsRemaining: 0 
+    };
+  }
+  
+  if (attempts.lockoutUntil && now >= attempts.lockoutUntil) {
+    // Lockout expired, reset
+    localStorage.removeItem(key);
+    return { locked: false, attemptsRemaining: MAX_LOGIN_ATTEMPTS };
+  }
+  
+  return {
+    locked: false,
+    attemptsRemaining: Math.max(0, MAX_LOGIN_ATTEMPTS - attempts.count)
+  };
+};
+
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -87,6 +195,8 @@ export default function LoginPage() {
     if (!email) return;
     
     setIsLoading(true);
+    setLoginError('');
+    
     try {
       // Use custom magic link via Resend (bypasses Supabase SMTP)
       const { data, error } = await supabase.functions.invoke('sendMagicLink', {
@@ -97,12 +207,24 @@ export default function LoginPage() {
       });
       
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (data?.error) {
+        // Handle rate limiting errors specifically
+        if (data.error.includes('Te veel verzoeken')) {
+          setLoginError(data.error);
+        } else {
+          throw new Error(data.error);
+        }
+        return;
+      }
       
       setEmailSent(true);
     } catch (error) {
       console.error('Magic link error:', error);
-      alert(error.message || 'Er is een fout opgetreden. Probeer het opnieuw.');
+      if (error.message?.includes('Te veel verzoeken')) {
+        setLoginError(error.message);
+      } else {
+        setLoginError('Er is een fout opgetreden. Probeer het opnieuw.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -115,25 +237,53 @@ export default function LoginPage() {
     setIsLoading(true);
     setLoginError('');
     
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // Check rate limiting
+    if (!checkRateLimit(normalizedEmail)) {
+      setLoginError('Te veel login pogingen. Wacht even en probeer het opnieuw.');
+      setIsLoading(false);
+      return;
+    }
+    
+    // Check account lockout
+    const attemptInfo = getLoginAttempts(normalizedEmail);
+    if (attemptInfo.locked) {
+      setLoginError(`Account tijdelijk geblokkeerd. Probeer het over ${attemptInfo.minutesRemaining} minuten opnieuw.`);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         password: password
       });
       
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setLoginError('Ongeldige e-mail of wachtwoord.');
+        // Record failed attempt
+        const newAttemptInfo = recordLoginAttempt(normalizedEmail, false);
+        
+        // Generieke foutmelding (niet specifiek of email bestaat)
+        if (newAttemptInfo.locked) {
+          setLoginError(`Account tijdelijk geblokkeerd na ${MAX_LOGIN_ATTEMPTS} mislukte pogingen. Probeer het over ${newAttemptInfo.minutesRemaining} minuten opnieuw.`);
+        } else if (newAttemptInfo.attemptsRemaining > 0) {
+          setLoginError(`Ongeldige inloggegevens. ${newAttemptInfo.attemptsRemaining} poging(en) over.`);
         } else {
-          setLoginError(error.message);
+          setLoginError('Ongeldige inloggegevens.');
         }
         return;
       }
+      
+      // Record successful login
+      recordLoginAttempt(normalizedEmail, true);
       
       // Success - redirect will happen automatically via auth state change
       window.location.href = '/Dashboard';
     } catch (error) {
       console.error('Password login error:', error);
+      // Record failed attempt
+      recordLoginAttempt(normalizedEmail, false);
       setLoginError('Er is een fout opgetreden. Probeer het opnieuw.');
     } finally {
       setIsLoading(false);
@@ -363,12 +513,20 @@ export default function LoginPage() {
                       <input
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => { setEmail(e.target.value); setLoginError(''); }}
                         placeholder="naam@bedrijf.nl"
                         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                         required
                       />
                     </div>
+                    
+                    {loginError && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span>{loginError}</span>
+                      </div>
+                    )}
+                    
                     <button
                       type="submit"
                       disabled={isLoading || !email}
@@ -405,6 +563,10 @@ export default function LoginPage() {
                 <p className="text-gray-600 mb-4">
                   We hebben een login link gestuurd naar<br />
                   <span className="font-medium text-gray-900">{email}</span>
+                  <br />
+                  <span className="text-sm text-gray-500 mt-2 block">
+                    Deze link is 10 minuten geldig.
+                  </span>
                 </p>
                 <button
                   onClick={() => {

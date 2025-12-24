@@ -91,7 +91,7 @@ function getMagicLinkEmailHtml(params: { email: string; magicLinkUrl: string }) 
                 <tr>
                   <td style="border-top: 1px solid #e5e7eb; padding-top: 30px;">
                     <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center; font-family: Arial, Helvetica, sans-serif;">
-                      Deze link is 15 minuten geldig. Heeft u deze e-mail niet aangevraagd? Dan kunt u deze negeren.
+                      Deze link is 10 minuten geldig. Heeft u deze e-mail niet aangevraagd? Dan kunt u deze negeren.
                     </p>
                   </td>
                 </tr>
@@ -140,9 +140,65 @@ serve(async (req) => {
     // Normalize email
     const normalizedEmail = email.toLowerCase().trim()
 
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown'
+    
+    // Rate limiting: Check if too many requests for this email
+    const rateLimitWindow = 15 * 60 * 1000 // 15 minuten
+    const maxRequestsPerEmail = 3 // Max 3 magic links per 15 minuten per email
+    
+    // Check rate limit from database
+    const { data: recentEmailLinks, error: rateLimitError } = await supabase
+      .from('magic_links')
+      .select('created_at')
+      .eq('email', normalizedEmail)
+      .gte('created_at', new Date(Date.now() - rateLimitWindow).toISOString())
+      .order('created_at', { ascending: false })
+    
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError)
+    }
+    
+    const recentEmailCount = recentEmailLinks?.length || 0
+    if (recentEmailCount >= maxRequestsPerEmail) {
+      return new Response(
+        JSON.stringify({ 
+          error: `Te veel verzoeken. U kunt maximaal ${maxRequestsPerEmail} login links per 15 minuten aanvragen. Probeer het later opnieuw.` 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+      )
+    }
+    
+    // IP-based rate limiting
+    const maxRequestsPerIP = 10 // Max 10 requests per IP per uur
+    const ipRateLimitWindow = 60 * 60 * 1000 // 1 uur
+    
+    const { data: recentIPLinks, error: ipRateLimitError } = await supabase
+      .from('magic_links')
+      .select('created_at')
+      .eq('ip_address', clientIP)
+      .gte('created_at', new Date(Date.now() - ipRateLimitWindow).toISOString())
+      .order('created_at', { ascending: false })
+    
+    if (ipRateLimitError) {
+      console.error('IP rate limit check error:', ipRateLimitError)
+    }
+    
+    const ipRecentCount = recentIPLinks?.length || 0
+    if (ipRecentCount >= maxRequestsPerIP) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Te veel verzoeken vanaf dit IP-adres. Probeer het later opnieuw.' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+      )
+    }
+
     // Generate a secure token
     const token = crypto.randomUUID()
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000) // 10 minuten (verkort van 15)
 
     // Store the magic link token
     const { error: insertError } = await supabase
@@ -151,7 +207,8 @@ serve(async (req) => {
         email: normalizedEmail,
         token,
         expires_at: expiresAt.toISOString(),
-        redirect_to: redirectTo || '/Dashboard'
+        redirect_to: redirectTo || '/Dashboard',
+        ip_address: clientIP
       })
 
     if (insertError) {

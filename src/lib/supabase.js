@@ -6,20 +6,6 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Genereer een unieke tab ID voor deze sessie
-// Dit zorgt ervoor dat elke tab zijn eigen storage key heeft
-const getTabId = () => {
-  if (typeof window === 'undefined') return 'server'
-  let tabId = sessionStorage.getItem('tab_id')
-  if (!tabId) {
-    tabId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    sessionStorage.setItem('tab_id', tabId)
-  }
-  return tabId
-}
-
-const tabId = getTabId()
-
 // Helper functie om te bepalen of een key auth-gerelateerd is
 const isAuthKey = (key) => {
   if (!key) return false
@@ -57,28 +43,23 @@ if (typeof window !== 'undefined') {
 }
 
 // Custom storage adapter die sessionStorage gebruikt voor auth
-// Met een unieke key per tab om volledige isolatie te garanderen
+// Dit zorgt ervoor dat elke tab zijn eigen sessie heeft en onafhankelijk kan uitloggen
+// We gebruiken de standaard keys (niet tab-specifiek) zodat Supabase de sessie kan vinden
 const customStorage = {
   getItem: (key) => {
     if (isAuthKey(key)) {
-      // Gebruik tab-specifieke key voor volledige isolatie
-      const tabSpecificKey = `${key}_${tabId}`
-      const value = sessionStorage.getItem(tabSpecificKey)
+      // Gebruik sessionStorage voor auth keys
+      const value = sessionStorage.getItem(key)
       if (value) return value
       
-      // Fallback: check zonder tab ID (voor backward compatibility)
-      const fallbackValue = sessionStorage.getItem(key)
+      // Fallback: check localStorage (voor migratie van oude sessies)
+      const fallbackValue = localStorage.getItem(key)
       if (fallbackValue) {
-        // Migreer naar tab-specifieke key
-        sessionStorage.setItem(tabSpecificKey, fallbackValue)
+        // Migreer naar sessionStorage
+        sessionStorage.setItem(key, fallbackValue)
+        // Verwijder uit localStorage
+        localStorage.removeItem(key)
         return fallbackValue
-      }
-      
-      // Laatste fallback: check localStorage (voor migratie)
-      const localStorageValue = localStorage.getItem(key)
-      if (localStorageValue) {
-        sessionStorage.setItem(tabSpecificKey, localStorageValue)
-        return localStorageValue
       }
       return null
     }
@@ -87,16 +68,9 @@ const customStorage = {
   },
   setItem: (key, value) => {
     if (isAuthKey(key)) {
-      // Gebruik tab-specifieke key
-      const tabSpecificKey = `${key}_${tabId}`
-      sessionStorage.setItem(tabSpecificKey, value)
-      
-      // Verwijder oude keys zonder tab ID
-      if (sessionStorage.getItem(key)) {
-        sessionStorage.removeItem(key)
-      }
-      
-      // Verwijder ook uit localStorage
+      // Gebruik sessionStorage voor auth keys
+      sessionStorage.setItem(key, value)
+      // Verwijder ook uit localStorage als het daar nog staat
       if (localStorage.getItem(key)) {
         localStorage.removeItem(key)
       }
@@ -106,12 +80,9 @@ const customStorage = {
   },
   removeItem: (key) => {
     if (isAuthKey(key)) {
-      // Verwijder tab-specifieke key
-      const tabSpecificKey = `${key}_${tabId}`
-      sessionStorage.removeItem(tabSpecificKey)
-      
-      // Verwijder ook oude keys
+      // Verwijder uit sessionStorage
       sessionStorage.removeItem(key)
+      // Verwijder ook uit localStorage voor volledigheid
       localStorage.removeItem(key)
     } else {
       localStorage.removeItem(key)
@@ -119,19 +90,15 @@ const customStorage = {
   }
 }
 
-// Genereer een unieke storage key per tab
-// Dit voorkomt dat Supabase storage events tussen tabs synchroniseert
-const projectRef = supabaseUrl.split('//')[1]?.split('.')[0] || 'default'
-const storageKey = `sb-${projectRef}-auth-token-${tabId}`
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: customStorage,
-    storageKey: storageKey, // Unieke key per tab
+    // Gebruik GEEN tab-specifieke storageKey - laat Supabase de standaard key gebruiken
+    // Dit zorgt ervoor dat Supabase de sessie kan vinden
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce' // Gebruik PKCE flow voor betere security en isolatie
+    flowType: 'pkce'
   }
 })
 
@@ -372,10 +339,64 @@ class UserEntity extends Entity {
   }
 
   async logout() {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      console.error('Logout error:', error)
-      throw error
+    try {
+      // Probeer eerst de sessie op te halen
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        // Als er een sessie is, log uit
+        const { error } = await supabase.auth.signOut()
+        if (error) {
+          console.error('Logout error:', error)
+          throw error
+        }
+      } else {
+        // Als er geen sessie is, verwijder gewoon de lokale storage
+        // Dit voorkomt AuthSessionMissingError
+        console.log('[User.logout] No active session, clearing local storage')
+        const authKeys = []
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i)
+          if (key && isAuthKey(key)) {
+            authKeys.push(key)
+          }
+        }
+        authKeys.forEach(key => sessionStorage.removeItem(key))
+        
+        // Verwijder ook uit localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && isAuthKey(key)) {
+            localStorage.removeItem(key)
+          }
+        }
+      }
+    } catch (error) {
+      // Als signOut faalt, probeer dan in ieder geval lokale storage te wissen
+      console.warn('[User.logout] Error during signOut, clearing local storage anyway:', error)
+      
+      // Wis alle auth-gerelateerde keys
+      const authKeys = []
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i)
+        if (key && isAuthKey(key)) {
+          authKeys.push(key)
+        }
+      }
+      authKeys.forEach(key => sessionStorage.removeItem(key))
+      
+      // Verwijder ook uit localStorage
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && isAuthKey(key)) {
+          localStorage.removeItem(key)
+        }
+      }
+      
+      // Gooi de error alleen door als het niet een AuthSessionMissingError is
+      if (error?.message && !error.message.includes('Auth session missing')) {
+        throw error
+      }
     }
   }
 }

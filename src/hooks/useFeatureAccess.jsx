@@ -145,13 +145,15 @@ export function FeatureAccessProvider({ children }) {
 
   // Check if a feature is enabled
   const hasFeature = useCallback((featureKey) => {
+    const userRole = currentUser?.company_role || USER_ROLES.PAINTER;
+    const tierId = company?.subscription_tier || SUBSCRIPTION_TIERS.STARTER_TRIAL;
+    
     console.log('[useFeatureAccess] hasFeature called:', {
       featureKey,
-      userId: currentUser?.id,
       userEmail: currentUser?.email,
-      companyRole: currentUser?.company_role,
-      enabledFeaturesKeys: Object.keys(enabledFeatures),
-      stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n')
+      companyRole: userRole,
+      tier: tierId,
+      enabledFeaturesCount: Object.keys(enabledFeatures).length
     });
     
     // Super admin always has access - check by email first
@@ -161,22 +163,74 @@ export function FeatureAccessProvider({ children }) {
     }
     
     // Super admin check via role
-    if (currentUser?.company_role === USER_ROLES.SUPER_ADMIN) {
+    if (userRole === USER_ROLES.SUPER_ADMIN) {
       console.log('[useFeatureAccess] Super admin by role, returning true');
       return true;
     }
     
-    // If no features loaded yet, use config-based check
-    if (Object.keys(enabledFeatures).length === 0) {
-      const userRole = currentUser?.company_role || USER_ROLES.PAINTER;
-      const tierId = company?.subscription_tier || SUBSCRIPTION_TIERS.STARTER_TRIAL;
-      const result = checkFeatureAccess(userRole, tierId, featureKey);
-      console.log('[useFeatureAccess] Features not loaded, using config check:', result);
+    // FIXED: Allow trialing users to access dashboard and other basic features
+    // This ensures new registrations can access Dashboard even if enabledFeatures is not loaded yet
+    if (company?.subscription_status === 'trialing') {
+      // Always allow dashboard access for trialing users (new registrations)
+      if (featureKey === 'page_dashboard') {
+        console.log('[useFeatureAccess] Trialing user accessing dashboard - allowing');
+        return true;
+      }
+      // For other features, continue with normal checks below
+    }
+    
+    // Check subscription status first (expired/past_due/canceled)
+    if (company?.subscription_status) {
+      const status = company.subscription_status;
+      
+      // Expired companies can only access subscription page
+      if (status === 'expired') {
+        if (featureKey === 'page_subscription') {
+          return true;
+        }
+        return false;
+      }
+      
+      // Past due companies have grace period
+      if (status === 'past_due') {
+        const paymentFailedAt = company.payment_failed_at ? new Date(company.payment_failed_at) : null;
+        if (paymentFailedAt) {
+          const gracePeriodEnd = new Date(paymentFailedAt.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 days
+          const now = new Date();
+          
+          // If grace period expired, treat as expired
+          if (now > gracePeriodEnd) {
+            if (featureKey === 'page_subscription') {
+              return true;
+            }
+            return false;
+          }
+          // Still in grace period - allow access
+        }
+      }
+      
+      // Canceled companies can only access subscription page
+      if (status === 'canceled') {
+        if (featureKey === 'page_subscription') {
+          return true;
+        }
+        return false;
+      }
+    }
+    
+    // If no features loaded yet OR specific feature not in enabledFeatures, use config-based check
+    if (Object.keys(enabledFeatures).length === 0 || !(featureKey in enabledFeatures)) {
+      const result = checkFeatureAccess(userRole, tierId, featureKey, company);
+      console.log('[useFeatureAccess] Using config check for', featureKey, ':', result, {
+        role: userRole,
+        tier: tierId,
+        subscription_status: company?.subscription_status
+      });
       return result;
     }
     
     const result = enabledFeatures[featureKey] === true;
-    console.log('[useFeatureAccess] Feature check result:', result);
+    console.log('[useFeatureAccess] Feature from enabledFeatures:', featureKey, '=', result);
     return result;
   }, [currentUser, company, enabledFeatures]);
 

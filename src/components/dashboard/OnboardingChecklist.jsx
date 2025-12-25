@@ -234,25 +234,34 @@ export default function OnboardingChecklist({
         {/* Collapsed header - always visible, clickable to expand */}
         <button
           onClick={toggleCollapsed}
-          className="w-full flex items-center justify-between p-3 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-colors"
+          className="w-full flex items-center justify-between p-3 sm:p-4 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-colors"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             <img 
               src={logoUrl} 
               alt="PaintConnect" 
-              className="h-6 w-auto"
+              className="h-5 w-auto sm:h-6 flex-shrink-0"
             />
-            <div className="text-left">
-              <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                Aan de slag met PaintConnect
-              </span>
-              <span className="ml-2 text-xs text-emerald-600 dark:text-emerald-400">
-                {completedTasks}/{totalTasks} stappen voltooid
-              </span>
+            <div className="text-left min-w-0 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate">
+                  Aan de slag met PaintConnect
+                </span>
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  {completedTasks}/{totalTasks} stappen voltooid
+                </span>
+              </div>
+              {/* Progress bar for mobile - visible on small screens */}
+              <div className="sm:hidden mt-1.5 w-full bg-emerald-100 dark:bg-emerald-900/50 rounded-full h-1">
+                <div 
+                  className="h-1 rounded-full bg-emerald-500 transition-all duration-300" 
+                  style={{ width: `${progressPercentage}%` }} 
+                />
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Mini progress bar */}
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            {/* Mini progress bar - hidden on mobile, visible on desktop */}
             <div className="hidden sm:block w-20 bg-emerald-100 dark:bg-emerald-900/50 rounded-full h-1.5">
               <div 
                 className="h-1.5 rounded-full bg-emerald-500 transition-all duration-300" 
@@ -260,9 +269,9 @@ export default function OnboardingChecklist({
               />
             </div>
             {isCollapsed ? (
-              <ChevronDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             ) : (
-              <ChevronUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
             )}
           </div>
         </button>

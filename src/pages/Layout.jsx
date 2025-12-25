@@ -296,16 +296,82 @@ function LayoutContent({ children }) {
         // Also include 'owner' for legacy users
         const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner' || user?.role === 'admin';
 
-        // Check trial expiration - don't show modal if subscription is active or pending_activation
+        // Check trial expiration and payment status - don't show modal if subscription is active or pending_activation
         let showTrialExpired = false;
         if (company && user?.role !== 'admin' && isAdmin) {
-          // Only show trial expired if NOT active and NOT pending_activation
-          if (company.subscription_status !== 'active' && company.subscription_status !== 'pending_activation' && (
-            (company.subscription_status === 'trialing' && company.trial_ends_at && new Date(company.trial_ends_at) < new Date()) ||
-            (company.subscription_status === 'canceled')
-          ) && !alwaysAccessiblePages.some((page) => currentPath.startsWith(page))) {
-            showTrialExpired = true;
+          // Check for expired status
+          if (company.subscription_status === 'expired') {
+            if (!alwaysAccessiblePages.some((page) => currentPath.startsWith(page))) {
+              showTrialExpired = true;
+            }
           }
+          // Check for past_due status with grace period (7 days)
+          else if (company.subscription_status === 'past_due') {
+            const paymentFailedAt = company.payment_failed_at ? new Date(company.payment_failed_at) : null;
+            if (paymentFailedAt) {
+              const gracePeriodEnd = new Date(paymentFailedAt.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 days
+              const now = new Date();
+              
+              if (now > gracePeriodEnd) {
+                // Grace period expired, show trial expired modal
+                if (!alwaysAccessiblePages.some((page) => currentPath.startsWith(page))) {
+                  showTrialExpired = true;
+                }
+              } else {
+                // Still in grace period, log warning but allow access
+                const daysRemaining = Math.ceil((gracePeriodEnd - now) / (1000 * 60 * 60 * 24));
+                console.warn(`[Layout] Payment required: ${daysRemaining} days remaining in grace period`);
+              }
+            } else {
+              // No payment_failed_at set, treat as expired
+              if (!alwaysAccessiblePages.some((page) => currentPath.startsWith(page))) {
+                showTrialExpired = true;
+              }
+            }
+          }
+          // Check for canceled status
+          else if (company.subscription_status === 'canceled') {
+            if (!alwaysAccessiblePages.some((page) => currentPath.startsWith(page))) {
+              showTrialExpired = true;
+            }
+          }
+          // FIXED: Check for trialing status - only show expired if trial_ends_at is in the past
+          else if (company.subscription_status === 'trialing') {
+            if (company.trial_ends_at) {
+              const trialEndDate = new Date(company.trial_ends_at);
+              const now = new Date();
+              
+              // Additional safety check: if trial_started_at exists and is recent (within last 15 days), 
+              // treat as active trial even if trial_ends_at seems wrong
+              if (company.trial_started_at) {
+                const trialStartDate = new Date(company.trial_started_at);
+                const daysSinceStart = (now.getTime() - trialStartDate.getTime()) / (1000 * 60 * 60 * 24);
+                
+                if (daysSinceStart < 15 && trialEndDate > trialStartDate) {
+                  // Trial started recently and end date is after start date - treat as active
+                  console.log('[Layout] Trial started recently, treating as active even if dates seem off');
+                  // Don't show expired modal
+                } else if (trialEndDate < now) {
+                  // Trial expired - trial_ends_at is in the past
+                  if (!alwaysAccessiblePages.some((page) => currentPath.startsWith(page))) {
+                    showTrialExpired = true;
+                  }
+                }
+              } else if (trialEndDate < now) {
+                // Trial expired - trial_ends_at is in the past (and no trial_started_at to verify)
+                if (!alwaysAccessiblePages.some((page) => currentPath.startsWith(page))) {
+                  showTrialExpired = true;
+                }
+              }
+              // If trial_ends_at is in future, trial is active - don't show expired modal
+            } else {
+              // No trial_ends_at set - this is a new registration, don't show expired
+              // This should not happen if registerCompany works correctly, but handle gracefully
+              console.warn('[Layout] Company has trialing status but no trial_ends_at - treating as active trial');
+            }
+          }
+          // Don't show expired for 'active' or 'pending_activation' status
+          // All other statuses that need expired modal are handled above
         }
 
         // FIXED: Handle new users without company - redirect to registration

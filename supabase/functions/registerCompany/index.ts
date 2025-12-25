@@ -187,18 +187,24 @@ serve(async (req) => {
         console.warn('[registerCompany] Some columns may not exist, trying with minimal fields...')
         
         // Minimal company data - only required fields
-        // CRITICAL: Always include subscription_tier and subscription_status even in minimal fallback
+        // CRITICAL: Always include subscription_tier, subscription_status, trial dates, and onboarding_status even in minimal fallback
         const minimalCompanyData: Record<string, any> = {
           name: companyData.name,
           email: companyData.email,
           inbound_email_address: companyData.inbound_email_address,
           subscription_tier: 'starter_trial', // CRITICAL: Always set to starter_trial
-          subscription_status: 'trialing' // CRITICAL: Always set to trialing
+          subscription_status: 'trialing', // CRITICAL: Always set to trialing
+          trial_started_at: companyData.trial_started_at, // CRITICAL: Set trial start time
+          trial_ends_at: companyData.trial_ends_at, // CRITICAL: Set trial end time (14 days)
+          onboarding_status: 'not_started' // CRITICAL: Set onboarding status so onboarding can start
         }
         
         console.log('[registerCompany] Using minimal company data (fallback):', {
           subscription_tier: minimalCompanyData.subscription_tier,
-          subscription_status: minimalCompanyData.subscription_status
+          subscription_status: minimalCompanyData.subscription_status,
+          has_trial_started: !!minimalCompanyData.trial_started_at,
+          has_trial_ends: !!minimalCompanyData.trial_ends_at,
+          onboarding_status: minimalCompanyData.onboarding_status
         })
         
         // Only add optional fields if they were provided
@@ -224,9 +230,11 @@ serve(async (req) => {
           console.log('[registerCompany] Company created with minimal fields:', {
             id: company.id,
             subscription_tier: company.subscription_tier,
-            subscription_status: company.subscription_status
+            subscription_status: company.subscription_status,
+            onboarding_status: company.onboarding_status,
+            has_trial_started: !!company.trial_started_at,
+            has_trial_ends: !!company.trial_ends_at
           })
-          console.warn('[registerCompany] Note: onboarding_status and trial dates may need to be set separately if columns exist')
         }
       } else {
         companyError = errorWithAllFields

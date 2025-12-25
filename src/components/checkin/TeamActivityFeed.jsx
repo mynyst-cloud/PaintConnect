@@ -50,7 +50,6 @@ export default function TeamActivityFeed({ isCompactIcon = false }) {
   const [completedCheckIns, setCompletedCheckIns] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [debugInfo, setDebugInfo] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(new Date()); // NIEUW: lastRefresh state
 
   const loadCheckIns = async () => {
@@ -65,11 +64,9 @@ export default function TeamActivityFeed({ isCompactIcon = false }) {
       if (response.data?.success) {
         console.log('[TeamActivityFeed] Active check-ins:', response.data.active?.length || 0);
         console.log('[TeamActivityFeed] Completed check-ins:', response.data.completed?.length || 0);
-        console.log('[TeamActivityFeed] Debug info:', response.data.debug);
         
         setActiveCheckIns(response.data.active || []);
         setCompletedCheckIns(response.data.completed || []);
-        setDebugInfo(response.data.debug);
         setLastRefresh(new Date()); // Update lastRefresh on successful manual load as well
       } else {
         console.error('[TeamActivityFeed] Response not successful:', response.data);
@@ -239,20 +236,6 @@ export default function TeamActivityFeed({ isCompactIcon = false }) {
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          {/* Debug Info */}
-          {debugInfo && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs">
-              <details>
-                <summary className="cursor-pointer font-semibold text-blue-900 dark:text-blue-300">
-                  Debug Info (klik om te tonen)
-                </summary>
-                <pre className="mt-2 text-blue-800 dark:text-blue-400 overflow-auto whitespace-pre-wrap">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              </details>
-            </div>
-          )}
-
           {/* Loading State */}
           {isLoading && activeCheckIns.length === 0 && completedCheckIns.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-slate-400">

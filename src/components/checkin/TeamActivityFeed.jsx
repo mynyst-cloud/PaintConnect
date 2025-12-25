@@ -80,26 +80,30 @@ export default function TeamActivityFeed({ isCompactIcon = false }) {
     }
   };
 
-  // Load check-ins when sheet opens
+  // Load check-ins on mount and when sheet opens
   useEffect(() => {
+    // Load immediately on mount to show badge count
+    loadCheckIns();
+    
+    // Also reload when sheet opens (for detailed view)
     if (isOpen) {
-      console.log('[TeamActivityFeed] Sheet opened, loading check-ins');
+      console.log('[TeamActivityFeed] Sheet opened, reloading check-ins');
       loadCheckIns();
     }
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-refresh timer - alleen wanneer sidebar open is
+  // Auto-refresh timer - always active (not just when sidebar is open)
+  // This ensures the badge count stays up-to-date even when sidebar is closed
   useEffect(() => {
-    if (!isOpen) return;
-
+    // Initial load is handled by the useEffect above, so start interval immediately
     const refreshInterval = setInterval(() => {
-      console.log('[TeamActivityFeed] Auto-refreshing sidebar data');
+      console.log('[TeamActivityFeed] Auto-refreshing check-ins (background)');
       loadCheckIns();
       setLastRefresh(new Date());
-    }, 60000); // Elke 60 seconden
+    }, 30000); // Refresh every 30 seconds (more frequent than before for better UX)
 
     return () => clearInterval(refreshInterval);
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount, interval continues regardless of sidebar state
 
   // New renderCheckInCard function
   const renderCheckInCard = (checkIn, isCompleted = false) => (

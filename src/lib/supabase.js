@@ -42,51 +42,22 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Custom storage adapter die sessionStorage gebruikt voor auth
-// Dit zorgt ervoor dat elke tab zijn eigen sessie heeft en onafhankelijk kan uitloggen
-// We gebruiken de standaard keys (niet tab-specifiek) zodat Supabase de sessie kan vinden
+// Custom storage adapter die localStorage gebruikt voor auth (persistent tussen sessies)
+// Cross-tab synchronisatie wordt geblokkeerd door de storage event listener hierboven
+// Dit zorgt ervoor dat gebruikers ingelogd blijven op mobiele browsers
 const customStorage = {
   getItem: (key) => {
-    if (isAuthKey(key)) {
-      // Gebruik sessionStorage voor auth keys
-      const value = sessionStorage.getItem(key)
-      if (value) return value
-      
-      // Fallback: check localStorage (voor migratie van oude sessies)
-      const fallbackValue = localStorage.getItem(key)
-      if (fallbackValue) {
-        // Migreer naar sessionStorage
-        sessionStorage.setItem(key, fallbackValue)
-        // Verwijder uit localStorage
-        localStorage.removeItem(key)
-        return fallbackValue
-      }
-      return null
-    }
-    // Andere data blijft in localStorage voor cross-tab sharing
+    // Gebruik localStorage voor alle keys (inclusief auth) voor persistentie
+    // Cross-tab synchronisatie wordt geblokkeerd door storage event listener
     return localStorage.getItem(key)
   },
   setItem: (key, value) => {
-    if (isAuthKey(key)) {
-      // Gebruik sessionStorage voor auth keys
-      sessionStorage.setItem(key, value)
-      // Verwijder ook uit localStorage als het daar nog staat
-      if (localStorage.getItem(key)) {
-        localStorage.removeItem(key)
-      }
-    } else {
-      localStorage.setItem(key, value)
-    }
+    // Gebruik localStorage voor alle keys voor persistentie
+    localStorage.setItem(key, value)
   },
   removeItem: (key) => {
-    if (isAuthKey(key)) {
-      // Verwijder uit sessionStorage
-      sessionStorage.removeItem(key)
-      // Verwijder ook uit localStorage voor volledigheid
-      localStorage.removeItem(key)
-    } else {
-      localStorage.removeItem(key)
-    }
+    // Verwijder uit localStorage
+    localStorage.removeItem(key)
   }
 }
 
@@ -110,7 +81,7 @@ class Entity {
     this.tableName = tableName
   }
 
-  async filter(conditions = {}, orderBy = '-created_date', limit = null) {
+  async filter(conditions = {}, orderBy = '-created_at', limit = null) {
     let query = supabase.from(this.tableName).select('*')
     
     // Handle conditions
@@ -162,7 +133,7 @@ class Entity {
     return data || []
   }
 
-  async list(orderBy = '-created_date') {
+  async list(orderBy = '-created_at') {
     return this.filter({}, orderBy);
   }
 
@@ -354,44 +325,30 @@ class UserEntity extends Entity {
         // Als er geen sessie is, verwijder gewoon de lokale storage
         // Dit voorkomt AuthSessionMissingError
         console.log('[User.logout] No active session, clearing local storage')
+        
+        // Verwijder auth keys uit localStorage
         const authKeys = []
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i)
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
           if (key && isAuthKey(key)) {
             authKeys.push(key)
           }
         }
-        authKeys.forEach(key => sessionStorage.removeItem(key))
-        
-        // Verwijder ook uit localStorage
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i)
-          if (key && isAuthKey(key)) {
-            localStorage.removeItem(key)
-          }
-        }
+        authKeys.forEach(key => localStorage.removeItem(key))
       }
     } catch (error) {
       // Als signOut faalt, probeer dan in ieder geval lokale storage te wissen
       console.warn('[User.logout] Error during signOut, clearing local storage anyway:', error)
       
-      // Wis alle auth-gerelateerde keys
+      // Wis alle auth-gerelateerde keys uit localStorage
       const authKeys = []
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i)
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
         if (key && isAuthKey(key)) {
           authKeys.push(key)
         }
       }
-      authKeys.forEach(key => sessionStorage.removeItem(key))
-      
-      // Verwijder ook uit localStorage
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && isAuthKey(key)) {
-          localStorage.removeItem(key)
-        }
-      }
+      authKeys.forEach(key => localStorage.removeItem(key))
       
       // Gooi de error alleen door als het niet een AuthSessionMissingError is
       if (error?.message && !error.message.includes('Auth session missing')) {

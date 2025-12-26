@@ -429,7 +429,7 @@ export default function Planning({ impersonatedCompanyId }) {
   const formattedDate = format(new Date(), "EEEE d MMMM yyyy", { locale: nl });
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 print-planning-wrapper">
       <div className="max-w-7xl mx-auto">
         <div className="mb-4">
           <div className="hidden md:flex md:flex-row justify-between items-start md:items-center gap-4 mb-6">

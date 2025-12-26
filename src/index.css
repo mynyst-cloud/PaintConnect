@@ -156,3 +156,82 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles - alleen planning content tonen */
+@media print {
+  /* Verberg alle navigatie, sidebar en andere UI elementen */
+  body > div:first-child > aside,
+  body > div:first-child > nav,
+  aside:not(.print-planning-wrapper),
+  nav:not(.print-planning-wrapper),
+  [class*="Sidebar"]:not(.print-planning-wrapper),
+  [class*="sidebar"]:not(.print-planning-wrapper),
+  [class*="Navigation"]:not(.print-planning-wrapper),
+  [class*="navigation"]:not(.print-planning-wrapper),
+  header:not(.print-planning-wrapper),
+  button:not(.print-visible),
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Verberg Layout container elementen (sidebar, etc) */
+  .flex.h-screen > aside,
+  .flex.h-screen > div:first-child:not(.print-planning-wrapper) {
+    display: none !important;
+  }
+  
+  /* Body styling voor print */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+  
+  /* Planning wrapper - alleen deze tonen */
+  .print-planning-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    min-height: auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  /* Verberg knoppen en controls in planning */
+  .print-planning-wrapper button,
+  .print-planning-wrapper .no-print {
+    display: none !important;
+  }
+  
+  /* Calendar styling voor print */
+  .print-planning-wrapper .bg-white,
+  .print-planning-wrapper .bg-slate-800 {
+    background: white !important;
+    box-shadow: none !important;
+  }
+  
+  /* Tekst kleuren voor print */
+  .print-planning-wrapper * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Optimaliseer spacing */
+  .print-planning-wrapper .p-4,
+  .print-planning-wrapper .p-6 {
+    padding: 10px !important;
+  }
+  
+  /* Verberg modals en popups */
+  .print-planning-wrapper [role="dialog"],
+  .print-planning-wrapper [class*="modal"],
+  .print-planning-wrapper [class*="Modal"],
+  .print-planning-wrapper [class*="AnimatePresence"] {
+    display: none !important;
+  }
+  
+  /* Verberg tabs list op mobiel tijdens print */
+  .print-planning-wrapper [class*="TabsList"] {
+    display: none !important;
+  }
+}

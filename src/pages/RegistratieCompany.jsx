@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, CheckCircle, Mail, Phone, MapPin, User as UserIcon } from 'lucide-react';
+import { Building, CheckCircle, Mail, Phone, MapPin, User as UserIcon, ArrowLeft } from 'lucide-react';
 import LoadingSpinner, { InlineSpinner } from '@/components/ui/LoadingSpinner';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -277,6 +277,15 @@ export default function RegistratieCompany() {
     }
   };
 
+  const handleCancel = async () => {
+    try {
+      await User.logout();
+      window.location.href = '/login';
+    } catch (err) {
+      window.location.href = '/login';
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
@@ -295,6 +304,19 @@ export default function RegistratieCompany() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-2xl">
         
+        {/* Terug knop bovenaan */}
+        <div className="mb-4">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleCancel}
+            disabled={isSubmitting}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+            <ArrowLeft className="w-4 h-4" />
+            Terug / Annuleren
+          </Button>
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <img src={paintConnectLogoUrl} alt="PaintConnect" className="h-16 mx-auto mb-4" />

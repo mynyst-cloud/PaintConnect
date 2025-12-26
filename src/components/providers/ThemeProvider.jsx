@@ -52,14 +52,23 @@ export function ThemeProvider({ children }) {
         const initializeTheme = async () => {
             try {
                 const user = await User.me();
+                console.log('[ThemeProvider] Loaded user from database:', { 
+                    id: user?.id, 
+                    email: user?.email,
+                    theme_preference: user?.theme_preference,
+                    theme_preference_type: typeof user?.theme_preference 
+                });
                 // Use nullish coalescing (??) instead of || to properly handle empty strings and null/undefined
                 const userTheme = user?.theme_preference ?? 'auto';
+                console.log('[ThemeProvider] Resolved userTheme after nullish coalescing:', userTheme);
                 setThemeState(userTheme);
                 
                 const resolved = userTheme === 'auto' ? getSystemTheme() : userTheme;
+                console.log('[ThemeProvider] Final resolved theme:', resolved);
                 setResolvedTheme(resolved);
                 applyTheme(resolved);
             } catch (error) {
+                console.error('[ThemeProvider] Error initializing theme:', error);
                 // User not logged in, use system preference
                 const systemTheme = getSystemTheme();
                 setThemeState('auto');
@@ -90,17 +99,26 @@ export function ThemeProvider({ children }) {
     }, [theme, isInitialized]);
 
     const setTheme = async (newTheme) => {
+        console.log('[ThemeProvider] setTheme called with:', newTheme);
         setThemeState(newTheme);
         
         // Save to user preferences
         try {
-            await User.updateMyUserData({ theme_preference: newTheme });
+            console.log('[ThemeProvider] Saving theme preference to database:', newTheme);
+            const updatedUser = await User.updateMyUserData({ theme_preference: newTheme });
+            console.log('[ThemeProvider] Theme preference saved successfully. Updated user:', {
+                id: updatedUser?.id,
+                theme_preference: updatedUser?.theme_preference,
+                theme_preference_type: typeof updatedUser?.theme_preference
+            });
         } catch (error) {
+            console.error('[ThemeProvider] Error saving theme preference:', error);
             console.warn('Could not save theme preference:', error);
         }
 
         // Apply theme immediately
         const resolved = newTheme === 'auto' ? getSystemTheme() : newTheme;
+        console.log('[ThemeProvider] Applying resolved theme immediately:', resolved);
         setResolvedTheme(resolved);
         applyTheme(resolved);
     };

@@ -76,16 +76,13 @@ serve(async (req) => {
       const color = PROJECT_COLOR_MAP[project.project_name]
       
       if (!color) {
-        console.log(`[updateDummyProjectColors] No color mapping found for: ${project.project_name}`)
+        console.log(`[updateDummyProjectColors] No color mapping found for: "${project.project_name}"`)
         continue
       }
 
-      // Only update if color is different
-      if (project.calendar_color === color) {
-        console.log(`[updateDummyProjectColors] Project "${project.project_name}" already has color: ${color}`)
-        continue
-      }
-
+      // Always update to ensure correct color (even if already set)
+      console.log(`[updateDummyProjectColors] Updating "${project.project_name}" from "${project.calendar_color || 'none'}" to "${color}"`)
+      
       const { data: updated, error: updateError } = await supabaseAdmin
         .from('projects')
         .update({ calendar_color: color })
@@ -99,7 +96,7 @@ serve(async (req) => {
       }
 
       updatedProjects.push(updated)
-      console.log(`[updateDummyProjectColors] Updated "${project.project_name}" to color: ${color}`)
+      console.log(`[updateDummyProjectColors] Successfully updated "${project.project_name}" to color: ${color}`)
     }
 
     console.log(`[updateDummyProjectColors] Updated ${updatedProjects.length} dummy projects`)

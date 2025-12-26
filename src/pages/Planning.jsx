@@ -118,33 +118,35 @@ export default function Planning({ impersonatedCompanyId }) {
   const events = planningData?.events || [];
   const isAdmin = planningData?.isAdmin || false;
 
-  // Auto-update dummy project colors if they don't have colors yet
+  // Auto-update dummy project colors to ensure they have the correct colors
   useEffect(() => {
     const updateDummyColors = async () => {
       if (!company?.id || !isAdmin) return;
       
-      // Check if there are dummy projects without calendar_color
-      const dummyProjectsWithoutColor = projects.filter(
-        p => p?.is_dummy && (!p?.calendar_color || p.calendar_color === null)
-      );
+      // Update ALL dummy projects to ensure they have the correct colors
+      const dummyProjects = projects.filter(p => p?.is_dummy);
       
-      if (dummyProjectsWithoutColor.length > 0) {
+      if (dummyProjects.length > 0) {
         try {
           const { updateDummyProjectColors } = await import('@/api/functions');
-          await updateDummyProjectColors({ companyId: company.id });
-          console.log('[Planning] Updated dummy project colors');
-          // Refetch to get updated projects
-          refetchAll();
+          const result = await updateDummyProjectColors({ companyId: company.id });
+          console.log('[Planning] Updated dummy project colors:', result);
+          // Refetch to get updated projects if any were updated
+          if (result?.count > 0) {
+            refetchAll();
+          }
         } catch (error) {
           console.warn('[Planning] Could not update dummy project colors:', error);
         }
       }
     };
 
-    if (projects.length > 0 && company?.id) {
+    // Only run once when projects are loaded (use projects.length to avoid infinite loops)
+    if (projects.length > 0 && company?.id && isAdmin) {
       updateDummyColors();
     }
-  }, [projects, company?.id, isAdmin, refetchAll]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects.length, company?.id, isAdmin]); // Use projects.length instead of projects array
 
   const minSwipeDistance = 50;
 

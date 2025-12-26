@@ -159,19 +159,11 @@ button:focus-visible {
 
 /* Print styles - alleen planning content tonen */
 @media print {
-  /* Verberg alle Layout elementen (sidebar, navigatie, etc) */
-  body > *:not(.print-planning-wrapper),
-  body > div:first-child > aside,
-  body > div:first-child > nav,
+  /* Verberg Layout sidebar en navigatie (specifieke selectors) */
   aside,
-  nav,
-  [class*="Sidebar"],
-  [class*="sidebar"],
-  [class*="Navigation"],
-  [class*="navigation"],
+  nav:not(.print-planning-wrapper nav),
   header:not(.print-planning-wrapper),
-  button:not(.print-visible),
-  .no-print {
+  footer {
     display: none !important;
   }
   
@@ -192,15 +184,24 @@ button:focus-visible {
     overflow: visible !important;
   }
   
-  /* Planning wrapper - alleen deze tonen */
-  .print-planning-wrapper {
+  /* Zorg dat main content area zichtbaar is */
+  main {
+    position: static !important;
+    margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Planning wrapper - zorg dat deze zichtbaar is */
+  .print-planning-wrapper {
+    padding: 20px !important;
     margin: 0 !important;
     background: white !important;
     min-height: auto !important;
     max-width: 100% !important;
     width: 100% !important;
     position: static !important;
+    display: block !important;
   }
   
   /* Verberg knoppen en controls in planning */
@@ -211,46 +212,34 @@ button:focus-visible {
     display: none !important;
   }
   
-  /* Verberg header controls (schilder select, toggle, etc) */
-  .print-planning-wrapper > div > div:first-child {
-    display: none !important;
-  }
-  
-  /* Calendar styling voor print */
-  .print-planning-wrapper .bg-white,
-  .print-planning-wrapper .bg-slate-800,
-  .print-planning-wrapper .bg-gray-50,
-  .print-planning-wrapper .bg-gray-900 {
-    background: white !important;
-    box-shadow: none !important;
-  }
-  
-  /* Tekst kleuren voor print - zwart */
-  .print-planning-wrapper,
-  .print-planning-wrapper * {
-    color: #000 !important;
-    color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  
-  /* Optimaliseer spacing */
-  .print-planning-wrapper .p-4,
-  .print-planning-wrapper .p-6,
-  .print-planning-wrapper .sm\:p-6 {
-    padding: 10px !important;
-  }
-  
-  /* Verberg modals, popups en overlays */
-  .print-planning-wrapper [role="dialog"],
-  .print-planning-wrapper [class*="modal"],
-  .print-planning-wrapper [class*="Modal"],
-  .print-planning-wrapper [class*="AnimatePresence"]:not([class*="calendar"]) {
+  /* Verberg de header controls row (met schilder select en knoppen) - maar niet de titel */
+  .print-planning-wrapper > div > div:first-child > div:last-child {
     display: none !important;
   }
   
   /* Verberg tabs list op mobiel tijdens print */
   .print-planning-wrapper [class*="TabsList"] {
+    display: none !important;
+  }
+  
+  /* Calendar styling voor print */
+  .print-planning-wrapper .bg-white,
+  .print-planning-wrapper .bg-slate-800 {
+    background: white !important;
+    box-shadow: none !important;
+  }
+  
+  /* Tekst kleuren voor print */
+  .print-planning-wrapper * {
+    color: #000 !important;
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  
+  /* Verberg modals en popups */
+  [role="dialog"],
+  [class*="modal"],
+  [class*="Modal"] {
     display: none !important;
   }
   

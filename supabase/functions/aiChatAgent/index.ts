@@ -157,9 +157,15 @@ serve(async (req) => {
       }
 
       // Build conversation history
-      const conversationHistory = (conversation.messages || []).map((msg: any) => {
-        if (msg.role === 'user' && msg === message) {
-          // Add user context to the current user message
+      // Find the last user message to add user context
+      const messages = conversation.messages || []
+      const lastUserMessageIndex = messages.length > 0 
+        ? messages.map((m: any, i: number) => m.role === 'user' ? i : -1).filter(i => i !== -1).pop() || -1
+        : -1
+
+      const conversationHistory = messages.map((msg: any, index: number) => {
+        // Add user context to the last user message
+        if (msg.role === 'user' && index === lastUserMessageIndex) {
           return {
             role: 'user',
             parts: [{ text: `${userContext}${msg.content}` }]
@@ -170,14 +176,6 @@ serve(async (req) => {
           parts: [{ text: msg.content }]
         }
       })
-
-      // If this is the first message, add user context
-      if (conversationHistory.length === 0 && message.role === 'user') {
-        conversationHistory.push({
-          role: 'user',
-          parts: [{ text: `${userContext}${message.content}` }]
-        })
-      }
 
       // System instruction
       const systemInstruction = `Je bent de PaintConnect AI assistent. Je helpt schildersbedrijven met het gebruik van de PaintConnect applicatie.
@@ -229,10 +227,9 @@ Gebruik altijd de ECHTE DATA die wordt gegeven. Verzin NOOIT projectnamen, klant
       const geminiData = await geminiResponse.json()
       const aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, ik kon geen antwoord genereren.'
 
-      // Add AI response to conversation
+      // Add AI response to conversation (message is already in conversation.messages)
       const updatedMessages = [
         ...(conversation.messages || []),
-        message,
         { role: 'assistant', content: aiResponse }
       ]
 

@@ -249,10 +249,17 @@ export default function AISupportWidget({ currentUser }) {
 
     setIsSending(true);
     try {
-      await base44.agents.addMessage(conversation, {
+      // addMessage retourneert de updated conversation met AI response
+      const updatedConversation = await base44.agents.addMessage(conversation, {
         role: 'user',
         content: inputMessage.trim()
       });
+      
+      // Update conversation en messages state direct met de response
+      if (updatedConversation) {
+        setConversation(updatedConversation);
+        setMessages(updatedConversation.messages || []);
+      }
       
       setInputMessage('');
     } catch (error) {

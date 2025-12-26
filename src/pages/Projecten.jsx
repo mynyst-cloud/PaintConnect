@@ -63,7 +63,12 @@ export default function Projecten() {
   const [deletingIds, setDeletingIds] = useState(new Set());
 
   const realProjects = useMemo(() => {
-    return (projects || []).filter(p => p && !p.is_dummy);
+    // Check if we have any real projects
+    const realProjectsList = (projects || []).filter(p => p && !p.is_dummy);
+    const hasRealProjects = realProjectsList.length > 0;
+    
+    // If we have real projects, return only those; otherwise return all (dummy) projects
+    return hasRealProjects ? realProjectsList : (projects || []);
   }, [projects]);
 
   const initialMapCenter = useMemo(() => {
@@ -212,21 +217,27 @@ export default function Projecten() {
       console.log('[Projecten] Fetching projects directly from entities...');
       
       const userIsAdmin = user?.company_role === 'admin' || user?.company_role === 'owner' || user?.role === 'admin';
+      let allProjectsRaw = [];
       let projectsData = [];
 
       if (userIsAdmin) {
-        // Admins see all real projects for the company (no dummies)
-        const allProjects = await Project.filter({ company_id: companyId }, '-created_date');
-        projectsData = (allProjects || []).filter(p => !p.is_dummy);
+        // Admins: fetch all projects (both dummy and real)
+        allProjectsRaw = await Project.filter({ company_id: companyId }, '-created_date');
       } else {
-        // Painters see only projects they are assigned to (no dummies)
+        // Painters: fetch projects they are assigned to (both dummy and real)
         const allProjects = await Project.filter({ company_id: companyId }, '-created_date');
-        projectsData = (allProjects || []).filter(p => 
-          !p.is_dummy && 
+        allProjectsRaw = (allProjects || []).filter(p => 
           p.assigned_painters && 
           p.assigned_painters.includes(user.email)
         );
       }
+
+      // Check if there are any real (non-dummy) projects
+      const realProjects = (allProjectsRaw || []).filter(p => !p.is_dummy);
+      const hasRealProjects = realProjects.length > 0;
+      
+      // If no real projects, show dummy projects; otherwise show only real projects
+      projectsData = hasRealProjects ? realProjects : (allProjectsRaw || []).filter(p => p.is_dummy);
       
       // Only fetch users if admin (to avoid RLS permission errors for non-admins)
       let usersData = [];
@@ -243,12 +254,12 @@ export default function Projecten() {
       const fetchedAllUsers = (usersData || []).filter(u => u.status === 'active');
 
       console.log('[Projecten] Loaded projects count:', projectsToSet.length);
+      console.log('[Projecten] Has real projects:', hasRealProjects);
+      console.log('[Projecten] Showing dummy projects:', !hasRealProjects);
       console.log('[Projecten] Project IDs:', projectsToSet.map(p => p.id));
       
       setProjects(projectsToSet);
       setAllUsers(fetchedAllUsers);
-
-      const hasRealProjects = projectsToSet.some(p => p && !p.is_dummy);
 
       const projectsToGeocode = projectsToSet
         .filter(p => {

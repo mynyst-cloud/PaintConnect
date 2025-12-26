@@ -10,17 +10,20 @@ import { nl } from "date-fns/locale";
 import PlanningForm from "@/components/planning/PlanningForm";
 import PlanningEventForm from "@/components/planning/PlanningEventForm";
 import ProjectDetails from "@/components/projects/ProjectDetails";
+import WeekPlanningView from "@/components/planning/WeekPlanningView";
 import { AnimatePresence, motion } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import CalendarItemBar from "@/components/planning/CalendarItemBar";
 import { calculateItemSpans, assignTracksToSpans, getMaxTrackForWeek } from "@/components/planning/calendarHelpers";
 
 const WEEK_NUMBER_COL = 1;
 
 export default function Planning({ impersonatedCompanyId }) {
+  const [viewMode, setViewMode] = useState("month"); // "month" or "week"
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
@@ -53,9 +56,9 @@ export default function Planning({ impersonatedCompanyId }) {
       // Include 'owner' for legacy users
       const isAdmin = user?.company_role === 'admin' || user?.company_role === 'owner' || user?.role === 'admin';
 
-      const [allProjects, allEvents] = await Promise.all([
+      const [allProjectsRaw, allEvents] = await Promise.all([
         isAdmin
-          ? Project.filter({ company_id: companyId, is_dummy: false }, '-created_date', 20)
+          ? Project.filter({ company_id: companyId }, '-created_date', 20)
           : (async () => {
               // Schilders zien alleen projecten waaraan ze zijn toegewezen
               // Use $contains for array column (assigned_painters is text[])
@@ -69,7 +72,7 @@ export default function Planning({ impersonatedCompanyId }) {
               // #region agent log
               fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Planning.jsx:67',message:'Painter projects query result',data:{count:assignedProjects?.length||0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
               // #endregion
-              return (assignedProjects || []).filter(p => !p.is_dummy);
+              return assignedProjects || [];
             })(),
         
         PlanningEvent.filter({ company_id: companyId }),
@@ -78,9 +81,15 @@ export default function Planning({ impersonatedCompanyId }) {
       const painterUsers = isAdmin ? await base44.functions.invoke('getCompanyPainters', { company_id: companyId }).then(res => res.data) : [];
 
       const deleted = JSON.parse(sessionStorage.getItem("deletedProjects") || "[]");
-      const projects = (allProjects || []).filter(
-        p => p && !p.is_dummy && !deleted.includes(p.id)
-      );
+      
+      // Check if there are any real (non-dummy) projects
+      const realProjects = (allProjectsRaw || []).filter(p => p && !p.is_dummy && !deleted.includes(p.id));
+      const hasRealProjects = realProjects.length > 0;
+      
+      // If no real projects, show dummy projects; otherwise show only real projects
+      const projects = hasRealProjects 
+        ? realProjects
+        : (allProjectsRaw || []).filter(p => p && p.is_dummy && !deleted.includes(p.id));
 
       return {
         user,
@@ -142,14 +151,17 @@ export default function Planning({ impersonatedCompanyId }) {
 
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
-    const nonDummyProjects = projects.filter(p => {
-      if (p.is_dummy === true || p.is_dummy === 'true' || p.is_dummy === 1) return false;
-      return true;
-    });
     
-    if (selectedPainter === "all") return nonDummyProjects;
+    // Check if we have any real projects in the current projects list
+    const realProjects = projects.filter(p => !p.is_dummy);
+    const hasRealProjects = realProjects.length > 0;
     
-    return nonDummyProjects.filter(p => 
+    // If we have real projects, filter out dummies; otherwise show all (dummy) projects
+    const projectsToFilter = hasRealProjects ? realProjects : projects;
+    
+    if (selectedPainter === "all") return projectsToFilter;
+    
+    return projectsToFilter.filter(p => 
       p.assigned_painters && 
       Array.isArray(p.assigned_painters) && 
       p.assigned_painters.includes(selectedPainter)
@@ -300,6 +312,18 @@ export default function Planning({ impersonatedCompanyId }) {
         }
       } else {
         savedProject = await Project.create(dataWithCompany);
+        
+        // Delete dummy projects when first real project is created
+        if (company?.id) {
+          try {
+            const { deleteDummyProjects } = await import('@/api/functions');
+            await deleteDummyProjects({ companyId: company.id });
+            console.log('[Planning] Deleted dummy projects after first real project creation');
+          } catch (dummyError) {
+            console.warn('[Planning] Could not delete dummy projects:', dummyError);
+          }
+        }
+        
         if (savedProject.assigned_painters && savedProject.assigned_painters.length > 0) {
           const { notifyAssignedPainters } = await import('@/api/functions');
           try {
@@ -439,7 +463,15 @@ export default function Planning({ impersonatedCompanyId }) {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-lg shadow mb-4">
+        {/* Tabs voor Maand/Week view */}
+        <Tabs value={viewMode} onValueChange={setViewMode} className="w-full mb-4">
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-4">
+            <TabsTrigger value="month">Maand</TabsTrigger>
+            <TabsTrigger value="week">Week</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="month" className="mt-0">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow mb-4">
           <div className="md:hidden">
             <div className="flex items-center justify-between p-3 border-b dark:border-slate-700">
               <Button
@@ -702,6 +734,21 @@ export default function Planning({ impersonatedCompanyId }) {
             </div>
           </TooltipProvider>
         </div>
+          </TabsContent>
+
+          <TabsContent value="week" className="mt-0">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
+              <WeekPlanningView
+                projects={filteredProjects}
+                users={users}
+                company={company}
+                isAdmin={isAdmin}
+                onRefresh={refetchAll}
+                onProjectClick={handleProjectClick}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <AnimatePresence>
           {showProjectForm && (

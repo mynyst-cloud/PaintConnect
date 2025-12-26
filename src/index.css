@@ -202,6 +202,37 @@ button:focus-visible {
     width: 100% !important;
     position: static !important;
     display: block !important;
+    overflow: visible !important;
+  }
+  
+  /* Zorg dat alle containers relatief zijn en overflow toestaan voor absolute children */
+  .print-planning-wrapper * {
+    overflow: visible !important;
+  }
+  
+  /* Zorg dat grid containers relatief zijn voor absolute children */
+  .print-planning-wrapper .grid,
+  .print-planning-wrapper [class*="grid"] {
+    position: relative !important;
+    overflow: visible !important;
+  }
+  
+  /* Zorg dat absolute gepositioneerde elementen (projecten/events) zichtbaar zijn */
+  .print-planning-wrapper [style*="position: absolute"],
+  .print-planning-wrapper [style*="position:absolute"],
+  .print-planning-wrapper [class*="absolute"] {
+    position: absolute !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Zorg dat motion.div elementen worden gerenderd (framer-motion) */
+  .print-planning-wrapper [class*="motion"],
+  .print-planning-wrapper [data-framer-name] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
   
   /* Verberg knoppen en controls in planning */

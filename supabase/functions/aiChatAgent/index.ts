@@ -24,27 +24,28 @@ serve(async (req) => {
       )
     }
 
-    // Create admin client for auth and ai_conversations access
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Create user client for RLS-aware queries
+    // Create user client for RLS-aware queries and auth
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Get user from auth
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser()
+    // Get user from auth using user client (not admin client)
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
+      console.error('[aiChatAgent] Auth error:', userError)
       return new Response(
         JSON.stringify({ success: false, error: 'Gebruiker niet gevonden' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
       )
     }
+
+    // Create admin client for ai_conversations access (bypass RLS)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
     const { action, conversation_id, message } = await req.json()
 

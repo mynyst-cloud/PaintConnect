@@ -2,6 +2,7 @@
 // Client-side helpers & fallbacks voor (oude) backend functies
 
 import { functions as supabaseFunctions } from '@/lib/supabase'
+import { debugLog } from '@/utils/debugLog';
 
 // Exporteer de ruwe Supabase functions client waar nodig
 export { supabaseFunctions as baseFunctions }
@@ -865,9 +866,13 @@ export const finalizeProject = async ({ project_id }) => {
 }
 
 export const handleProjectUpdate = async (params) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:entry',message:'handleProjectUpdate called',data:{params},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
+  const { debugLog } = await import('@/utils/debugLog');
+  debugLog({
+    location: 'functions.js:handleProjectUpdate:entry',
+    message: 'handleProjectUpdate called',
+    data: { params },
+    hypothesisId: 'A'
+  });
   
   try {
     const { DailyUpdate } = await import('@/lib/supabase')
@@ -884,21 +889,30 @@ export const handleProjectUpdate = async (params) => {
       visible_to_client: params.visible_to_client ?? true
     }
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:beforeCreate',message:'About to create DailyUpdate',data:{updateData},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
+    debugLog({
+      location: 'functions.js:handleProjectUpdate:beforeCreate',
+      message: 'About to create DailyUpdate',
+      data: { updateData },
+      hypothesisId: 'B'
+    });
     
     const createdUpdate = await DailyUpdate.create(updateData)
     
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:afterCreate',message:'DailyUpdate created',data:{createdUpdate},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
+    debugLog({
+      location: 'functions.js:handleProjectUpdate:afterCreate',
+      message: 'DailyUpdate created',
+      data: { createdUpdate },
+      hypothesisId: 'B'
+    });
     
     return { data: { success: true, update: createdUpdate }, error: null }
   } catch (error) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'functions.js:handleProjectUpdate:error',message:'Error creating update',data:{error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
+    debugLog({
+      location: 'functions.js:handleProjectUpdate:error',
+      message: 'Error creating update',
+      data: { error: error.message },
+      hypothesisId: 'B'
+    });
     console.error('handleProjectUpdate error:', error)
     return { data: null, error }
   }

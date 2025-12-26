@@ -28,6 +28,7 @@ import { sendQuickActionEmail } from '@/api/functions';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { debugLog } from '@/utils/debugLog';
 
 const ProjectDetails = lazy(() => import('@/components/projects/ProjectDetails'));
 const ProjectForm = lazy(() => import('@/components/planning/PlanningForm'));
@@ -237,9 +238,13 @@ export default function Dashboard() {
       const hasTeamMembers = nonAdminUsers.length > 0;
       const hasProjects = (projectsList || []).length > 0;
       
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:220',message:'Onboarding status check',data:{onboarding_status:latestCompany.onboarding_status,hasTeamMembers,hasProjects,teamMemberCount:nonAdminUsers.length,projectCount:projectsList.length,allUsersCount:users.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
+      debugLog({
+        location: 'Dashboard.jsx:220',
+        message: 'Onboarding status check',
+        data: { onboarding_status: latestCompany.onboarding_status, hasTeamMembers, hasProjects, teamMemberCount: nonAdminUsers.length, projectCount: projectsList.length, allUsersCount: users.length },
+        runId: 'run1',
+        hypothesisId: 'A'
+      });
       
       console.log('[checkOnboardingStatus] Status check:', {
         onboarding_status: latestCompany.onboarding_status,
@@ -252,15 +257,23 @@ export default function Dashboard() {
       // FIXED: Show onboarding guide if not_started and no projects (even if team members exist)
       // Show checklist if skipped and missing either team members or projects
       if ((latestCompany.onboarding_status === 'not_started' || latestCompany.onboarding_status == null) && !hasProjects) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:234',message:'Showing OnboardingGuide',data:{reason:'not_started_and_no_projects',hasTeamMembers},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
+        debugLog({
+          location: 'Dashboard.jsx:234',
+          message: 'Showing OnboardingGuide',
+          data: { reason: 'not_started_and_no_projects', hasTeamMembers },
+          runId: 'run1',
+          hypothesisId: 'A'
+        });
         console.log('[checkOnboardingStatus] Showing OnboardingGuide (not_started, no projects)');
         setShowOnboardingGuide(true);
       } else if (latestCompany.onboarding_status === 'skipped' && (!hasTeamMembers || !hasProjects)) {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:240',message:'Showing OnboardingChecklist',data:{reason:'skipped_and_missing_items',hasTeamMembers,hasProjects},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
+        debugLog({
+          location: 'Dashboard.jsx:240',
+          message: 'Showing OnboardingChecklist',
+          data: { reason: 'skipped_and_missing_items', hasTeamMembers, hasProjects },
+          runId: 'run1',
+          hypothesisId: 'B'
+        });
         console.log('[checkOnboardingStatus] Showing OnboardingChecklist');
         setShowOnboardingChecklist(true);
       } else if (hasTeamMembers && hasProjects && latestCompany.onboarding_status !== 'completed') {
@@ -347,9 +360,13 @@ export default function Dashboard() {
       const companyPromise = fetchData(`company_${companyId}`, async () => {
         const companyData = await Company.get(companyId);
         
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:320',message:'Company data loaded',data:{companyId:companyData?.id,subscription_tier:companyData?.subscription_tier,onboarding_status:companyData?.onboarding_status,has_trial_started:!!companyData?.trial_started_at,isCurrentUserAdmin,impersonatedCompanyId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
+        debugLog({
+          location: 'Dashboard.jsx:320',
+          message: 'Company data loaded',
+          data: { companyId: companyData?.id, subscription_tier: companyData?.subscription_tier, onboarding_status: companyData?.onboarding_status, has_trial_started: !!companyData?.trial_started_at, isCurrentUserAdmin, impersonatedCompanyId },
+          runId: 'run1',
+          hypothesisId: 'C'
+        });
         
         // FIXED: Auto-fix legacy companies with 'free' tier or missing onboarding_status
         if (companyData && isCurrentUserAdmin && !impersonatedCompanyId) {
@@ -360,9 +377,13 @@ export default function Dashboard() {
             !companyData.onboarding_status ||
             !companyData.trial_started_at;
           
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:330',message:'Checking if company needs update',data:{needsUpdate,subscription_tier:companyData.subscription_tier,has_onboarding:!!companyData.onboarding_status,has_trial_started:!!companyData.trial_started_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
+          debugLog({
+            location: 'Dashboard.jsx:330',
+            message: 'Checking if company needs update',
+            data: { needsUpdate, subscription_tier: companyData.subscription_tier, has_onboarding: !!companyData.onboarding_status, has_trial_started: !!companyData.trial_started_at },
+            runId: 'run1',
+            hypothesisId: 'C'
+          });
           
           if (needsUpdate) {
             console.log('[loadDashboardData] Auto-fixing legacy company:', {
@@ -396,31 +417,47 @@ export default function Dashboard() {
                 }
               }
               
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:360',message:'Attempting company update',data:{updateData,companyId:companyData.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-              // #endregion
+              debugLog({
+                location: 'Dashboard.jsx:360',
+                message: 'Attempting company update',
+                data: { updateData, companyId: companyData.id },
+                runId: 'run1',
+                hypothesisId: 'C'
+              });
               
               if (Object.keys(updateData).length > 0) {
                 await Company.update(companyData.id, updateData);
                 console.log('[loadDashboardData] Company updated:', updateData);
                 
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:368',message:'Company update successful, reloading',data:{updateData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
+                debugLog({
+                  location: 'Dashboard.jsx:368',
+                  message: 'Company update successful, reloading',
+                  data: { updateData },
+                  runId: 'run1',
+                  hypothesisId: 'C'
+                });
                 
                 // Reload company data to get updated values
                 const updatedCompany = await Company.get(companyId);
                 
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:375',message:'Reloaded company data after update',data:{subscription_tier:updatedCompany?.subscription_tier,onboarding_status:updatedCompany?.onboarding_status,has_trial_started:!!updatedCompany?.trial_started_at},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-                // #endregion
+                debugLog({
+                  location: 'Dashboard.jsx:375',
+                  message: 'Reloaded company data after update',
+                  data: { subscription_tier: updatedCompany?.subscription_tier, onboarding_status: updatedCompany?.onboarding_status, has_trial_started: !!updatedCompany?.trial_started_at },
+                  runId: 'run1',
+                  hypothesisId: 'C'
+                });
                 
                 return updatedCompany;
               }
             } catch (updateError) {
-              // #region agent log
-              fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:382',message:'Company update failed',data:{error:updateError.message,stack:updateError.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-              // #endregion
+              debugLog({
+                location: 'Dashboard.jsx:382',
+                message: 'Company update failed',
+                data: { error: updateError.message, stack: updateError.stack },
+                runId: 'run1',
+                hypothesisId: 'C'
+              });
               console.warn('[loadDashboardData] Could not auto-fix company:', updateError.message);
             }
           }
@@ -450,17 +487,23 @@ export default function Dashboard() {
             if (uniqueProjectIds.length >= 10) break;
           }
           if (uniqueProjectIds.length === 0) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:294',message:'Painter fallback query with $contains',data:{email:user.email,companyId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-            // #endregion
+            debugLog({
+              location: 'Dashboard.jsx:294',
+              message: 'Painter fallback query with $contains',
+              data: { email: user.email, companyId },
+              hypothesisId: 'A'
+            });
             // Use $contains for array column (assigned_painters is text[])
             const fallbackProjects = await Project.filter({
               company_id: companyId,
               assigned_painters: { '$contains': [user.email] }
             }, '-created_date', 10);
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:301',message:'Painter fallback query result',data:{count:fallbackProjects?.length||0,success:true},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-            // #endregion
+            debugLog({
+              location: 'Dashboard.jsx:301',
+              message: 'Painter fallback query result',
+              data: { count: fallbackProjects?.length || 0, success: true },
+              hypothesisId: 'A'
+            });
             return (fallbackProjects || []).filter(p => !p.is_dummy).slice(0, 4);
           }
           const projects = await Project.filter({ id: { '$in': uniqueProjectIds } });
@@ -901,9 +944,12 @@ export default function Dashboard() {
                   currentUser={currentUser} 
                   refreshTrigger={checkInRefreshTrigger}
                   onCheckInSuccess={(record) => {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:onCheckInSuccess',message:'onCheckInSuccess callback called, triggering CheckOutButton refresh',data:{hasRecord:!!record,currentCheckOutTrigger:checkOutRefreshTrigger},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-                    // #endregion
+                    debugLog({
+                      location: 'Dashboard.jsx:onCheckInSuccess',
+                      message: 'onCheckInSuccess callback called, triggering CheckOutButton refresh',
+                      data: { hasRecord: !!record, currentCheckOutTrigger: checkOutRefreshTrigger },
+                      hypothesisId: 'C'
+                    });
                     // Trigger CheckOutButton to refresh its state
                     setCheckOutRefreshTrigger(prev => prev + 1);
                     loadDashboardData(true);
@@ -913,15 +959,21 @@ export default function Dashboard() {
                   currentUser={currentUser}
                   refreshTrigger={checkOutRefreshTrigger}
                   onCheckOutSuccess={(record) => {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:onCheckOutSuccess',message:'onCheckOutSuccess callback called',data:{hasRecord:!!record},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-                    // #endregion
+                    debugLog({
+                      location: 'Dashboard.jsx:onCheckOutSuccess',
+                      message: 'onCheckOutSuccess callback called',
+                      data: { hasRecord: !!record },
+                      hypothesisId: 'C'
+                    });
                     loadDashboardData(true);
                   }}
                   onCheckOutComplete={() => {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:onCheckOutComplete',message:'onCheckOutComplete called, triggering CheckInButton refresh',data:{currentTrigger:checkInRefreshTrigger},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-                    // #endregion
+                    debugLog({
+                      location: 'Dashboard.jsx:onCheckOutComplete',
+                      message: 'onCheckOutComplete called, triggering CheckInButton refresh',
+                      data: { currentTrigger: checkInRefreshTrigger },
+                      hypothesisId: 'E'
+                    });
                     setCheckInRefreshTrigger(prev => prev + 1);
                   }}
                 />

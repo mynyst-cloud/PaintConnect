@@ -56,6 +56,7 @@ supabase functions deploy registerPainter
 supabase functions deploy registerCompany
 supabase functions deploy processInboundInvoice
 supabase functions deploy checkExpiredTrials
+supabase functions deploy aiChatAgent
 ```
 
 ### Of via een enkele opdracht:

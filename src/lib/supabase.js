@@ -305,6 +305,16 @@ class UserEntity extends Entity {
     return createdUser
   }
 
+  async updateMyUserData(data) {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !authUser) {
+      throw new Error('Not authenticated')
+    }
+    
+    return this.update(authUser.id, data)
+  }
+
   async login() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

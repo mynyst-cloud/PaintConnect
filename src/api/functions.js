@@ -151,6 +151,30 @@ export const deleteDummyProjects = async ({ companyId }) => {
   }
 }
 
+export const updateDummyProjectColors = async ({ companyId }) => {
+  console.log('[updateDummyProjectColors] Updating dummy project colors for company:', companyId);
+  
+  if (!companyId) return;
+  
+  try {
+    // Use Edge Function to bypass RLS
+    const result = await supabaseFunctions.invoke('updateDummyProjectColors', {
+      body: { company_id: companyId }
+    });
+    
+    if (result.error) {
+      console.error('[updateDummyProjectColors] Edge function error:', result.error);
+      throw result.error;
+    } else {
+      console.log('[updateDummyProjectColors] Result:', result.data);
+      return result.data;
+    }
+  } catch (error) {
+    console.error('[updateDummyProjectColors] Error:', error);
+    throw error;
+  }
+}
+
 // ====== NOTIFICATION FUNCTIONS - Use Edge Functions ======
 
 /**

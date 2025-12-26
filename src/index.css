@@ -159,24 +159,24 @@ button:focus-visible {
 
 /* Print styles - alleen planning content tonen */
 @media print {
-  /* Verberg alle navigatie, sidebar en andere UI elementen */
+  /* Verberg alle Layout elementen (sidebar, navigatie, etc) */
+  body > *:not(.print-planning-wrapper),
   body > div:first-child > aside,
   body > div:first-child > nav,
-  aside:not(.print-planning-wrapper),
-  nav:not(.print-planning-wrapper),
-  [class*="Sidebar"]:not(.print-planning-wrapper),
-  [class*="sidebar"]:not(.print-planning-wrapper),
-  [class*="Navigation"]:not(.print-planning-wrapper),
-  [class*="navigation"]:not(.print-planning-wrapper),
+  aside,
+  nav,
+  [class*="Sidebar"],
+  [class*="sidebar"],
+  [class*="Navigation"],
+  [class*="navigation"],
   header:not(.print-planning-wrapper),
   button:not(.print-visible),
   .no-print {
     display: none !important;
   }
   
-  /* Verberg Layout container elementen (sidebar, etc) */
-  .flex.h-screen > aside,
-  .flex.h-screen > div:first-child:not(.print-planning-wrapper) {
+  /* Verberg Layout container sidebar */
+  .flex.h-screen > div:first-child {
     display: none !important;
   }
   
@@ -185,6 +185,11 @@ button:focus-visible {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
+    overflow: visible !important;
+  }
+  
+  html {
+    overflow: visible !important;
   }
   
   /* Planning wrapper - alleen deze tonen */
@@ -195,43 +200,69 @@ button:focus-visible {
     min-height: auto !important;
     max-width: 100% !important;
     width: 100% !important;
+    position: static !important;
   }
   
   /* Verberg knoppen en controls in planning */
   .print-planning-wrapper button,
-  .print-planning-wrapper .no-print {
+  .print-planning-wrapper .no-print,
+  .print-planning-wrapper [class*="Select"],
+  .print-planning-wrapper [class*="Tooltip"] {
+    display: none !important;
+  }
+  
+  /* Verberg header controls (schilder select, toggle, etc) */
+  .print-planning-wrapper > div > div:first-child {
     display: none !important;
   }
   
   /* Calendar styling voor print */
   .print-planning-wrapper .bg-white,
-  .print-planning-wrapper .bg-slate-800 {
+  .print-planning-wrapper .bg-slate-800,
+  .print-planning-wrapper .bg-gray-50,
+  .print-planning-wrapper .bg-gray-900 {
     background: white !important;
     box-shadow: none !important;
   }
   
-  /* Tekst kleuren voor print */
+  /* Tekst kleuren voor print - zwart */
+  .print-planning-wrapper,
   .print-planning-wrapper * {
+    color: #000 !important;
     color-adjust: exact;
     -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   
   /* Optimaliseer spacing */
   .print-planning-wrapper .p-4,
-  .print-planning-wrapper .p-6 {
+  .print-planning-wrapper .p-6,
+  .print-planning-wrapper .sm\:p-6 {
     padding: 10px !important;
   }
   
-  /* Verberg modals en popups */
+  /* Verberg modals, popups en overlays */
   .print-planning-wrapper [role="dialog"],
   .print-planning-wrapper [class*="modal"],
   .print-planning-wrapper [class*="Modal"],
-  .print-planning-wrapper [class*="AnimatePresence"] {
+  .print-planning-wrapper [class*="AnimatePresence"]:not([class*="calendar"]) {
     display: none !important;
   }
   
   /* Verberg tabs list op mobiel tijdens print */
   .print-planning-wrapper [class*="TabsList"] {
     display: none !important;
+  }
+  
+  /* Optimaliseer kalender voor print */
+  .print-planning-wrapper table,
+  .print-planning-wrapper .grid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  
+  /* Zorg dat borders zichtbaar zijn */
+  .print-planning-wrapper [class*="border"] {
+    border-color: #000 !important;
   }
 }

@@ -2,6 +2,7 @@
 // Drop-in replacement voor Base44 SDK
 
 import { createClient } from '@supabase/supabase-js'
+import { debugLog } from '@/utils/debugLog'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -96,7 +97,6 @@ class Entity {
           // For array columns (e.g. text[]), use contains operator
           // This checks if the array column contains the specified value(s)
           if (typeof window !== 'undefined') {
-            const { debugLog } = await import('@/utils/debugLog');
             debugLog({
               location: 'supabase.js:filter',
               message: 'Using $contains operator',

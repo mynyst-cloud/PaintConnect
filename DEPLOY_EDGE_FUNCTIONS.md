@@ -55,6 +55,7 @@ supabase functions deploy sendNotification
 supabase functions deploy registerPainter
 supabase functions deploy registerCompany
 supabase functions deploy processInboundInvoice
+supabase functions deploy checkExpiredTrials
 ```
 
 ### Of via een enkele opdracht:
@@ -123,6 +124,7 @@ Voer `add_check_in_records.sql` uit in de Supabase SQL Editor.
 | `registerPainter` | Registreer uitgenodigde schilder met wachtwoord |
 | `registerCompany` | Registreer nieuw bedrijf met inbound email generatie |
 | `processInboundInvoice` | Verwerk inkomende factuur emails (Resend Inbound webhook) |
+| `checkExpiredTrials` | Controleer en update verlopen trials naar 'expired' status |
 
 ## Database Migraties
 

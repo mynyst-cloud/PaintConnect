@@ -166,10 +166,7 @@ export class SecurityManager {
   }
 }
 
-// Encryption utilities (for sensitive data) - NOW USES BACKEND FUNCTIONS
-import { encryptData } from '@/api/functions';
-import { decryptData } from '@/api/functions';
-
+// Encryption utilities (for sensitive data)
 export class EncryptionUtils {
   static async hashPassword(password) {
     // This is a client-side utility and remains as is.
@@ -187,36 +184,14 @@ export class EncryptionUtils {
     return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
-  // UPDATED: Now calls the secure backend function for encryption
+  // NOTE: encryptSensitiveData and decryptSensitiveData are not currently implemented
+  // If needed, implement via Supabase Edge Functions
   static async encryptSensitiveData(data) {
-    try {
-      const response = await encryptData({ data });
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      return response.data; // Returns { iv, encryptedData }
-    } catch (error) {
-      console.error('Encryption via backend failed:', error);
-      throw new Error('Versleuteling mislukt');
-    }
+    throw new Error('Encryption not implemented. Use Supabase Edge Functions if needed.');
   }
 
-  // NEW: Function to decrypt data via the backend
   static async decryptSensitiveData(encryptedPayload) {
-    const { iv, encryptedData } = encryptedPayload;
-    if (!iv || !encryptedData) {
-      throw new Error("Invalid payload for decryption.");
-    }
-    try {
-      const response = await decryptData({ iv, encryptedData });
-       if (response.error) {
-        throw new Error(response.error);
-      }
-      return response.data.decryptedData;
-    } catch (error) {
-      console.error('Decryption via backend failed:', error);
-      throw new Error('Ontsleuteling mislukt');
-    }
+    throw new Error('Decryption not implemented. Use Supabase Edge Functions if needed.');
   }
 }
 

@@ -7,5 +7,11 @@
     "api/**/*.js": {
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/check-expired-trials?secret=paintconnect-cron-2024",
+      "schedule": "0 2 * * *"
+    }
+  ]
 }

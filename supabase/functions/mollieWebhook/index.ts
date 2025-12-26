@@ -111,24 +111,54 @@ serve(async (req) => {
       console.log('[mollieWebhook] Payment failed/cancelled, status:', payment.status)
       
       if (companyId) {
-        // Clear pending_subscription but DON'T change status/tier
-        // This signals to the frontend that the checkout failed
-        const { error: clearError } = await supabaseAdmin
+        // Get current company data
+        const { data: company, error: companyError } = await supabaseAdmin
           .from('companies')
-          .update({
-            pending_subscription: {
-              ...metadata,
-              status: 'failed',
-              failed_at: new Date().toISOString(),
-              failure_reason: payment.status,
-            },
-          })
+          .select('id, subscription_status, subscription_tier, mollie_subscription_id')
           .eq('id', companyId)
+          .single()
+        
+        if (company && !companyError) {
+          // Check if this is a recurring payment failure for an active subscription
+          const isRecurringPaymentFailure = company.subscription_status === 'active' 
+            && company.subscription_tier !== 'starter_trial'
+            && company.mollie_subscription_id;
+          
+          if (isRecurringPaymentFailure) {
+            // Update company to past_due status
+            const { error: updateError } = await supabaseAdmin
+              .from('companies')
+              .update({ 
+                subscription_status: 'past_due',
+                payment_failed_at: new Date().toISOString()
+              })
+              .eq('id', companyId)
+            
+            if (updateError) {
+              console.error('[mollieWebhook] Error updating company to past_due:', updateError)
+            } else {
+              console.log('[mollieWebhook] Updated company to past_due status:', companyId)
+            }
+          } else {
+            // This is a checkout failure, just update pending_subscription
+            const { error: clearError } = await supabaseAdmin
+              .from('companies')
+              .update({
+                pending_subscription: {
+                  ...metadata,
+                  status: 'failed',
+                  failed_at: new Date().toISOString(),
+                  failure_reason: payment.status,
+                },
+              })
+              .eq('id', companyId)
 
-        if (clearError) {
-          console.error('[mollieWebhook] Failed to update pending_subscription:', clearError)
-        } else {
-          console.log('[mollieWebhook] Marked pending_subscription as failed for company:', companyId)
+            if (clearError) {
+              console.error('[mollieWebhook] Failed to update pending_subscription:', clearError)
+            } else {
+              console.log('[mollieWebhook] Marked pending_subscription as failed for company:', companyId)
+            }
+          }
         }
 
         // Send notification about failed payment
@@ -137,15 +167,28 @@ serve(async (req) => {
             .from('users')
             .select('id, email, full_name')
             .eq('company_id', companyId)
-            .eq('company_role', 'admin')
+            .in('company_role', ['admin', 'owner'])
 
           if (admins && admins.length > 0) {
             for (const admin of admins) {
+              const notificationType = company?.subscription_status === 'active' 
+                ? 'payment_failed_recurring' 
+                : 'payment_failed';
+              
+              const notificationTitle = company?.subscription_status === 'active'
+                ? '⚠️ Betaling mislukt - Grace period actief'
+                : '❌ Betaling mislukt';
+              
+              const notificationMessage = company?.subscription_status === 'active'
+                ? `Je terugkerende betaling kon niet worden verwerkt. Je hebt 7 dagen om te betalen voordat je toegang verliest.`
+                : `Je betaling kon niet worden verwerkt. Probeer het opnieuw of neem contact op met support.`;
+              
               await supabaseAdmin.from('notifications').insert({
                 user_id: admin.id,
-                type: 'payment_failed',
-                title: '❌ Betaling mislukt',
-                message: `Je betaling kon niet worden verwerkt. Probeer het opnieuw of neem contact op met support.`,
+                company_id: companyId,
+                type: notificationType,
+                title: notificationTitle,
+                message: notificationMessage,
                 link_to: '/Subscription',
                 read: false,
               })

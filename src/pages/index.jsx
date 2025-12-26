@@ -169,8 +169,13 @@ function _getCurrentPage(url) {
         urlLastPart = urlLastPart.split('?')[0];
     }
 
+    // If root path, return Dashboard
+    if (!urlLastPart || urlLastPart === '') {
+        return 'Dashboard';
+    }
+
     const pageName = Object.keys(PAGES).find(page => page.toLowerCase() === urlLastPart.toLowerCase());
-    return pageName || Object.keys(PAGES)[0];
+    return pageName || 'Dashboard'; // Default to Dashboard instead of first page
 }
 
 // Create a wrapper component that uses useLocation inside the Router context
@@ -182,7 +187,7 @@ function PagesContent() {
         <Layout currentPageName={currentPage}>
             <Routes>            
                 
-                    <Route path="/" element={<Projecten />} />
+                    <Route path="/" element={<Dashboard />} />
                 
                 
                 <Route path="/Projecten" element={<Projecten />} />

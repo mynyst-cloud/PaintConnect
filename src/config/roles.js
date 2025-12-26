@@ -110,6 +110,7 @@ export const TIER_FEATURES = {
     
     // Planning
     page_planning: true,
+    page_weekplanning: false, // Alleen Professional+
     
     // Projecten
     page_projects: true,
@@ -174,6 +175,7 @@ export const TIER_FEATURES = {
     page_dashboard: true,
     dashboard_all_features: true,
     page_planning: true,
+    page_weekplanning: false, // Alleen Professional+
     page_projects: true,
     page_damages: true,
     page_referrals: true,
@@ -208,6 +210,7 @@ export const TIER_FEATURES = {
     page_dashboard: true,
     dashboard_all_features: true,
     page_planning: true,
+    page_weekplanning: true, // Professional heeft toegang
     page_projects: true,
     page_damages: true,
     page_referrals: true,
@@ -256,6 +259,7 @@ export const TIER_FEATURES = {
     page_dashboard: true,
     dashboard_all_features: true,
     page_planning: true,
+    page_weekplanning: true, // Enterprise heeft toegang
     page_projects: true,
     page_damages: true,
     page_referrals: true,
@@ -424,11 +428,55 @@ export function getTierConfig(tier) {
 
 /**
  * Check if user has access to a feature based on role and tier
+ * @param {string} userRole - User's role
+ * @param {string} subscriptionTier - Company's subscription tier
+ * @param {string} featureKey - Feature to check
+ * @param {object} companyData - Optional company data with subscription_status
  */
-export function hasFeatureAccess(userRole, subscriptionTier, featureKey) {
+export function hasFeatureAccess(userRole, subscriptionTier, featureKey, companyData = null) {
   // Super Admin heeft altijd toegang
   if (userRole === USER_ROLES.SUPER_ADMIN) {
     return true;
+  }
+  
+  // Check subscription status - expired/past_due companies have limited access
+  if (companyData?.subscription_status) {
+    const status = companyData.subscription_status;
+    
+    // Expired companies can only access subscription page
+    if (status === 'expired') {
+      if (featureKey === 'page_subscription') {
+        return true; // Allow access to subscription page to upgrade
+      }
+      return false; // Block all other features
+    }
+    
+    // Past due companies have grace period (handled in Layout.jsx)
+    // But still allow basic access during grace period
+    if (status === 'past_due') {
+      const paymentFailedAt = companyData.payment_failed_at ? new Date(companyData.payment_failed_at) : null;
+      if (paymentFailedAt) {
+        const gracePeriodEnd = new Date(paymentFailedAt.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7 days
+        const now = new Date();
+        
+        // If grace period expired, treat as expired
+        if (now > gracePeriodEnd) {
+          if (featureKey === 'page_subscription') {
+            return true;
+          }
+          return false;
+        }
+        // Still in grace period - allow access but could show warnings
+      }
+    }
+    
+    // Canceled companies can only access subscription page
+    if (status === 'canceled') {
+      if (featureKey === 'page_subscription') {
+        return true;
+      }
+      return false;
+    }
   }
   
   // Schilders gebruiken hun eigen feature set
@@ -436,14 +484,15 @@ export function hasFeatureAccess(userRole, subscriptionTier, featureKey) {
     return PAINTER_FEATURES[featureKey] === true;
   }
   
-  // Admins gebruiken tier-based features
-  if (userRole === USER_ROLES.ADMIN) {
+  // Admins en Owners gebruiken tier-based features
+  if (userRole === USER_ROLES.ADMIN || userRole === 'owner') {
     const tierFeatures = getTierFeatures(subscriptionTier);
     return tierFeatures[featureKey] === true;
   }
   
-  // Default: geen toegang
-  return false;
+  // Default: gebruik tier-based features (voor onbekende rollen)
+  const tierFeatures = getTierFeatures(subscriptionTier || SUBSCRIPTION_TIERS.STARTER_TRIAL);
+  return tierFeatures[featureKey] === true;
 }
 
 /**

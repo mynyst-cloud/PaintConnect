@@ -1,0 +1,6 @@
+{
+  "appId": "be.freshdecor.paintconnect",
+  "appName": "PaintConnect",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Material, SupplierInvoice, MaterialPriceApproval, User, Supplier, MaterialCategory, Notification } from '@/api/entities';
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -27,9 +26,6 @@ import AddToStockModal from '@/components/stock/AddToStockModal';
 import MaterialConsumptionReport from '@/components/materials/MaterialConsumptionReport';
 import { formatDate, formatCurrency } from '@/components/utils';
 import { base44 } from '@/api/base44Client';
-import { useFeatureAccess, UpgradePrompt } from '@/hooks/useFeatureAccess';
-import UpgradeModal from '@/components/ui/UpgradeModal';
-import { Lock } from 'lucide-react';
 
 // Normaliseer materiaalnaam voor betere matching
 const normalizeMaterialName = (name) => {
@@ -211,13 +207,6 @@ const is404Error = (error) => {
 };
 
 export default function MateriaalBeheer() {
-    // Feature access for subscription-based restrictions
-    const { hasFeature, isLoading: featureLoading, checkLimit } = useFeatureAccess();
-    
-    // Upgrade modal state
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [upgradeFeatureName, setUpgradeFeatureName] = useState('');
-    
     const [activeTab, setActiveTab] = useState('materials');
     const [materials, setMaterials] = useState([]);
     const [invoices, setInvoices] = useState([]);
@@ -330,21 +319,11 @@ export default function MateriaalBeheer() {
         if (!currentUser?.company_id && !currentUser?.current_company_id) return;
 
         try {
-            const companyIdForQuery = currentUser.current_company_id || currentUser.company_id;
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:loadInvoices',message:'Fetching invoices',data:{companyId:companyIdForQuery},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
             const invoiceList = await SupplierInvoice.filter({
-                company_id: companyIdForQuery
+                company_id: currentUser.current_company_id || currentUser.company_id
             }, '-created_date');
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:loadInvoices',message:'Invoices loaded',data:{count:invoiceList?.length||0,invoices:invoiceList?.slice(0,3).map(i=>({id:i.id,supplier:i.supplier_name,status:i.status}))},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
             setInvoices(invoiceList || []);
         } catch (error) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:loadInvoices',message:'Error loading invoices',data:{error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
             console.error("Error loading invoices:", error);
         }
     }, [currentUser]);
@@ -424,15 +403,9 @@ export default function MateriaalBeheer() {
                 setCurrentUser(user);
 
                 const companyId = user.current_company_id || user.company_id;
-                // #region agent log
-                fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:init',message:'User loaded',data:{userId:user.id,companyId,email:user.email},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-                // #endregion
                 if (companyId) {
                     const companyData = await base44.entities.Company.get(companyId);
                     setCompany(companyData);
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'MateriaalBeheer.jsx:init',message:'Company loaded',data:{companyId:companyData.id,companyName:companyData.name,inboundEmail:companyData.inbound_email_address},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-                    // #endregion
                 }
             } catch (error) {
                 console.error("Error initializing:", error);
@@ -1573,42 +1546,18 @@ export default function MateriaalBeheer() {
                             <Package className="w-4 h-4 mr-2" />
                             Materialen
                         </TabsTrigger>
-                        {/* Facturen tab - Always visible, but shows modal if no access */}
-                        <TabsTrigger 
-                            value={hasFeature('materiaalbeheer_tab_invoices') ? "invoices" : "materials"}
-                            onClick={(e) => {
-                                if (!hasFeature('materiaalbeheer_tab_invoices')) {
-                                    e.preventDefault();
-                                    setUpgradeFeatureName('Facturen verwerken');
-                                    setShowUpgradeModal(true);
-                                }
-                            }}
-                            className={`relative ${!hasFeature('materiaalbeheer_tab_invoices') ? 'opacity-60' : ''}`}
-                        >
+                        <TabsTrigger value="invoices" className="relative">
                             <FileText className="w-4 h-4 mr-2" />
                             Facturen
-                            {hasFeature('materiaalbeheer_tab_invoices') && (pendingInvoices.length > 0 || reviewRequiredInvoices.length > 0) && (
+                            {(pendingInvoices.length > 0 || reviewRequiredInvoices.length > 0) && (
                                 <Badge className="ml-2 bg-red-500 text-white">
                                     {pendingInvoices.length + reviewRequiredInvoices.length}
                                 </Badge>
                             )}
-                            {!hasFeature('materiaalbeheer_tab_invoices') && <Lock className="w-3 h-3 ml-2 text-gray-400" />}
                         </TabsTrigger>
-                        {/* Verbruik tab - Always visible, but shows modal if no access */}
-                        <TabsTrigger 
-                            value={hasFeature('materiaalbeheer_tab_usage') ? "consumption" : "materials"}
-                            onClick={(e) => {
-                                if (!hasFeature('materiaalbeheer_tab_usage')) {
-                                    e.preventDefault();
-                                    setUpgradeFeatureName('Verbruiksrapportage');
-                                    setShowUpgradeModal(true);
-                                }
-                            }}
-                            className={!hasFeature('materiaalbeheer_tab_usage') ? 'opacity-60' : ''}
-                        >
+                        <TabsTrigger value="consumption">
                             <TrendingUp className="w-4 h-4 mr-2" />
                             Verbruik
-                            {!hasFeature('materiaalbeheer_tab_usage') && <Lock className="w-3 h-3 ml-2 text-gray-400" />}
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -1853,7 +1802,7 @@ export default function MateriaalBeheer() {
 
                         <div className="flex flex-wrap gap-2">
                             <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={isExporting || filteredAndSortedAllMaterials.length === 0}>
-                                {isExporting ? <InlineSpinner /> : <Download className="mr-2 h-4 w-4" />}
+                                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                                 Export CSV
                             </Button>
                             <Button onClick={handleAddNew}>
@@ -1930,7 +1879,7 @@ export default function MateriaalBeheer() {
 
                     {isLoading ? (
                         <div className="flex justify-center items-center h-64">
-                            <LoadingSpinner size="default" />
+                            <Loader2 className="h-8 w-8 animate-spin" />
                         </div>
                     ) : (
                         <>
@@ -2193,7 +2142,7 @@ export default function MateriaalBeheer() {
 
                     {isLoading ? (
                         <div className="flex justify-center items-center h-64">
-                            <LoadingSpinner size="default" />
+                            <Loader2 className="h-8 w-8 animate-spin" />
                         </div>
                     ) : invoices.length === 0 ? (
                         <Card>
@@ -2508,7 +2457,7 @@ export default function MateriaalBeheer() {
                                                                                                         className="bg-emerald-600 hover:bg-emerald-700"
                                                                                                     >
                                                                                                         {isSavingLineItem ? (
-                                                                                                            <InlineSpinner className="mr-1" />
+                                                                                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                                                                                                         ) : (
                                                                                                             <Save className="w-3 h-3 mr-1" />
                                                                                                         )}
@@ -2824,14 +2773,6 @@ export default function MateriaalBeheer() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            
-            {/* Upgrade Modal for restricted tabs */}
-            <UpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
-                featureName={upgradeFeatureName}
-                requiredTier="professional"
-            />
         </div>
     );
 }

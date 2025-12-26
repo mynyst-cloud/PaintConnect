@@ -1,8 +1,7 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
+// Server Component - Main Landing Page
+import Navigation from "@/components/Navigation";
+import AppPreviewSection from "@/components/AppPreviewSection";
+import FAQSection from "@/components/FAQSection";
 import {
   Check,
   Clock,
@@ -12,15 +11,12 @@ import {
   Camera,
   Shield,
   ChevronDown,
-  Menu,
-  X,
   Star,
   ArrowRight,
   Play,
   MapPin,
   FileText,
   Bell,
-  Palette,
   Calculator,
   AlertTriangle,
   MessageCircle,
@@ -37,165 +33,7 @@ const FAVICON = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/publ
 // App URL - alle CTA's linken naar de app
 const APP_URL = "https://app.paintconnect.be";
 
-// Navigation Component
-function Navigation() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  // Handle scroll to change nav background
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/95 backdrop-blur-sm border-b border-[var(--color-gray-200)] shadow-sm"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <a href="#" className="flex items-center">
-            <img
-              src={scrolled ? LOGO_LIGHT : LOGO_DARK}
-              alt="PaintConnect Logo"
-              className="h-10 w-auto transition-opacity"
-            />
-          </a>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <a
-              href="#features"
-              className={`transition-colors ${
-                scrolled
-                  ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              Features
-            </a>
-            <a
-              href="#wetgeving-2027"
-              className={`transition-colors ${
-                scrolled
-                  ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              Wetgeving 2027
-            </a>
-            <a
-              href="#pricing"
-              className={`transition-colors ${
-                scrolled
-                  ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              Prijzen
-            </a>
-            <a
-              href="#faq"
-              className={`transition-colors ${
-                scrolled
-                  ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              FAQ
-            </a>
-            <a
-              href={APP_URL}
-              className={`transition-colors ${
-                scrolled
-                  ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              Inloggen
-            </a>
-            <a href={APP_URL} className="btn-primary text-sm py-2.5 px-5">
-              Gratis proberen
-            </a>
-          </div>
-
-          {/* Mobile menu button */}
-          <button
-            className={`md:hidden p-2 ${scrolled ? "text-gray-900" : "text-white"}`}
-            onClick={() => setIsOpen(!isOpen)}
-            aria-label="Menu"
-          >
-            {isOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden bg-white border-t border-[var(--color-gray-200)]">
-          <div className="px-4 py-4 space-y-3">
-            <a
-              href="#features"
-              className="block py-2 text-[var(--color-gray-600)]"
-              onClick={() => setIsOpen(false)}
-            >
-              Features
-            </a>
-            <a
-              href="#wetgeving-2027"
-              className="block py-2 text-[var(--color-gray-600)]"
-              onClick={() => setIsOpen(false)}
-            >
-              Wetgeving 2027
-            </a>
-            <a
-              href="#pricing"
-              className="block py-2 text-[var(--color-gray-600)]"
-              onClick={() => setIsOpen(false)}
-            >
-              Prijzen
-            </a>
-            <a
-              href="#faq"
-              className="block py-2 text-[var(--color-gray-600)]"
-              onClick={() => setIsOpen(false)}
-            >
-              FAQ
-            </a>
-            <a
-              href={APP_URL}
-              className="block py-2 text-[var(--color-gray-600)]"
-              onClick={() => setIsOpen(false)}
-            >
-              Inloggen
-            </a>
-            <a
-              href={APP_URL}
-              className="block btn-primary text-center text-sm py-2.5"
-              onClick={() => setIsOpen(false)}
-            >
-              Gratis proberen
-            </a>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-}
-
-// Hero Section
+// Hero Section - Server Component
 function HeroSection() {
   return (
     <section className="relative min-h-[100svh] lg:min-h-screen pt-20 lg:pt-16 overflow-hidden bg-black" aria-label="PaintConnect - Software voor schildersbedrijven">
@@ -207,6 +45,7 @@ function HeroSection() {
           alt="PaintConnect schildersbedrijf app - Dashboard met GPS tijdsregistratie en projectplanning op iPhone"
           className="absolute right-0 top-0 h-full w-auto object-contain object-right opacity-90 hidden lg:block"
           loading="eager"
+          fetchPriority="high"
         />
         {/* Gradient overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-transparent lg:to-black/30" />
@@ -281,6 +120,7 @@ function HeroSection() {
               alt="PaintConnect mobiele app voor schilders"
               className="h-[45vh] max-h-[400px] w-auto object-contain"
               loading="eager"
+              fetchPriority="high"
             />
             {/* Subtle glow effect */}
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none" />
@@ -296,225 +136,7 @@ function HeroSection() {
   );
 }
 
-// App Preview Section - Phone Mockups
-function AppPreviewSection() {
-  const [activeScreen, setActiveScreen] = useState(0);
-  
-  const screens = [
-    {
-      id: 0,
-      name: "Dashboard",
-      description: "Overzicht met snelle acties, recente projecten en dagelijkse updates",
-      image: "/app-dashboard.png",
-    },
-    {
-      id: 1,
-      name: "Planning",
-      description: "Week-overzicht met alle projecten en schilders in één oogopslag",
-      image: "/app-planning.png",
-    },
-    {
-      id: 2,
-      name: "Check-in",
-      description: "GPS-verificatie bij aankomst op de werf - automatische tijdregistratie",
-      image: "/app-checkin.png",
-    },
-    {
-      id: 3,
-      name: "Projecten",
-      description: "Bekijk al je projecten op de kaart met real-time status",
-      image: "/app-map.png",
-    },
-  ];
-
-  return (
-    <section className="py-20 md:py-28 bg-gradient-to-b from-[var(--color-gray-900)] to-black overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="text-center mb-12">
-          <span className="text-[var(--color-emerald-400)] font-semibold text-sm uppercase tracking-wider">
-            Bekijk de app
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mt-3 mb-4">
-            Ontworpen voor schilders, door schilders
-          </h2>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
-            Een intuïtieve interface die je team direct kan gebruiken - geen training nodig
-          </p>
-        </div>
-
-        {/* Screen Selector Pills */}
-        <div className="flex flex-wrap justify-center gap-2 mb-12">
-          {screens.map((screen) => (
-            <button
-              key={screen.id}
-              onClick={() => setActiveScreen(screen.id)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                activeScreen === screen.id
-                  ? "bg-[var(--color-emerald-500)] text-white shadow-lg shadow-emerald-500/30"
-                  : "bg-white/10 text-gray-300 hover:bg-white/20"
-              }`}
-            >
-              {screen.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Phone Mockup Display */}
-        <div className="relative max-w-6xl mx-auto">
-          
-          {/* Main Phone - Active Screen */}
-          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-            
-            {/* Phone Frame */}
-            <div className="relative flex-shrink-0">
-              {/* Glow Effect */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-[var(--color-emerald-500)]/20 via-blue-500/20 to-[var(--color-orange-500)]/20 rounded-[3rem] blur-2xl opacity-60" />
-              
-              {/* Phone Frame */}
-              <div className="relative bg-gray-800 rounded-[2.5rem] p-3 shadow-2xl border border-gray-700">
-                {/* Screen */}
-                <img
-                  src={screens[activeScreen].image}
-                  alt={screens[activeScreen].name}
-                  className="w-[280px] md:w-[320px] h-auto rounded-[2rem] transition-opacity duration-300"
-                />
-              </div>
-            </div>
-
-            {/* Description Panel */}
-            <div className="text-center lg:text-left max-w-md">
-              <div className="inline-flex items-center gap-2 bg-[var(--color-emerald-500)]/20 text-[var(--color-emerald-400)] px-4 py-1.5 rounded-full text-sm font-medium mb-4">
-                <Smartphone className="w-4 h-4" />
-                {screens[activeScreen].name}
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
-                {screens[activeScreen].name === "Dashboard" && "Alles in één oogopslag"}
-                {screens[activeScreen].name === "Planning" && "Slimme weekplanning"}
-                {screens[activeScreen].name === "Check-in" && "GPS-verificatie op locatie"}
-                {screens[activeScreen].name === "Projecten" && "Projecten op de kaart"}
-              </h3>
-              <p className="text-gray-400 text-lg mb-6">
-                {screens[activeScreen].description}
-              </p>
-              
-              {/* Feature bullets for active screen */}
-              <ul className="space-y-3">
-                {screens[activeScreen].name === "Dashboard" && (
-                  <>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Snelle acties voor dagelijkse taken
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Recente projecten met foto's
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Eén-klik check-in op werf
-                    </li>
-                  </>
-                )}
-                {screens[activeScreen].name === "Planning" && (
-                  <>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Week- en maandoverzicht
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Kleurgecodeerde projecten
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Drag & drop schilders toewijzen
-                    </li>
-                  </>
-                )}
-                {screens[activeScreen].name === "Check-in" && (
-                  <>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Automatische GPS-verificatie
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Tijdregistratie voor 2027 wetgeving
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Notities toevoegen bij aankomst
-                    </li>
-                  </>
-                )}
-                {screens[activeScreen].name === "Projecten" && (
-                  <>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Alle werven op de kaart
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Route planning geïntegreerd
-                    </li>
-                    <li className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-[var(--color-emerald-400)]" />
-                      Real-time project status
-                    </li>
-                  </>
-                )}
-              </ul>
-            </div>
-          </div>
-
-          {/* Small Preview Thumbnails */}
-          <div className="hidden lg:flex justify-center gap-4 mt-12">
-            {screens.map((screen) => (
-              <button
-                key={screen.id}
-                onClick={() => setActiveScreen(screen.id)}
-                className={`relative rounded-xl overflow-hidden transition-all ${
-                  activeScreen === screen.id
-                    ? "ring-2 ring-[var(--color-emerald-500)] scale-105"
-                    : "opacity-50 hover:opacity-80"
-                }`}
-              >
-                <img
-                  src={screen.image}
-                  alt={screen.name}
-                  className="w-16 h-auto"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-12 border-t border-white/10">
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-white mb-1">200+</div>
-            <div className="text-gray-400 text-sm">Actieve bedrijven</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-white mb-1">15.000+</div>
-            <div className="text-gray-400 text-sm">Check-ins per maand</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-white mb-1">98%</div>
-            <div className="text-gray-400 text-sm">Klanttevredenheid</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-white mb-1">4.8★</div>
-            <div className="text-gray-400 text-sm">App Store rating</div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-  );
-}
+// Hero Section - Server Component
 
 // Features Section
 function FeaturesSection() {
@@ -959,7 +581,7 @@ function Legislation2027Section() {
               </p>
               
               <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-                <h4 className="font-semibold text-white mb-3">Wat zijn de vereisten?</h4>
+                <h3 className="font-semibold text-white mb-3 text-lg">Wat zijn de vereisten?</h3>
                 <p className="text-sm mb-4">
                   Volgens de Europese rechtspraak moet het systeem voldoen aan drie criteria:
                 </p>
@@ -1067,7 +689,7 @@ function Legislation2027Section() {
               <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-blue-400 font-bold">2019</span>
               </div>
-              <h4 className="font-semibold text-white mb-1">EU Uitspraak</h4>
+              <h3 className="font-semibold text-white mb-1 text-lg">EU Uitspraak</h3>
               <p className="text-sm text-gray-400">
                 Europees Hof oordeelt: lidstaten moeten tijdsregistratie verplichten
               </p>
@@ -1076,7 +698,7 @@ function Legislation2027Section() {
               <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-purple-400 font-bold">2020</span>
               </div>
-              <h4 className="font-semibold text-white mb-1">Belgisch Arrest</h4>
+              <h3 className="font-semibold text-white mb-1 text-lg">Belgisch Arrest</h3>
               <p className="text-sm text-gray-400">
                 Arbeidshof Brussel volgt Europese rechtspraak
               </p>
@@ -1085,7 +707,7 @@ function Legislation2027Section() {
               <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-orange-400 font-bold">2025</span>
               </div>
-              <h4 className="font-semibold text-white mb-1">Regeringsbesluit</h4>
+              <h3 className="font-semibold text-white mb-1 text-lg">Regeringsbesluit</h3>
               <p className="text-sm text-gray-400">
                 België besluit: verplichting vanaf 2027
               </p>
@@ -1094,7 +716,7 @@ function Legislation2027Section() {
               <div className="w-12 h-12 bg-[var(--color-emerald-500)]/20 rounded-full flex items-center justify-center mx-auto mb-3">
                 <span className="text-[var(--color-emerald-400)] font-bold">2027</span>
               </div>
-              <h4 className="font-semibold text-white mb-1">Deadline</h4>
+              <h3 className="font-semibold text-white mb-1 text-lg">Deadline</h3>
               <p className="text-sm text-gray-400">
                 Alle bedrijven moeten compliant zijn
               </p>
@@ -1611,88 +1233,7 @@ function TestimonialsSection() {
   );
 }
 
-// FAQ Section
-function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-
-  const faqs = [
-    {
-      question: "Hoe snel kan ik starten met PaintConnect?",
-      answer:
-        "Je kunt binnen 5 minuten aan de slag. Maak een account aan, voeg je bedrijfsgegevens toe en nodig je schilders uit. Ze krijgen een mail met de download-link voor de app.",
-    },
-    {
-      question: "Wat is de verplichte tijdsregistratie 2027?",
-      answer:
-        "Vanaf 2027 zijn werkgevers in Nederland verplicht om de werktijden van hun medewerkers digitaal te registreren. PaintConnect is hier volledig op voorbereid met automatische check-in/out, GPS-verificatie en exporteerbare rapporten.",
-    },
-    {
-      question: "Kunnen mijn klanten ook de voortgang zien?",
-      answer:
-        "Ja! Elke klant krijgt toegang tot een eigen portaal waar ze foto's en updates zien, de planning kunnen bekijken en direct met je kunnen communiceren. Dit vermindert telefoontjes en verhoogt de klanttevredenheid.",
-    },
-    {
-      question: "Hoe werkt de GPS-tracking?",
-      answer:
-        "Wanneer een schilder incheckt op een project, wordt de locatie vastgelegd. De reistijd tussen projecten wordt automatisch berekend. Alle data is AVG-compliant en schilders hebben inzicht in hun eigen gegevens.",
-    },
-    {
-      question: "Kan ik maandelijks opzeggen?",
-      answer:
-        "Absoluut. Er zijn geen langdurige contracten. Je betaalt maandelijks en kunt elk moment opzeggen. Je data kun je altijd exporteren.",
-    },
-    {
-      question: "Bieden jullie ook support en training?",
-      answer:
-        "Jazeker. Alle klanten krijgen toegang tot onze kennisbank en chat-support. Professional en Enterprise klanten krijgen daarnaast een persoonlijke onboarding en prioriteit support.",
-    },
-  ];
-
-  return (
-    <section id="faq" className="py-20 md:py-28 bg-white">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <span className="text-[var(--color-orange-600)] font-semibold text-sm uppercase tracking-wider">
-            FAQ
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-[var(--color-gray-900)] mt-3 mb-4">
-            Veelgestelde vragen
-          </h2>
-        </div>
-
-        <div className="space-y-4">
-          {faqs.map((faq, index) => (
-            <div
-              key={index}
-              className="border border-[var(--color-gray-200)] rounded-lg overflow-hidden"
-            >
-              <button
-                className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-[var(--color-gray-50)] transition-colors"
-                onClick={() =>
-                  setOpenIndex(openIndex === index ? null : index)
-                }
-              >
-                <span className="font-semibold text-[var(--color-gray-900)]">
-                  {faq.question}
-                </span>
-                <ChevronDown
-                  className={`w-5 h-5 text-[var(--color-gray-500)] transition-transform ${
-                    openIndex === index ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              {openIndex === index && (
-                <div className="px-6 pb-4">
-                  <p className="text-[var(--color-gray-600)]">{faq.answer}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+// Testimonials Section
 
 // CTA Section
 function CTASection() {
@@ -1708,6 +1249,8 @@ function CTASection() {
             src={LOGO_DARK}
             alt="PaintConnect"
             className="h-14 md:h-16 w-auto mx-auto mb-3"
+            loading="lazy"
+            decoding="async"
           />
           <p className="text-[var(--color-orange-500)] text-sm md:text-base font-medium tracking-wider uppercase">
             Naadloze verbinding op de werf
@@ -1759,6 +1302,8 @@ function Footer() {
                 src={LOGO_DARK}
                 alt="PaintConnect - Software voor schildersbedrijven"
                 className="h-10 w-auto mb-2"
+                loading="lazy"
+                decoding="async"
               />
               <p className="text-[var(--color-orange-500)] text-xs font-medium tracking-wider uppercase">
                 Naadloze verbinding op de werf

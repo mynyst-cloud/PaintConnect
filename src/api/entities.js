@@ -39,5 +39,12 @@ export {
   TestLog,
   AppError,
   SupplierInvoice,
-  MaterialPriceApproval
+  MaterialPriceApproval,
+  CompanyVehicle,
+  VehicleAssignment,
+  Subcontractor,
+  SubcontractorAssignment,
+  ProjectTask,
+  EmployeeDaySchedule,
+  MaterialDelivery
 } from '@/lib/supabase'

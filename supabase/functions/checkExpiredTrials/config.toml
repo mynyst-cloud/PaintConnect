@@ -1,0 +1,4 @@
+[functions.checkExpiredTrials]
+verify_jwt = false
+
+

@@ -126,6 +126,7 @@ Voer `add_check_in_records.sql` uit in de Supabase SQL Editor.
 | `registerCompany` | Registreer nieuw bedrijf met inbound email generatie |
 | `processInboundInvoice` | Verwerk inkomende factuur emails (Resend Inbound webhook) |
 | `checkExpiredTrials` | Controleer en update verlopen trials naar 'expired' status |
+| `aiChatAgent` | AI chat assistent voor gebruikers (Gemini API) |
 
 ## Database Migraties
 

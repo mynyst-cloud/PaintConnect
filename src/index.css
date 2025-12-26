@@ -218,10 +218,32 @@ button:focus-visible {
     overflow: visible !important;
   }
   
+  /* Fix voor calendar container overflow - overschrijf overflow-hidden */
+  .print-planning-wrapper [class*="overflow-hidden"] {
+    overflow: visible !important;
+  }
+  
+  /* Zorg dat week rows correct renderen met voldoende hoogte */
+  .print-planning-wrapper .divide-y > div[class*="grid"][class*="relative"] {
+    position: relative !important;
+    overflow: visible !important;
+    min-height: auto !important;
+  }
+  
   /* Zorg dat absolute gepositioneerde elementen (projecten/events) zichtbaar zijn */
   .print-planning-wrapper [style*="position: absolute"],
   .print-planning-wrapper [style*="position:absolute"],
   .print-planning-wrapper [class*="absolute"] {
+    position: absolute !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Specifiek voor CalendarItemBar elementen met gridColumnStart/End styles */
+  .print-planning-wrapper [style*="gridColumnStart"],
+  .print-planning-wrapper [style*="gridColumnEnd"],
+  .print-planning-wrapper [style*="top"] {
     position: absolute !important;
     display: block !important;
     visibility: visible !important;

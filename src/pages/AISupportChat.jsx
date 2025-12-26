@@ -204,9 +204,9 @@ export default function AISupportChat() {
 
   const createNewConversation = async (user) => {
     const newConversation = await base44.agents.createConversation({
-      agent_name: 'support_agent',
+      agent_name: 'paint_agent',
       metadata: {
-        name: 'PaintConnect Support Chat',
+        name: 'PaintConnect AI',
         user_name: user.full_name,
         user_email: user.email,
         started_at: new Date().toISOString()
@@ -319,8 +319,8 @@ export default function AISupportChat() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                  AI Support Assistent
-                  <Sparkles className="w-5 h-5" />
+                  <span>PaintConnect</span>
+                  <span className="bg-white/10 px-2 py-0.5 rounded-md text-sm font-medium">AI</span>
                 </h1>
                 <p className="text-emerald-100 text-sm">Stel je vraag over PaintConnect</p>
               </div>

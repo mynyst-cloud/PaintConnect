@@ -27,6 +27,7 @@ import { useRealtimeData } from '@/components/utils/useRealtimeData';
 import { sendQuickActionEmail } from '@/api/functions';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 const ProjectDetails = lazy(() => import('@/components/projects/ProjectDetails'));
 const ProjectForm = lazy(() => import('@/components/planning/PlanningForm'));
@@ -50,6 +51,7 @@ export default function Dashboard() {
   const { onOpenTeamChat, unreadMessages, impersonatedCompanyId } = useTeamChat();
   const location = useLocation();
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const setupComplete = searchParams.get('setupComplete') === 'true';
@@ -205,19 +207,25 @@ export default function Dashboard() {
       return;
     }
     
+    // FIXED: Add delay to allow database updates to propagate
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     try {
+      // FIXED: Fetch latest company data to ensure we have the most up-to-date onboarding_status
+      const latestCompany = await Company.get(company.id);
+      
       console.log('[checkOnboardingStatus] Starting check:', {
-        companyId: company.id,
-        onboarding_status: company.onboarding_status,
+        companyId: latestCompany.id,
+        onboarding_status: latestCompany.onboarding_status,
         userId: currentUser.id
       });
       
-      if (company.onboarding_status === 'completed') {
+      if (latestCompany.onboarding_status === 'completed') {
         console.log('[checkOnboardingStatus] Onboarding already completed');
         return;
       }
       
-      const usersResult = await base44.functions.invoke('getCompanyUsers', { company_id: company.id }).catch(() => ({ data: [] }));
+      const usersResult = await base44.functions.invoke('getCompanyUsers', { company_id: latestCompany.id }).catch(() => ({ data: [] }));
       const users = usersResult.data || [];
       // Only count ACTIVE non-admin users as team members (not pending invites)
       const nonAdminUsers = (users || []).filter((u) => 
@@ -225,16 +233,16 @@ export default function Dashboard() {
         u.company_role !== 'owner' &&
         u.status === 'active' // Must be active, not pending
       );
-      const projectsList = await Project.filter({ company_id: company.id, is_dummy: { '$ne': true } }).catch(() => []);
+      const projectsList = await Project.filter({ company_id: latestCompany.id, is_dummy: { '$ne': true } }).catch(() => []);
       const hasTeamMembers = nonAdminUsers.length > 0;
       const hasProjects = (projectsList || []).length > 0;
       
       // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:220',message:'Onboarding status check',data:{onboarding_status:company.onboarding_status,hasTeamMembers,hasProjects,teamMemberCount:nonAdminUsers.length,projectCount:projectsList.length,allUsersCount:users.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:220',message:'Onboarding status check',data:{onboarding_status:latestCompany.onboarding_status,hasTeamMembers,hasProjects,teamMemberCount:nonAdminUsers.length,projectCount:projectsList.length,allUsersCount:users.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
       // #endregion
       
       console.log('[checkOnboardingStatus] Status check:', {
-        onboarding_status: company.onboarding_status,
+        onboarding_status: latestCompany.onboarding_status,
         hasTeamMembers,
         hasProjects,
         teamMemberCount: nonAdminUsers.length,
@@ -243,25 +251,25 @@ export default function Dashboard() {
       
       // FIXED: Show onboarding guide if not_started and no projects (even if team members exist)
       // Show checklist if skipped and missing either team members or projects
-      if ((company.onboarding_status === 'not_started' || company.onboarding_status == null) && !hasProjects) {
+      if ((latestCompany.onboarding_status === 'not_started' || latestCompany.onboarding_status == null) && !hasProjects) {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:234',message:'Showing OnboardingGuide',data:{reason:'not_started_and_no_projects',hasTeamMembers},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
         // #endregion
         console.log('[checkOnboardingStatus] Showing OnboardingGuide (not_started, no projects)');
         setShowOnboardingGuide(true);
-      } else if (company.onboarding_status === 'skipped' && (!hasTeamMembers || !hasProjects)) {
+      } else if (latestCompany.onboarding_status === 'skipped' && (!hasTeamMembers || !hasProjects)) {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/e3889834-1bb5-40e6-acc6-c759053e31c4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Dashboard.jsx:240',message:'Showing OnboardingChecklist',data:{reason:'skipped_and_missing_items',hasTeamMembers,hasProjects},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
         // #endregion
         console.log('[checkOnboardingStatus] Showing OnboardingChecklist');
         setShowOnboardingChecklist(true);
-      } else if (hasTeamMembers && hasProjects && company.onboarding_status !== 'completed') {
+      } else if (hasTeamMembers && hasProjects && latestCompany.onboarding_status !== 'completed') {
         // Only company admins can update Company entity
         // FIXED: Also allow 'owner' role (legacy)
         const isAdmin = currentUser.company_role === 'admin' || currentUser.company_role === 'owner' || currentUser.role === 'admin';
         if (isAdmin) {
           try {
-            await Company.update(company.id, { onboarding_status: 'completed' });
+            await Company.update(latestCompany.id, { onboarding_status: 'completed' });
             console.log('[checkOnboardingStatus] Marked onboarding as completed');
           } catch (updateErr) {
             console.warn('Could not update onboarding status:', updateErr.message);
@@ -1029,6 +1037,25 @@ export default function Dashboard() {
                     {projectsToDisplay.map((project) => (
                       <div key={project.id}><DashboardProjectCard project={project} calculateProgress={calculateProgress} onViewDetails={openDetailsModal} /></div>
                     ))}
+                    {/* Placeholders voor lege slots (max 4 projecten totaal) */}
+                    {Array.from({ length: Math.max(0, 4 - projectsToDisplay.length) }).map((_, index) => {
+                      const placeholderLogoLight = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png';
+                      const placeholderLogoDark = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png';
+                      const placeholderLogo = resolvedTheme === 'dark' ? placeholderLogoDark : placeholderLogoLight;
+                      
+                      return (
+                        <div 
+                          key={`placeholder-${index}`} 
+                          className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 flex items-center justify-center shadow-md"
+                        >
+                          <img 
+                            src={placeholderLogo} 
+                            alt="PaintConnect" 
+                            className="w-1/3 h-1/3 max-w-24 max-h-24 object-contain opacity-60"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500 dark:text-slate-500">

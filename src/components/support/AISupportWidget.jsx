@@ -168,9 +168,9 @@ export default function AISupportWidget({ currentUser }) {
     setIsInitializing(true);
     try {
       const newConversation = await base44.agents.createConversation({
-        agent_name: 'support_agent',
+        agent_name: 'paint_agent',
         metadata: {
-          name: 'PaintConnect Support Chat',
+          name: 'PaintConnect AI',
           user_name: currentUser.full_name,
           user_email: currentUser.email,
           started_at: new Date().toISOString()
@@ -324,9 +324,9 @@ export default function AISupportWidget({ currentUser }) {
                   <Bot className="w-6 h-6 text-white" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-white font-bold flex items-center gap-1">
-                    AI Assistent
-                    <Sparkles className="w-4 h-4 flex-shrink-0" />
+                  <h3 className="text-white font-bold flex items-center gap-2">
+                    <span>PaintConnect</span>
+                    <span className="bg-white/10 px-2 py-0.5 rounded-md text-xs font-medium">AI</span>
                   </h3>
                   <p className="text-emerald-100 text-xs">Altijd beschikbaar</p>
                 </div>

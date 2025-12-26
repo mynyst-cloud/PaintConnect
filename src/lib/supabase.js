@@ -431,8 +431,132 @@ export const functions = {
   }
 }
 
+// AI Agents API
+const agents = {
+  async createConversation({ agent_name, metadata = {} }) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data, error } = await supabase
+        .from('ai_conversations')
+        .insert({
+          user_id: user.id,
+          agent_name,
+          metadata,
+          messages: []
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error creating conversation:', error)
+      throw error
+    }
+  },
+
+  async getConversation(conversationId) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const { data, error } = await supabase
+        .from('ai_conversations')
+        .select('*')
+        .eq('id', conversationId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Error getting conversation:', error)
+      throw error
+    }
+  },
+
+  async addMessage(conversation, message) {
+    try {
+      console.log('[agents.addMessage] Adding message:', { conversationId: conversation.id, role: message.role })
+      
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Add user message to conversation
+      const updatedMessages = [...(conversation.messages || []), message]
+      
+      const { data: updatedConversation, error: updateError } = await supabase
+        .from('ai_conversations')
+        .update({ 
+          messages: updatedMessages,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversation.id)
+        .eq('user_id', user.id)
+        .select()
+        .single()
+
+      if (updateError) throw updateError
+
+      // Trigger AI response via edge function
+      const { data: responseData, error: invokeError } = await supabase.functions.invoke('aiChatAgent', {
+        body: {
+          action: 'add_message',
+          conversation_id: conversation.id,
+          message: message
+        }
+      })
+
+      if (invokeError) {
+        console.error('[agents.addMessage] Edge function error:', invokeError)
+        throw invokeError
+      }
+
+      console.log('[agents.addMessage] Response received:', responseData)
+
+      // Return updated conversation with AI response
+      if (responseData?.conversation) {
+        return responseData.conversation
+      }
+
+      return updatedConversation
+    } catch (error) {
+      console.error('[agents.addMessage] Error:', error)
+      throw error
+    }
+  },
+
+  subscribeToConversation(conversationId, callback) {
+    const channel = supabase
+      .channel(`ai_conversation_${conversationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'ai_conversations',
+          filter: `id=eq.${conversationId}`
+        },
+        (payload) => {
+          console.log('[agents.subscribeToConversation] Update received:', payload)
+          if (payload.new && payload.new.messages) {
+            callback({ messages: payload.new.messages })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }
+}
+
 export const base44 = {
   functions,
+  agents,
   auth: {
     signIn: User.login,
     signOut: User.logout,

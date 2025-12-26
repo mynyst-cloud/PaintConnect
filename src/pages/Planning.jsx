@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Project, User, Company, PlanningEvent } from "@/api/entities";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { base44 } from "@/api/base44Client";
@@ -117,6 +117,34 @@ export default function Planning({ impersonatedCompanyId }) {
   const users = planningData?.users || [];
   const events = planningData?.events || [];
   const isAdmin = planningData?.isAdmin || false;
+
+  // Auto-update dummy project colors if they don't have colors yet
+  useEffect(() => {
+    const updateDummyColors = async () => {
+      if (!company?.id || !isAdmin) return;
+      
+      // Check if there are dummy projects without calendar_color
+      const dummyProjectsWithoutColor = projects.filter(
+        p => p?.is_dummy && (!p?.calendar_color || p.calendar_color === null)
+      );
+      
+      if (dummyProjectsWithoutColor.length > 0) {
+        try {
+          const { updateDummyProjectColors } = await import('@/api/functions');
+          await updateDummyProjectColors({ companyId: company.id });
+          console.log('[Planning] Updated dummy project colors');
+          // Refetch to get updated projects
+          refetchAll();
+        } catch (error) {
+          console.warn('[Planning] Could not update dummy project colors:', error);
+        }
+      }
+    };
+
+    if (projects.length > 0 && company?.id) {
+      updateDummyColors();
+    }
+  }, [projects, company?.id, isAdmin, refetchAll]);
 
   const minSwipeDistance = 50;
 

@@ -52,7 +52,8 @@ export function ThemeProvider({ children }) {
         const initializeTheme = async () => {
             try {
                 const user = await User.me();
-                const userTheme = user?.theme_preference || 'auto';
+                // Use nullish coalescing (??) instead of || to properly handle empty strings and null/undefined
+                const userTheme = user?.theme_preference ?? 'auto';
                 setThemeState(userTheme);
                 
                 const resolved = userTheme === 'auto' ? getSystemTheme() : userTheme;
@@ -61,6 +62,7 @@ export function ThemeProvider({ children }) {
             } catch (error) {
                 // User not logged in, use system preference
                 const systemTheme = getSystemTheme();
+                setThemeState('auto');
                 setResolvedTheme(systemTheme);
                 applyTheme(systemTheme);
             }

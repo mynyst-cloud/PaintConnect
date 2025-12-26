@@ -4,7 +4,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Printer, X } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Printer, X, Camera } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, isWeekend, addMonths, subMonths, startOfWeek, endOfWeek, eachWeekOfInterval } from "date-fns";
 import { nl } from "date-fns/locale";
 import PlanningForm from "@/components/planning/PlanningForm";
@@ -23,6 +23,7 @@ import { calculateItemSpans, assignTracksToSpans, getMaxTrackForWeek } from "@/c
 const WEEK_NUMBER_COL = 1;
 
 export default function Planning({ impersonatedCompanyId }) {
+  const planningRef = useRef(null);
   const [viewMode, setViewMode] = useState("month"); // "month" or "week"
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);

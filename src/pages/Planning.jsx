@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Project, User, Company, PlanningEvent } from "@/api/entities";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { base44 } from "@/api/base44Client";
@@ -290,6 +290,91 @@ export default function Planning({ impersonatedCompanyId }) {
     feestdag: "Feestdag"
   };
 
+  const handleScreenshot = async () => {
+    if (!planningRef.current) return;
+    
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      
+      // Neem screenshot van de planning wrapper
+      const canvas = await html2canvas(planningRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2, // Hoge resolutie voor goede kwaliteit
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        windowWidth: planningRef.current.scrollWidth,
+        windowHeight: planningRef.current.scrollHeight,
+        scrollX: 0,
+        scrollY: 0
+      });
+      
+      // Converteer naar blob en open voor print
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          console.error('Failed to create blob from canvas');
+          return;
+        }
+        
+        const url = URL.createObjectURL(blob);
+        const printWindow = window.open('', '_blank');
+        
+        if (printWindow) {
+          printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+              <head>
+                <title>Planning - PaintConnect</title>
+                <style>
+                  body {
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                  }
+                  img {
+                    width: 100%;
+                    height: auto;
+                    display: block;
+                  }
+                </style>
+              </head>
+              <body>
+                <img src="${url}" onload="window.print();" />
+              </body>
+            </html>
+          `);
+          printWindow.document.close();
+          
+          // Cleanup na print
+          printWindow.addEventListener('afterprint', () => {
+            URL.revokeObjectURL(url);
+            printWindow.close();
+          });
+          
+          // Fallback cleanup na 30 seconden
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 30000);
+        } else {
+          // Fallback: download als bestand
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `planning-${format(currentDate, 'yyyy-MM-dd')}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      }, 'image/png');
+    } catch (error) {
+      console.error('Screenshot failed:', error);
+      alert('Kon screenshot niet maken. Probeer opnieuw.');
+    }
+  };
+
   const handleProjectSubmit = async (projectData) => {
     try {
       // Voeg company_id toe aan projectData
@@ -429,7 +514,7 @@ export default function Planning({ impersonatedCompanyId }) {
   const formattedDate = format(new Date(), "EEEE d MMMM yyyy", { locale: nl });
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 print-planning-wrapper">
+    <div ref={planningRef} className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6 print-planning-wrapper">
       <div className="max-w-7xl mx-auto">
         <div className="mb-4">
           <div className="hidden md:flex md:flex-row justify-between items-start md:items-center gap-4 mb-6">
@@ -487,6 +572,17 @@ export default function Planning({ impersonatedCompanyId }) {
               >
                 <Printer className="w-4 h-4 mr-2" />
                 Print / PDF
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleScreenshot}
+                className="hidden md:flex"
+                title="Maak screenshot van planning voor print"
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                Screenshot
               </Button>
 
               {isAdmin && (

@@ -200,10 +200,18 @@ export default function AISupportWidget({ currentUser }) {
     if (savedConversationId) {
       try {
         const existingConversation = await base44.agents.getConversation(savedConversationId);
-        setConversation(existingConversation);
-        setMessages(existingConversation.messages || []);
+        if (existingConversation) {
+          setConversation(existingConversation);
+          setMessages(existingConversation.messages || []);
+        } else {
+          // Conversation not found, clear localStorage and create new one
+          console.log('Saved conversation not found, creating new one');
+          localStorage.removeItem('ai_support_conversation_id');
+          await createNewConversation();
+        }
       } catch (error) {
-        console.log('Saved conversation not found, creating new one');
+        console.log('Error getting conversation, creating new one:', error);
+        localStorage.removeItem('ai_support_conversation_id');
         await createNewConversation();
       }
     } else {

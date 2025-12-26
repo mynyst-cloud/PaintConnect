@@ -477,9 +477,18 @@ const agents = {
         .select('*')
         .eq('id', conversationId)
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle() // Use maybeSingle() instead of single() to return null instead of error when not found
 
-      if (error) throw error
+      // If error and it's not a "not found" error, throw it
+      if (error && error.code !== 'PGRST116') {
+        throw error
+      }
+
+      // If no data (conversation not found), return null instead of throwing
+      if (!data) {
+        return null
+      }
+
       return data
     } catch (error) {
       console.error('Error getting conversation:', error)

@@ -310,7 +310,7 @@ export default function Planning({ impersonatedCompanyId }) {
         scrollY: 0
       });
       
-      // Converteer naar blob en open voor print
+      // Converteer naar blob en download direct
       canvas.toBlob((blob) => {
         if (!blob) {
           console.error('Failed to create blob from canvas');
@@ -318,57 +318,17 @@ export default function Planning({ impersonatedCompanyId }) {
         }
         
         const url = URL.createObjectURL(blob);
-        const printWindow = window.open('', '_blank');
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `planning-${format(currentDate, 'yyyy-MM-dd')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         
-        if (printWindow) {
-          printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>Planning - PaintConnect</title>
-                <style>
-                  body {
-                    margin: 0;
-                    padding: 0;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                  }
-                  img {
-                    width: 100%;
-                    height: auto;
-                    display: block;
-                  }
-                </style>
-              </head>
-              <body>
-                <img src="${url}" onload="window.print();" />
-              </body>
-            </html>
-          `);
-          printWindow.document.close();
-          
-          // Cleanup na print
-          printWindow.addEventListener('afterprint', () => {
-            URL.revokeObjectURL(url);
-            printWindow.close();
-          });
-          
-          // Fallback cleanup na 30 seconden
-          setTimeout(() => {
-            URL.revokeObjectURL(url);
-          }, 30000);
-        } else {
-          // Fallback: download als bestand
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `planning-${format(currentDate, 'yyyy-MM-dd')}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+        // Cleanup
+        setTimeout(() => {
           URL.revokeObjectURL(url);
-        }
+        }, 100);
       }, 'image/png');
     } catch (error) {
       console.error('Screenshot failed:', error);

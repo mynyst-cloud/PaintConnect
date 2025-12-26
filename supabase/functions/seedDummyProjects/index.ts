@@ -15,6 +15,7 @@ const DUMMY_PROJECT_DATA = [
     description: 'Luxe woonkamer en hal volledig opnieuw geschilderd in warm wit en accent kleuren.',
     status: 'in_uitvoering',
     progress_percentage: 65,
+    calendar_color: 'blue',
     photo_urls: [
       'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
       'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80',
@@ -26,6 +27,7 @@ const DUMMY_PROJECT_DATA = [
     description: 'Volledig penthouse project met custom kleuradvies en hoogwaardige afwerking.',
     status: 'planning',
     progress_percentage: 10,
+    calendar_color: 'green',
     photo_urls: [
       'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80',
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
@@ -37,6 +39,7 @@ const DUMMY_PROJECT_DATA = [
     description: 'Stijlvolle lobby en receptieruimte met klassieke accenten en moderne afwerking.',
     status: 'nieuw',
     progress_percentage: 0,
+    calendar_color: 'purple',
     photo_urls: [
       'https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&q=80',
       'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&q=80',
@@ -48,6 +51,7 @@ const DUMMY_PROJECT_DATA = [
     description: 'Industriële loft met wit stucwerk en contrast accenten. Plafond en muren.',
     status: 'afgerond',
     progress_percentage: 100,
+    calendar_color: 'orange',
     photo_urls: [
       'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80',
       'https://images.unsplash.com/photo-1600573472592-401b489a3cdc?w=800&q=80',
@@ -126,6 +130,7 @@ serve(async (req) => {
         description: data.description,
         photo_urls: data.photo_urls,
         is_dummy: true,
+        calendar_color: data.calendar_color,
         estimated_hours: 40 + (i * 10),
         actual_hours: Math.floor((40 + (i * 10)) * (data.progress_percentage / 100))
       }

@@ -1,6 +1,6 @@
 # Belangrijke Branch Informatie
 
-## ✅ HUIDIGE STATUS (Laatste Update: $(date +'%Y-%m-%d %H:%M:%S'))
+## ✅ HUIDIGE STATUS (Laatste Update: 2025-12-26 20:30:00)
 
 ### Actieve Branch:
 - **Main branch**: Commit `3f3d690` (nieuwste versie met alle functies)

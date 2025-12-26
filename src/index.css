@@ -250,10 +250,39 @@ button:focus-visible {
     opacity: 1 !important;
   }
   
-  /* Zorg dat motion.div elementen worden gerenderd (framer-motion) */
-  .print-planning-wrapper [class*="motion"],
-  .print-planning-wrapper [data-framer-name] {
+  /* Fix voor Tooltip wrapper - zorg dat CalendarItemBar direct zichtbaar is */
+  .print-planning-wrapper [data-radix-tooltip-trigger] {
+    display: contents !important;
+  }
+  
+  .print-planning-wrapper [data-radix-tooltip-content],
+  .print-planning-wrapper [role="tooltip"] {
+    display: none !important;
+  }
+  
+  /* Motion.div fix - verwijder animaties en zorg dat content zichtbaar is */
+  .print-planning-wrapper [class*="motion"] {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Specifiek voor CalendarItemBar motion.div met absolute positioning */
+  .print-planning-wrapper [class*="motion"][style*="gridColumnStart"],
+  .print-planning-wrapper [class*="motion"][style*="gridColumnEnd"] {
+    position: absolute !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Zorg dat de inner div (de gekleurde bar met tekst) zichtbaar is */
+  .print-planning-wrapper [class*="motion"][style*="gridColumnStart"] > div,
+  .print-planning-wrapper [class*="motion"][style*="gridColumnEnd"] > div {
+    display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
   }
@@ -262,7 +291,12 @@ button:focus-visible {
   .print-planning-wrapper button,
   .print-planning-wrapper .no-print,
   .print-planning-wrapper [class*="Select"],
-  .print-planning-wrapper [class*="Tooltip"] {
+  .print-planning-wrapper [class*="TooltipContent"] {
+    display: none !important;
+  }
+  
+  /* Verberg alleen TooltipContent, niet TooltipTrigger */
+  .print-planning-wrapper [class*="Tooltip"]:not([class*="TooltipTrigger"]) {
     display: none !important;
   }
   

@@ -297,17 +297,32 @@ export default function Planning({ impersonatedCompanyId }) {
     try {
       const html2canvas = (await import('html2canvas')).default;
       
-      // Neem screenshot van de planning wrapper
+      // Wacht even tot animaties klaar zijn
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Neem screenshot van de planning wrapper met hogere resolutie
       const canvas = await html2canvas(planningRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2, // Hoge resolutie voor goede kwaliteit
+        scale: 3, // Verhoog naar 3 voor betere leesbaarheid van kleine tekst
         logging: false,
         useCORS: true,
         allowTaint: true,
         windowWidth: planningRef.current.scrollWidth,
         windowHeight: planningRef.current.scrollHeight,
         scrollX: 0,
-        scrollY: 0
+        scrollY: 0,
+        removeContainer: true, // Betere rendering
+        onclone: (clonedDoc) => {
+          // Verwijder tooltips en hover states voor duidelijkere screenshot
+          const tooltips = clonedDoc.querySelectorAll('[role="tooltip"], [data-radix-tooltip-content]');
+          tooltips.forEach(tooltip => tooltip.remove());
+          
+          // Verwijder hover effects
+          const hoverElements = clonedDoc.querySelectorAll('.group-hover\\:scale-\\[1\\.02\\]');
+          hoverElements.forEach(el => {
+            el.classList.remove('group-hover:scale-[1.02]');
+          });
+        }
       });
       
       // Converteer naar blob en download direct

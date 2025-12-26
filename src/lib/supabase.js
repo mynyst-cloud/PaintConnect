@@ -82,7 +82,7 @@ class Entity {
     this.tableName = tableName
   }
 
-  async filter(conditions = {}, orderBy = '-created_at', limit = null) {
+  async filter(conditions = {}, orderBy = '-created_date', limit = null) {
     let query = supabase.from(this.tableName).select('*')
     
     // Handle conditions
@@ -122,7 +122,11 @@ class Entity {
     // Handle ordering
     if (orderBy) {
       const isDesc = orderBy.startsWith('-')
-      const column = isDesc ? orderBy.slice(1) : orderBy
+      let column = isDesc ? orderBy.slice(1) : orderBy
+      // Map created_at to created_date for backward compatibility (database uses created_date)
+      if (column === 'created_at') {
+        column = 'created_date'
+      }
       query = query.order(column, { ascending: !isDesc })
     }
     
@@ -139,7 +143,7 @@ class Entity {
     return data || []
   }
 
-  async list(orderBy = '-created_at') {
+  async list(orderBy = '-created_date') {
     return this.filter({}, orderBy);
   }
 

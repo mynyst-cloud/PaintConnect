@@ -322,6 +322,57 @@ export default function Planning({ impersonatedCompanyId }) {
           hoverElements.forEach(el => {
             el.classList.remove('group-hover:scale-[1.02]');
           });
+          
+          // Inject CSS voor betere leesbaarheid in screenshot
+          const style = clonedDoc.createElement('style');
+          style.textContent = `
+            /* Maak project balken groter en tekst leesbaarder */
+            [class*="absolute"][style*="gridColumnStart"] > div {
+              min-height: 32px !important;
+              height: 32px !important;
+              padding: 6px 10px !important;
+              font-size: 13px !important;
+              line-height: 1.4 !important;
+              font-weight: 600 !important;
+            }
+            
+            [class*="absolute"][style*="gridColumnStart"] > div svg {
+              width: 16px !important;
+              height: 16px !important;
+            }
+            
+            [class*="absolute"][style*="gridColumnStart"] > div span {
+              font-size: 13px !important;
+              line-height: 1.4 !important;
+              font-weight: 600 !important;
+            }
+            
+            /* Verwijder truncate om volledige tekst te tonen waar mogelijk */
+            [class*="absolute"][style*="gridColumnStart"] > div span.truncate {
+              white-space: nowrap !important;
+              overflow: visible !important;
+              text-overflow: clip !important;
+            }
+          `;
+          clonedDoc.head.appendChild(style);
+          
+          // Verhoog ook de top spacing tussen balken (track spacing)
+          const projectBars = clonedDoc.querySelectorAll('[class*="absolute"][style*="gridColumnStart"]');
+          projectBars.forEach(bar => {
+            const styleAttr = bar.getAttribute('style');
+            if (styleAttr && styleAttr.includes('top:')) {
+              // Parse huidige top waarde en verhoog track spacing
+              const topMatch = styleAttr.match(/top:\s*(\d+)px/);
+              if (topMatch) {
+                const currentTop = parseInt(topMatch[1]);
+                // Reken uit welke track dit is en verhoog spacing
+                const track = Math.floor((currentTop - 32) / 28);
+                const newTop = track * 36 + 32; // 36px spacing ipv 28px
+                const newStyle = styleAttr.replace(/top:\s*\d+px/, `top: ${newTop}px`);
+                bar.setAttribute('style', newStyle);
+              }
+            }
+          });
         }
       });
       

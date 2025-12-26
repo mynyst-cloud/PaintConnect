@@ -230,6 +230,67 @@ function ResourceRow({ icon: Icon, label, weekDays, renderDayContent, iconBgColo
 }
 
 // ========================================
+// COLOR CLASSES (matching Planning.jsx)
+// ========================================
+
+const colorClasses = {
+  blue: { 
+    bg: 'bg-blue-500 dark:bg-blue-600', 
+    border: 'border-blue-600 dark:border-blue-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-blue-500 dark:bg-blue-600'
+  },
+  green: { 
+    bg: 'bg-emerald-500 dark:bg-emerald-600', 
+    border: 'border-emerald-600 dark:border-emerald-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-emerald-500 dark:bg-emerald-600'
+  },
+  yellow: { 
+    bg: 'bg-amber-400 dark:bg-amber-500', 
+    border: 'border-amber-500 dark:border-amber-400', 
+    text: 'text-amber-900 dark:text-amber-900',
+    bar: 'bg-amber-400 dark:bg-amber-500'
+  },
+  red: { 
+    bg: 'bg-red-500 dark:bg-red-600', 
+    border: 'border-red-600 dark:border-red-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-red-500 dark:bg-red-600'
+  },
+  purple: { 
+    bg: 'bg-purple-500 dark:bg-purple-600', 
+    border: 'border-purple-600 dark:border-purple-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-purple-500 dark:bg-purple-600'
+  },
+  pink: { 
+    bg: 'bg-pink-500 dark:bg-pink-600', 
+    border: 'border-pink-600 dark:border-pink-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-pink-500 dark:bg-pink-600'
+  },
+  indigo: { 
+    bg: 'bg-indigo-500 dark:bg-indigo-600', 
+    border: 'border-indigo-600 dark:border-indigo-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-indigo-500 dark:bg-indigo-600'
+  },
+  gray: { 
+    bg: 'bg-slate-500 dark:bg-slate-600', 
+    border: 'border-slate-600 dark:border-slate-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-slate-500 dark:bg-slate-600'
+  },
+  orange: { 
+    bg: 'bg-orange-500 dark:bg-orange-600', 
+    border: 'border-orange-600 dark:border-orange-500', 
+    text: 'text-white dark:text-white',
+    bar: 'bg-orange-500 dark:bg-orange-600'
+  }
+};
+
+// ========================================
 // PROJECT ROW COMPONENT
 // ========================================
 
@@ -251,6 +312,9 @@ function ProjectRow({
   onProjectClick,
   isMobile = false
 }) {
+  // Get project color
+  const projectColor = project?.calendar_color || 'blue';
+  const colorClass = colorClasses[projectColor] || colorClasses.blue;
   const assignedPainters = useMemo(() => {
     if (!project.assigned_painters || !Array.isArray(project.assigned_painters)) return [];
     return project.assigned_painters.map(email => {
@@ -321,6 +385,9 @@ function ProjectRow({
           "flex items-center gap-2 border-r border-gray-100 dark:border-slate-700",
           isMobile ? "px-2 py-2 sticky left-0 z-10 bg-inherit" : "px-3 py-2.5"
         )}>
+          {/* Color bar */}
+          <div className={cn("w-1 h-full min-h-[40px] rounded-full", colorClass.bar)} />
+          
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>

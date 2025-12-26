@@ -455,6 +455,30 @@ export default function Planning({ impersonatedCompanyId }) {
                 </Select>
               )}
 
+              {/* Maand/Week toggle op desktop - naast schilder select */}
+              <div className="hidden md:flex items-center gap-1 bg-muted rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('month')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    viewMode === 'month'
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Maand
+                </button>
+                <button
+                  onClick={() => setViewMode('week')}
+                  className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                    viewMode === 'week'
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Week
+                </button>
+              </div>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -500,11 +524,21 @@ export default function Planning({ impersonatedCompanyId }) {
           </div>
         </div>
 
-        {/* Tabs voor Maand/Week view */}
+        {/* Tabs voor Maand/Week view - alleen op mobiel */}
         <Tabs value={viewMode} onValueChange={setViewMode} className="w-full mb-4">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-4">
-            <TabsTrigger value="month">Maand</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-4 md:hidden">
+            <TabsTrigger 
+              value="month"
+              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:hover:bg-emerald-700"
+            >
+              Maand
+            </TabsTrigger>
+            <TabsTrigger 
+              value="week"
+              className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:hover:bg-emerald-700"
+            >
+              Week
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="month" className="mt-0">

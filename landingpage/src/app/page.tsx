@@ -1275,7 +1275,7 @@ function CTASection() {
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
-            href="https://app.paintconnect.be"
+            href={INVITE_URL}
             className="btn-outline-white flex items-center justify-center gap-2 text-lg"
           >
             Inloggen

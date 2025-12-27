@@ -320,7 +320,7 @@ const structuredData = {
           "@type": "HowToStep",
           "position": 1,
           "name": "Account aanmaken",
-          "text": "Maak een account aan op app.paintconnect.be. Registreer je bedrijfsnaam en gegevens. Geen creditcard nodig voor de proefperiode."
+          "text": "Vraag toegang aan via de invite pagina. Wij nemen contact met je op om je account aan te maken. Geen creditcard nodig."
         },
         {
           "@type": "HowToStep",

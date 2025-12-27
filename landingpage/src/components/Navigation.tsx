@@ -14,6 +14,12 @@ const INVITE_URL = "/invite";
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isInvitePage, setIsInvitePage] = useState(false);
+
+  // Check if we're on the invite page
+  useEffect(() => {
+    setIsInvitePage(window.location.pathname === '/invite');
+  }, []);
 
   // Handle scroll to change nav background
   useEffect(() => {
@@ -24,10 +30,13 @@ export default function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // On invite page, always show white background
+  const showWhiteBackground = scrolled || isInvitePage;
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
+        showWhiteBackground
           ? "bg-white/95 backdrop-blur-sm border-b border-[var(--color-gray-200)] shadow-sm"
           : "bg-transparent"
       }`}
@@ -35,9 +44,9 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <a href="#" className="flex items-center">
+          <a href="/" className="flex items-center">
             <img
-              src={scrolled ? LOGO_LIGHT : LOGO_DARK}
+              src={showWhiteBackground ? LOGO_LIGHT : LOGO_DARK}
               alt="PaintConnect Logo"
               className="h-10 w-auto transition-opacity"
               loading="eager"
@@ -48,9 +57,9 @@ export default function Navigation() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             <a
-              href="#features"
+              href="/#features"
               className={`transition-colors ${
-                scrolled
+                showWhiteBackground
                   ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
                   : "text-white/80 hover:text-white"
               }`}
@@ -58,9 +67,9 @@ export default function Navigation() {
               Features
             </a>
             <a
-              href="#wetgeving-2027"
+              href="/#wetgeving-2027"
               className={`transition-colors ${
-                scrolled
+                showWhiteBackground
                   ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
                   : "text-white/80 hover:text-white"
               }`}
@@ -68,9 +77,9 @@ export default function Navigation() {
               Wetgeving 2027
             </a>
             <a
-              href="#pricing"
+              href="/#pricing"
               className={`transition-colors ${
-                scrolled
+                showWhiteBackground
                   ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
                   : "text-white/80 hover:text-white"
               }`}
@@ -78,9 +87,9 @@ export default function Navigation() {
               Prijzen
             </a>
             <a
-              href="#faq"
+              href="/#faq"
               className={`transition-colors ${
-                scrolled
+                showWhiteBackground
                   ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
                   : "text-white/80 hover:text-white"
               }`}
@@ -88,9 +97,9 @@ export default function Navigation() {
               FAQ
             </a>
             <a
-              href="https://app.paintconnect.be"
+              href={INVITE_URL}
               className={`transition-colors ${
-                scrolled
+                showWhiteBackground
                   ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
                   : "text-white/80 hover:text-white"
               }`}
@@ -104,7 +113,7 @@ export default function Navigation() {
 
           {/* Mobile menu button */}
           <button
-            className={`md:hidden p-2 ${scrolled ? "text-gray-900" : "text-white"}`}
+            className={`md:hidden p-2 ${showWhiteBackground ? "text-gray-900" : "text-white"}`}
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Menu"
           >
@@ -122,35 +131,35 @@ export default function Navigation() {
         <div className="md:hidden bg-white border-t border-[var(--color-gray-200)]">
           <div className="px-4 py-4 space-y-3">
             <a
-              href="#features"
+              href="/#features"
               className="block py-2 text-[var(--color-gray-600)]"
               onClick={() => setIsOpen(false)}
             >
               Features
             </a>
             <a
-              href="#wetgeving-2027"
+              href="/#wetgeving-2027"
               className="block py-2 text-[var(--color-gray-600)]"
               onClick={() => setIsOpen(false)}
             >
               Wetgeving 2027
             </a>
             <a
-              href="#pricing"
+              href="/#pricing"
               className="block py-2 text-[var(--color-gray-600)]"
               onClick={() => setIsOpen(false)}
             >
               Prijzen
             </a>
             <a
-              href="#faq"
+              href="/#faq"
               className="block py-2 text-[var(--color-gray-600)]"
               onClick={() => setIsOpen(false)}
             >
               FAQ
             </a>
             <a
-              href="https://app.paintconnect.be"
+              href={INVITE_URL}
               className="block py-2 text-[var(--color-gray-600)]"
               onClick={() => setIsOpen(false)}
             >

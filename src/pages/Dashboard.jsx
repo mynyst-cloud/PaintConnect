@@ -45,6 +45,7 @@ import CheckOutButton from '@/components/checkin/CheckOutButton';
 import TeamActivityFeed from '@/components/checkin/TeamActivityFeed';
 import PushNotificationPrompt from '@/components/notifications/PushNotificationPrompt';
 import { useTeamChat } from '@/contexts/TeamChatContext';
+import HoursSummaryWidget from '@/components/dashboard/HoursSummaryWidget';
 
 // Helper functie om dummy/demo notificaties te genereren
 const generateDummyNotifications = () => {
@@ -560,13 +561,14 @@ export default function Dashboard() {
       }
 
       const messagesPromise = fetchData(`messages_${companyId}`, () => ChatMessage.filter({ company_id: companyId }, '-timestamp', 10), 90000, forceRefresh);
-      const notificationsPromise = fetchData(`notifications_${companyId}_${user.email}`, () => Notification.filter({
-        company_id: companyId,
-        recipient_email: user.email
-      }, '-created_date', 8), 90000, forceRefresh);
-      const referralPointsPromise = fetchData(`referral_points_${companyId}`, () => ReferralPoint.filter({ company_id: companyId }), 120000, forceRefresh);
+        const notificationsPromise = fetchData(`notifications_${companyId}_${user.email}`, () => Notification.filter({
+          company_id: companyId,
+          recipient_email: user.email
+        }, '-created_date', 8), 90000, forceRefresh);
+        const referralPointsPromise = fetchData(`referral_points_${companyId}`, () => ReferralPoint.filter({ company_id: companyId }), 120000, forceRefresh);
+        const dailyUpdatesPromise = fetchData(`daily_updates_${companyId}`, () => DailyUpdate.filter({ company_id: companyId }), 60000, forceRefresh);
 
-      let [companyDetails, projectsData, materialsData, damagesData, usersData, messagesData, notificationsData, referralPointsData] = await Promise.all([
+        let [companyDetails, projectsData, materialsData, damagesData, usersData, messagesData, notificationsData, referralPointsData, dailyUpdatesData] = await Promise.all([
         companyPromise, projectsPromise, materialsPromise, damagesPromise, usersPromise, messagesPromise, notificationsPromise, referralPointsPromise
       ]);
 
@@ -1088,8 +1090,6 @@ export default function Dashboard() {
                     { label: "Meld Beschadiging", icon: AlertTriangle, action: () => setShowDamageForm(true), show: true },
                     { label: "Vraag Materiaal Aan", icon: Package, action: () => setShowMaterialForm(true), show: true },
                     { label: "Project Update", icon: BarChart, action: handleQuickUpdateClick, show: true },
-                    { label: "Uren Bevestigen", icon: Clock, action: handleQuickHours, show: true },
-                    { label: "Materialen Bevestigen", icon: Package, action: handleQuickMaterials, show: true },
                     { label: "🎙️ Offerte Agent", icon: Mic, action: () => navigate(createPageUrl('OfferteOpmeting')), show: currentUser?.role === 'admin' }
                   ].filter(item => item.show).map((item, index) => (
                     <Button key={index} variant="ghost" className="bg-white/10 hover:bg-white/20 p-2 h-auto justify-start text-left w-full" onClick={item.action}>

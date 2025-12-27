@@ -213,10 +213,45 @@ class UserEntity extends Entity {
   }
 
   async me() {
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+    // First, try to get the current user
+    let { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
     
+    // If getUser failed, try to refresh the session first
     if (authError || !authUser) {
-      console.error('Auth error:', authError)
+      console.warn('[User.me] getUser failed, attempting session refresh:', authError?.message);
+      
+      try {
+        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (!refreshError && session?.user) {
+          console.log('[User.me] Session refreshed successfully');
+          authUser = session.user;
+          authError = null;
+        } else {
+          console.error('[User.me] Session refresh failed:', refreshError);
+          // If refresh failed, check if we still have a session (might be expired but refreshable)
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (currentSession?.user) {
+            console.log('[User.me] Found valid session after refresh failure');
+            authUser = currentSession.user;
+            authError = null;
+          }
+        }
+      } catch (refreshErr) {
+        console.error('[User.me] Error during session refresh:', refreshErr);
+        // Fall through to check if we have a session anyway
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession?.user) {
+          console.log('[User.me] Found valid session after refresh error');
+          authUser = currentSession.user;
+          authError = null;
+        }
+      }
+    }
+    
+    // If still no user after refresh attempt, throw error
+    if (authError || !authUser) {
+      console.error('[User.me] No valid user after refresh attempt:', authError?.message);
       throw new Error('auth')
     }
     

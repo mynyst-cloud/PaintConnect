@@ -188,9 +188,24 @@ export function UserStateProvider({ children }) {
             console.log('User fetched successfully:', currentUser.email);
             return currentUser;
         } catch (error) {
-            // Treat any error during User.me() as an unauthenticated state or a general fetch error.
-            console.warn('User not authenticated or error fetching user:', error.message);
-            setUser(null);
+            // Log error details for debugging
+            console.warn('[UserStateProvider] Error fetching user:', {
+                message: error.message,
+                error: error,
+                timestamp: new Date().toISOString(),
+                fetchAttempts: fetchAttempts
+            });
+            
+            // Only set user to null if it's an auth error (not a network error)
+            // Network errors should not trigger logout
+            if (error.message === 'auth' || error.message?.includes('Not authenticated')) {
+                console.warn('[UserStateProvider] Auth error detected, clearing user');
+                setUser(null);
+            } else {
+                // For other errors (network, etc.), keep the current user if it exists
+                console.warn('[UserStateProvider] Non-auth error, keeping current user state');
+            }
+            
             setAuthChecked(true); // Mark as checked even if unauthenticated
             setFetchAttempts(prev => prev + 1);
             return null;

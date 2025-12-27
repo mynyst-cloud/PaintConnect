@@ -599,6 +599,7 @@ export default function Dashboard() {
         safeSetState(setAllUsers, (usersData || []).filter(Boolean));
         safeSetState(setAllMessages, (messagesData || []).filter(Boolean));
         safeSetState(setNotifications, (notificationsData || []).filter(Boolean));
+        safeSetState(setDailyUpdates, dailyUpdatesData || []);
 
         const painterScores = {};
         (referralPointsData || []).filter(Boolean).forEach((point) => {

@@ -1091,11 +1091,20 @@ export default function Dashboard() {
                     { label: "Meld Beschadiging", icon: AlertTriangle, action: () => setShowDamageForm(true), show: true },
                     { label: "Vraag Materiaal Aan", icon: Package, action: () => setShowMaterialForm(true), show: true },
                     { label: "Project Update", icon: BarChart, action: handleQuickUpdateClick, show: true },
+                    { label: "Project toevoegen", icon: Plus, action: () => setShowProjectForm(true), show: isAdmin, badge: "admin" },
+                    { label: "Materialen toevoegen", icon: Package, action: () => navigate(createPageUrl('MateriaalBeheer')), show: isAdmin, badge: "admin" },
                     { label: "🎙️ Offerte Agent", icon: Mic, action: () => navigate(createPageUrl('OfferteOpmeting')), show: currentUser?.role === 'admin' }
                   ].filter(item => item.show).map((item, index) => (
                     <Button key={index} variant="ghost" className="bg-white/10 hover:bg-white/20 p-2 h-auto justify-start text-left w-full" onClick={item.action}>
                       <item.icon className="w-4 h-4 text-emerald-200 mr-2 flex-shrink-0" />
-                      <span className="font-medium text-xs">{item.label}</span>
+                      <span className="font-medium text-xs flex items-center gap-2">
+                        {item.label}
+                        {item.badge && (
+                          <Badge variant="outline" className="bg-white/20 text-white border-white/30 text-[9px] px-1.5 py-0">
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </span>
                     </Button>
                   ))}
                 </div>

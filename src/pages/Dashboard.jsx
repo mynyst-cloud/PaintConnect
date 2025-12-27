@@ -45,7 +45,6 @@ import CheckOutButton from '@/components/checkin/CheckOutButton';
 import TeamActivityFeed from '@/components/checkin/TeamActivityFeed';
 import PushNotificationPrompt from '@/components/notifications/PushNotificationPrompt';
 import { useTeamChat } from '@/contexts/TeamChatContext';
-import HoursSummaryWidget from '@/components/dashboard/HoursSummaryWidget';
 
 // Helper functie om dummy/demo notificaties te genereren
 const generateDummyNotifications = () => {
@@ -1206,12 +1205,46 @@ export default function Dashboard() {
           </div>
 
           <div className="order-4 lg:order-4">
-            <HoursSummaryWidget 
-              dailyUpdates={dailyUpdates}
-              users={allUsers}
-              isAdmin={isAdmin}
-              companyId={company?.id}
-            />
+            <Card className="shadow-lg border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <Trophy className="w-6 h-6" />
+                  Referral Race
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 pt-0">
+                {referralData.topPainters.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-emerald-100 text-sm">Nog geen referrals</p>
+                    <Link to={createPageUrl("Referrals")}>
+                      <Button variant="outline" className="mt-3 bg-white/10 hover:bg-white/20 border-white/20 text-white">
+                        Bekijk Referrals
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {referralData.topPainters.slice(0, 3).map((painter, index) => (
+                      <div key={painter.id || painter.painter_id} className="flex items-center justify-between p-2 bg-white/10 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold">#{index + 1}</span>
+                          <span className="font-medium">{painter.full_name || painter.name}</span>
+                        </div>
+                        <Badge className="bg-white/20 text-white border-white/30">
+                          {painter.score || painter.points || 0} pts
+                        </Badge>
+                      </div>
+                    ))}
+                    <Link to={createPageUrl("Referrals")}>
+                      <Button variant="outline" className="w-full mt-3 bg-white/10 hover:bg-white/20 border-white/20 text-white">
+                        Bekijk volledige ranglijst
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 

@@ -1088,9 +1088,9 @@ export default function Dashboard() {
               <CardContent className="p-2 lg:p-3 pt-0">
                 <div className="grid grid-cols-1 gap-1">
                   {[
-                    { label: "Meld Beschadiging", icon: AlertTriangle, action: () => setShowDamageForm(true), show: true },
-                    { label: "Vraag Materiaal Aan", icon: Package, action: () => setShowMaterialForm(true), show: true },
-                    { label: "Project Update", icon: BarChart, action: handleQuickUpdateClick, show: true },
+                    { label: "Meld Beschadiging", icon: AlertTriangle, action: () => setShowDamageForm(true), show: true, badge: "schilder" },
+                    { label: "Vraag Materiaal Aan", icon: Package, action: () => setShowMaterialForm(true), show: true, badge: "schilder" },
+                    { label: "Project Update", icon: BarChart, action: handleQuickUpdateClick, show: true, badge: "schilder" },
                     { label: "Project toevoegen", icon: Plus, action: () => setShowProjectForm(true), show: isAdmin, badge: "admin" },
                     { label: "Materialen toevoegen", icon: Package, action: () => navigate(createPageUrl('MateriaalBeheer')), show: isAdmin, badge: "admin" },
                     { label: "🎙️ Offerte Agent", icon: Mic, action: () => navigate(createPageUrl('OfferteOpmeting')), show: currentUser?.role === 'admin' }

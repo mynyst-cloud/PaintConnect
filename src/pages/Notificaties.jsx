@@ -4,13 +4,60 @@ import { User } from '@/api/entities';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, CheckCheck, Trash2, ArrowLeft, RefreshCw, FileText, Package, AlertTriangle, CheckCircle, AlertCircle, Calendar, Users, MessageCircle } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, ArrowLeft, RefreshCw, FileText, Package, AlertTriangle, CheckCircle, AlertCircle, Calendar, Users, MessageCircle, Info } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
 import { motion } from 'framer-motion';
 import { formatDistanceToNow, parseISO, format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { markAllNotificationsAsRead } from '@/api/functions';
+
+// Helper functie om dummy/demo notificaties te genereren
+const generateDummyNotifications = () => {
+  const now = new Date();
+  return [
+    {
+      id: 'dummy-material-1',
+      message: 'Materiaal aanvraag - Verf wit 10L - Project: Villa Renovatie',
+      type: 'material_requested',
+      created_date: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(), // 2 uur geleden
+      read: false,
+      isDummy: true
+    },
+    {
+      id: 'dummy-project-1',
+      message: 'Project update - Voortgang: 65% - Penthouse Amsterdam',
+      type: 'project_update',
+      created_date: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(), // 5 uur geleden
+      read: false,
+      isDummy: true
+    },
+    {
+      id: 'dummy-damage-1',
+      message: 'Schademelding - Beschadiging gemeld - Boutique Hotel Lobby',
+      type: 'damage_reported',
+      created_date: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 dag geleden
+      read: true,
+      isDummy: true
+    },
+    {
+      id: 'dummy-planning-1',
+      message: 'Planning wijziging - Nieuwe schilder toegewezen aan Moderne Loft',
+      type: 'planning_change',
+      created_date: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 dagen geleden
+      read: true,
+      isDummy: true
+    },
+    {
+      id: 'dummy-confirmed-1',
+      message: 'Materiaal bevestigd - Verf blauw 5L goedgekeurd voor Villa Renovatie',
+      type: 'materials_confirmed',
+      created_date: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 dagen geleden
+      read: true,
+      isDummy: true
+    }
+  ];
+};
 
 // Helper functie om notificatie visuele details te bepalen
 const getNotificationVisuals = (notification) => {
@@ -149,6 +196,11 @@ export default function Notificaties() {
   };
 
   const handleNotificationClick = async (notification) => {
+    // Dummy notificaties zijn niet klikbaar voor acties
+    if (notification.isDummy) {
+      return;
+    }
+    
     if (!notification.read) {
       try {
         await Notification.update(notification.id, { read: true });
@@ -170,6 +222,13 @@ export default function Notificaties() {
 
   const handleDeleteNotification = async (e, notificationId) => {
     e.stopPropagation();
+    
+    // Dummy notificaties kunnen niet verwijderd worden
+    const notification = displayNotifications.find(n => n.id === notificationId);
+    if (notification?.isDummy) {
+      return;
+    }
+    
     try {
       await Notification.delete(notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
@@ -194,7 +253,7 @@ export default function Notificaties() {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.read && !n.isDummy).length;
 
   if (isLoading) {
     return (
@@ -244,6 +303,15 @@ export default function Notificaties() {
   }
 
   const safeNotifications = (notifications || []).filter(Boolean);
+  
+  // Als er geen echte notificaties zijn, toon dummy notificaties
+  const hasRealNotifications = safeNotifications.length > 0;
+  const displayNotifications = hasRealNotifications 
+    ? safeNotifications 
+    : generateDummyNotifications();
+  
+  const realNotificationCount = safeNotifications.length;
+  const unreadRealCount = safeNotifications.filter(n => !n.read).length;
 
   return (
     <div className="p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -261,16 +329,25 @@ export default function Notificaties() {
             </h1>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <Badge variant="secondary">{safeNotifications.length} totaal</Badge>
-            {unreadCount > 0 && (
-              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                {unreadCount} ongelezen
+            {hasRealNotifications ? (
+              <>
+                <Badge variant="secondary">{realNotificationCount} totaal</Badge>
+                {unreadRealCount > 0 && (
+                  <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {unreadRealCount} ongelezen
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                <Info className="w-3 h-3 mr-1" />
+                Demo meldingen
               </Badge>
             )}
             <Button variant="outline" size="sm" onClick={loadNotifications} disabled={isLoading}>
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-            {unreadCount > 0 && (
+            {hasRealNotifications && unreadRealCount > 0 && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -284,19 +361,24 @@ export default function Notificaties() {
           </div>
         </div>
         
-        {safeNotifications.length === 0 ? (
-          <Card className="p-8 sm:p-12 text-center">
-            <Bell className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Geen notificaties
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Nieuwe updates zullen hier verschijnen
-            </p>
+        {!hasRealNotifications && (
+          <Card className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                  Demo meldingen
+                </h3>
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  Dit zijn voorbeeldmeldingen om te laten zien hoe notificaties eruit zien. Zodra je echte meldingen krijgt, verdwijnen deze demo meldingen automatisch.
+                </p>
+              </div>
+            </div>
           </Card>
-        ) : (
-          <div className="space-y-3">
-            {safeNotifications.map((notif) => {
+        )}
+        
+        <div className="space-y-3">
+          {displayNotifications.map((notif) => {
               if (!notif || !notif.id) return null;
               
               const { title, details, alert, status, icon: Icon, color } = getNotificationVisuals(notif);
@@ -310,31 +392,40 @@ export default function Notificaties() {
                 >
                   <Card 
                     className={`transition-all ${
-                      !notif.read 
+                      !notif.read && !notif.isDummy
                         ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' 
+                        : notif.isDummy
+                        ? 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700'
                         : 'bg-white dark:bg-gray-800'
-                    } hover:shadow-md ${notif.link_to ? 'cursor-pointer' : ''}`}
+                    } hover:shadow-md ${notif.link_to && !notif.isDummy ? 'cursor-pointer' : notif.isDummy ? 'cursor-default' : ''}`}
                     onClick={() => handleNotificationClick(notif)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         {/* Icoon */}
-                        <div className={`flex-shrink-0 mt-0.5 ${color}`}>
+                        <div className={`flex-shrink-0 mt-0.5 ${color} ${notif.isDummy ? 'opacity-60' : ''}`}>
                           <Icon className="w-6 h-6" />
                         </div>
                         
                         {/* Content */}
                         <div className="flex-1 min-w-0">
-                          {/* Titel + Ongelezen indicator */}
+                          {/* Titel + Badges */}
                           <div className="flex items-start justify-between gap-2 mb-2">
-                            <h3 className={`text-base font-semibold ${
-                              !notif.read 
-                                ? 'text-gray-900 dark:text-gray-100' 
-                                : 'text-gray-800 dark:text-gray-200'
-                            }`}>
-                              {title}
-                            </h3>
-                            {!notif.read && (
+                            <div className="flex-1 flex items-center gap-2 flex-wrap">
+                              <h3 className={`text-base font-semibold ${
+                                !notif.read && !notif.isDummy
+                                  ? 'text-gray-900 dark:text-gray-100' 
+                                  : 'text-gray-800 dark:text-gray-200'
+                              } ${notif.isDummy ? 'opacity-75' : ''}`}>
+                                {title}
+                              </h3>
+                              {notif.isDummy && (
+                                <Badge variant="outline" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700 text-xs px-2 py-0">
+                                  DEMO
+                                </Badge>
+                              )}
+                            </div>
+                            {!notif.read && !notif.isDummy && (
                               <div className="w-2.5 h-2.5 bg-blue-500 rounded-full flex-shrink-0 mt-1.5"></div>
                             )}
                           </div>
@@ -350,7 +441,7 @@ export default function Notificaties() {
                           )}
                           
                           {/* Details */}
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed">
+                          <p className={`text-sm text-gray-700 dark:text-gray-300 mb-2 leading-relaxed ${notif.isDummy ? 'opacity-75' : ''}`}>
                             {details}
                           </p>
                           
@@ -366,17 +457,19 @@ export default function Notificaties() {
                           
                           {/* Tijdstempel en Delete button */}
                           <div className="flex items-center justify-between mt-3">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className={`text-xs text-gray-500 dark:text-gray-400 ${notif.isDummy ? 'opacity-60' : ''}`}>
                               {formatRelativeTime(notif.created_date)}
                             </p>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                              onClick={(e) => handleDeleteNotification(e, notif.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-600" />
-                            </Button>
+                            {!notif.isDummy && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                                onClick={(e) => handleDeleteNotification(e, notif.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-600" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>

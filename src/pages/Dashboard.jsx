@@ -1170,24 +1170,35 @@ export default function Dashboard() {
                 <Link to={createPageUrl("Notificaties")} className="text-xs font-medium text-white/90 hover:text-white">Alles <ArrowRight className="w-3 h-3 inline" /></Link>
               </CardHeader>
               <CardContent className="p-2 lg:p-3 pt-0">
-                {notifications?.length > 0 ? (
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
-                    {notifications.slice(0, 3).map((notification) => (
-                      <motion.div key={notification.id} className="flex items-start gap-2 p-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-                        <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${!notification.read ? 'bg-yellow-300' : 'bg-white/30'}`} />
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-xs line-clamp-2 ${!notification.read ? 'font-medium' : 'font-normal'} text-white`}>{notification.message}</p>
-                          <p className="text-[10px] text-white/75 mt-0.5">{formatDateTime(notification.created_date)}</p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-white/70">
-                    <Bell className="w-8 h-8 mx-auto mb-2 text-white/50" />
-                    <p className="font-medium text-sm">Geen nieuwe meldingen</p>
-                  </div>
-                )}
+                {(() => {
+                  const realNotifications = (notifications || []).filter(n => !n.isDummy);
+                  const hasRealNotifications = realNotifications.length > 0;
+                  const displayNotifications = hasRealNotifications ? realNotifications : generateDummyNotifications();
+                  
+                  return displayNotifications?.length > 0 ? (
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {displayNotifications.slice(0, 3).map((notification) => (
+                        <motion.div key={notification.id} className={`flex items-start gap-2 p-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 ${notification.isDummy ? 'opacity-75' : ''}`} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${!notification.read && !notification.isDummy ? 'bg-yellow-300' : notification.isDummy ? 'bg-amber-300' : 'bg-white/30'}`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <p className={`text-xs line-clamp-2 ${!notification.read && !notification.isDummy ? 'font-medium' : 'font-normal'} text-white flex-1`}>{notification.message}</p>
+                              {notification.isDummy && (
+                                <span className="text-[9px] bg-amber-500/80 text-white px-1.5 py-0.5 rounded font-semibold flex-shrink-0">DEMO</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-white/75 mt-0.5">{formatDateTime(notification.created_date)}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-white/70">
+                      <Bell className="w-8 h-8 mx-auto mb-2 text-white/50" />
+                      <p className="font-medium text-sm">Geen nieuwe meldingen</p>
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>

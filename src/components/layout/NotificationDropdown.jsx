@@ -1,13 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Bell, CheckCheck, FileText, Package, AlertTriangle, CheckCircle, Calendar, MessageCircle, UserPlus, Clock, LogIn, Reply, Receipt, TrendingUp, ExternalLink } from "lucide-react";
+import { Bell, CheckCheck, FileText, Package, AlertTriangle, CheckCircle, Calendar, MessageCircle, UserPlus, Clock, LogIn, Reply, Receipt, TrendingUp, ExternalLink, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
 import { Notification } from '@/api/entities';
 import { markAllNotificationsAsRead } from '@/api/functions';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Helper functie om dummy/demo notificaties te genereren
+const generateDummyNotifications = () => {
+  const now = new Date();
+  return [
+    {
+      id: 'dummy-material-1',
+      message: 'Materiaal aanvraag - Verf wit 10L - Project: Villa Renovatie',
+      type: 'material_requested',
+      created_date: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(), // 2 uur geleden
+      read: false,
+      is_read: false,
+      isDummy: true
+    },
+    {
+      id: 'dummy-project-1',
+      message: 'Project update - Voortgang: 65% - Penthouse Amsterdam',
+      type: 'project_update',
+      created_date: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(), // 5 uur geleden
+      read: false,
+      is_read: false,
+      isDummy: true
+    },
+    {
+      id: 'dummy-damage-1',
+      message: 'Schademelding - Beschadiging gemeld - Boutique Hotel Lobby',
+      type: 'damage_reported',
+      created_date: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 dag geleden
+      read: true,
+      is_read: true,
+      isDummy: true
+    }
+  ];
+};
 
 // Notification type configurations
 const notificationConfig = {
@@ -185,8 +219,27 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
+  
+  // Bepaal welke notificaties te tonen (echt of dummy)
+  const realNotifications = useMemo(() => {
+    return (notifications || []).filter(n => !n.isDummy);
+  }, [notifications]);
+  
+  const hasRealNotifications = realNotifications.length > 0;
+  const displayNotifications = useMemo(() => {
+    return hasRealNotifications ? realNotifications : generateDummyNotifications();
+  }, [hasRealNotifications, realNotifications]);
+  
+  const realUnreadCount = useMemo(() => {
+    return realNotifications.filter(n => !n.read && !n.is_read).length;
+  }, [realNotifications]);
 
   const handleNotificationClick = async (notification) => {
+    // Dummy notificaties zijn niet klikbaar
+    if (notification.isDummy) {
+      return;
+    }
+    
     setIsOpen(false);
     
     // Mark notification as read
@@ -224,7 +277,7 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
     }
   };
 
-  const displayCount = unreadCount > 99 ? '99+' : unreadCount;
+  const displayCount = realUnreadCount > 99 ? '99+' : realUnreadCount;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -233,7 +286,7 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
           variant="ghost" 
           size="icon" 
           className="relative group h-10 w-10"
-          aria-label={`Meldingen${unreadCount > 0 ? `, ${unreadCount} ongelezen` : ''}`}
+          aria-label={`Meldingen${realUnreadCount > 0 ? `, ${realUnreadCount} ongelezen` : ''}`}
         >
           <motion.div
             whileHover={{ scale: 1.05 }}
@@ -242,7 +295,7 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
             <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
           </motion.div>
           <AnimatePresence>
-            {unreadCount > 0 && (
+            {realUnreadCount > 0 && (
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -268,13 +321,18 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
           <div className="flex items-center gap-2">
             <Bell className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             <h3 className="font-semibold text-gray-900 dark:text-gray-100">Meldingen</h3>
-            {unreadCount > 0 && (
+            {hasRealNotifications && realUnreadCount > 0 && (
               <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                {unreadCount} nieuw
+                {realUnreadCount} nieuw
+              </Badge>
+            )}
+            {!hasRealNotifications && (
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700">
+                DEMO
               </Badge>
             )}
           </div>
-          {unreadCount > 0 && (
+          {hasRealNotifications && realUnreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -288,9 +346,21 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
           )}
         </div>
 
+        {/* Demo meldingen info banner */}
+        {!hasRealNotifications && displayNotifications.length > 0 && (
+          <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-2">
+              <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <p className="text-xs text-amber-800 dark:text-amber-200">
+                Demo meldingen - verdwijnen bij echte meldingen
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Notifications List */}
         <div className="max-h-[400px] overflow-y-auto">
-          {notifications.length === 0 ? (
+          {displayNotifications.length === 0 ? (
             <div className="py-12 px-4 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <Bell className="w-8 h-8 text-gray-300 dark:text-gray-600" />
@@ -300,10 +370,10 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
             </div>
           ) : (
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
-              {notifications.slice(0, 12).map((notification, index) => {
+              {displayNotifications.slice(0, 12).map((notification, index) => {
                 const { title, body, config } = parseNotification(notification);
                 const Icon = config.icon;
-                const isUnread = !notification.read && !notification.is_read;
+                const isUnread = !notification.read && !notification.is_read && !notification.isDummy;
                 
                 return (
                   <motion.div
@@ -312,14 +382,16 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.03 }}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`flex gap-3 px-4 py-3 cursor-pointer transition-all duration-200 group
+                    className={`flex gap-3 px-4 py-3 ${notification.isDummy ? 'cursor-default' : 'cursor-pointer'} transition-all duration-200 group
                       ${isUnread 
                         ? 'bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-950/30' 
+                        : notification.isDummy
+                        ? 'bg-gray-50/50 dark:bg-gray-800/30'
                         : 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800/50'
                       }`}
                   >
                     {/* Icon */}
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl ${config.bgColor} flex items-center justify-center shadow-sm`}>
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-xl ${config.bgColor} flex items-center justify-center shadow-sm ${notification.isDummy ? 'opacity-60' : ''}`}>
                       <Icon className={`w-5 h-5 ${config.iconColor}`} />
                     </div>
                     
@@ -327,23 +399,30 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          {/* Label */}
-                          <span className={`inline-block text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${config.iconColor}`}>
-                            {config.label}
-                          </span>
+                          {/* Label en DEMO badge */}
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`inline-block text-[10px] font-semibold uppercase tracking-wider ${config.iconColor} ${notification.isDummy ? 'opacity-75' : ''}`}>
+                              {config.label}
+                            </span>
+                            {notification.isDummy && (
+                              <Badge variant="outline" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300 dark:border-amber-700 text-[9px] px-1.5 py-0 h-4">
+                                DEMO
+                              </Badge>
+                            )}
+                          </div>
                           
                           {/* Title */}
                           <h4 className={`text-sm font-medium truncate ${
                             isUnread 
                               ? 'text-gray-900 dark:text-white' 
                               : 'text-gray-700 dark:text-gray-300'
-                          }`}>
+                          } ${notification.isDummy ? 'opacity-75' : ''}`}>
                             {title}
                           </h4>
                           
                           {/* Body */}
                           {body && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                            <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2 ${notification.isDummy ? 'opacity-75' : ''}`}>
                               {body}
                             </p>
                           )}
@@ -354,15 +433,17 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
                           {isUnread && (
                             <span className="w-2 h-2 rounded-full bg-blue-500 shadow-sm shadow-blue-500/50" />
                           )}
-                          <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                          <span className={`text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap ${notification.isDummy ? 'opacity-60' : ''}`}>
                             {formatRelativeTime(notification.created_date)}
                           </span>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Hover arrow */}
-                    <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-3" />
+                    {/* Hover arrow - alleen voor echte notificaties */}
+                    {!notification.isDummy && (
+                      <ExternalLink className="w-4 h-4 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-3" />
+                    )}
                   </motion.div>
                 );
               })}
@@ -371,7 +452,7 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
         </div>
 
         {/* Footer */}
-        {notifications.length > 0 && (
+        {displayNotifications.length > 0 && (
           <>
             <DropdownMenuSeparator className="m-0" />
             <div className="p-2 bg-gray-50 dark:bg-gray-800/50">

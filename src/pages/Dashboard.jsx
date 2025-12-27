@@ -1204,42 +1204,12 @@ export default function Dashboard() {
           </div>
 
           <div className="order-4 lg:order-4">
-            <Card className="bg-gradient-to-br from-emerald-600 to-teal-500 text-white shadow-sm">
-              <CardHeader className="flex flex-row justify-between items-center p-2 lg:p-3 pb-1 lg:pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm lg:text-base font-semibold">
-                  <Trophy className="w-4 h-4 lg:w-5 lg:h-5 text-white" />Referral Race
-                </CardTitle>
-                <Link to={createPageUrl("Referrals")} className="text-xs font-medium text-white/90 hover:text-white">Volledig <ArrowRight className="w-3 h-3 inline" /></Link>
-              </CardHeader>
-              <CardContent className="p-2 lg:p-3 pt-0">
-                {referralData.topPainters?.length > 0 ? (
-                  <div className="space-y-1">
-                    {referralData.topPainters.slice(0, 2).map((painter, index) => (
-                      <motion.div key={painter.id} className="flex items-center justify-between p-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${index === 0 ? 'bg-yellow-400 text-yellow-900' : 'bg-gray-300 text-gray-700'}`}>#{index + 1}</div>
-                          <div>
-                            <p className="font-semibold text-xs text-white">{painter.full_name}</p>
-                            <p className="text-[10px] text-white/75">{painter.score} punt{painter.score !== 1 ? 'en' : ''}</p>
-                          </div>
-                        </div>
-                        {index === 0 && (
-                          <div className="flex items-center gap-1 text-yellow-300">
-                            <Crown className="w-2.5 h-2.5" />
-                            <span className="text-[10px] font-bold">Leider</span>
-                          </div>
-                        )}
-                      </motion.div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4 text-white/70">
-                    <Trophy className="w-8 h-8 mx-auto mb-2 text-white/50" />
-                    <p className="font-medium text-sm">Geen referral punten</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <HoursSummaryWidget 
+              dailyUpdates={dailyUpdates}
+              users={allUsers}
+              isAdmin={isAdmin}
+              companyId={company?.id}
+            />
           </div>
         </div>
 

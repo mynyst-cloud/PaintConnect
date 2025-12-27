@@ -30,8 +30,8 @@ const LOGO_LIGHT = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/p
 const LOGO_DARK = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png";
 const FAVICON = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/c4fa1d0cb_Android.png";
 
-// App URL - alle CTA's linken naar de app
-const APP_URL = "https://app.paintconnect.be";
+// Invite URL - alle CTA's linken naar invite pagina
+const INVITE_URL = "/invite";
 
 // Hero Section - Server Component
 function HeroSection() {
@@ -80,10 +80,10 @@ function HeroSection() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6 lg:mb-10">
             <a
-              href={APP_URL}
+              href={INVITE_URL}
               className="btn-primary flex items-center justify-center gap-2 text-base lg:text-lg py-3 lg:py-4"
             >
-              Start 14 dagen gratis
+              Vraag toegang aan
               <ArrowRight className="w-5 h-5" />
             </a>
             <a
@@ -671,10 +671,10 @@ function Legislation2027Section() {
             </div>
 
             <a 
-              href={APP_URL} 
+              href={INVITE_URL} 
               className="btn-primary w-full flex items-center justify-center gap-2 text-lg"
             >
-              Start nu – wees op tijd voorbereid
+              Vraag toegang aan
               <ArrowRight className="w-5 h-5" />
             </a>
           </div>
@@ -731,8 +731,8 @@ function Legislation2027Section() {
             Start vandaag nog met PaintConnect en vermijd stress en boetes.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href={APP_URL} className="btn-primary flex items-center justify-center gap-2">
-              14 dagen gratis proberen
+            <a href={INVITE_URL} className="btn-primary flex items-center justify-center gap-2">
+              Vraag toegang aan
               <ArrowRight className="w-5 h-5" />
             </a>
             <a href="#features" className="btn-outline-white flex items-center justify-center gap-2">
@@ -998,8 +998,8 @@ function PricingSection() {
                 Test alle functies van het Professional plan. Geen creditcard nodig. 
                 Na de proefperiode bepaal jij of je doorgaat.
               </p>
-              <a href={APP_URL} className="inline-flex items-center gap-2 bg-white text-[var(--color-emerald-700)] font-semibold px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors">
-                Start gratis trial
+              <a href={INVITE_URL} className="inline-flex items-center gap-2 bg-white text-[var(--color-emerald-700)] font-semibold px-8 py-3 rounded-lg hover:bg-gray-100 transition-colors">
+                Vraag toegang aan
                 <ArrowRight className="w-5 h-5" />
               </a>
             </div>
@@ -1064,14 +1064,14 @@ function PricingSection() {
 
               {/* CTA Button */}
               <a
-                href={APP_URL}
+                href={INVITE_URL}
                 className={`block text-center py-3 px-6 rounded-lg font-semibold transition-all ${
                   plan.popular
                     ? "bg-white text-[var(--color-gray-900)] hover:bg-gray-100"
                     : "bg-[var(--color-emerald-600)] text-white hover:bg-[var(--color-emerald-700)]"
                 }`}
               >
-                Start gratis trial
+                Vraag toegang aan
               </a>
             </div>
           ))}
@@ -1268,14 +1268,14 @@ function CTASection() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
-            href={APP_URL}
+            href={INVITE_URL}
             className="btn-primary flex items-center justify-center gap-2 text-lg"
           >
-            Start gratis trial
+            Vraag toegang aan
             <ArrowRight className="w-5 h-5" />
           </a>
           <a
-            href={APP_URL}
+            href="https://app.paintconnect.be"
             className="btn-outline-white flex items-center justify-center gap-2 text-lg"
           >
             Inloggen

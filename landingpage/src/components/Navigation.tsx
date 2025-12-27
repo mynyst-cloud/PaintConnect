@@ -7,8 +7,8 @@ import { Menu, X } from "lucide-react";
 const LOGO_LIGHT = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/8f6c3b85c_Colorlogo-nobackground.png";
 const LOGO_DARK = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/688ddf9fafec117afa44cb01/23346926a_Colorlogo-nobackground.png";
 
-// App URL - alle CTA's linken naar de app
-const APP_URL = "https://app.paintconnect.be";
+// Invite URL - alle CTA's linken naar invite pagina
+const INVITE_URL = "/invite";
 
 // Navigation Component
 export default function Navigation() {
@@ -88,7 +88,7 @@ export default function Navigation() {
               FAQ
             </a>
             <a
-              href={APP_URL}
+              href="https://app.paintconnect.be"
               className={`transition-colors ${
                 scrolled
                   ? "text-[var(--color-gray-600)] hover:text-[var(--color-emerald-600)]"
@@ -97,8 +97,8 @@ export default function Navigation() {
             >
               Inloggen
             </a>
-            <a href={APP_URL} className="btn-primary text-sm py-2.5 px-5">
-              Gratis proberen
+            <a href={INVITE_URL} className="btn-primary text-sm py-2.5 px-5">
+              Vraag toegang aan
             </a>
           </div>
 
@@ -150,18 +150,18 @@ export default function Navigation() {
               FAQ
             </a>
             <a
-              href={APP_URL}
+              href="https://app.paintconnect.be"
               className="block py-2 text-[var(--color-gray-600)]"
               onClick={() => setIsOpen(false)}
             >
               Inloggen
             </a>
             <a
-              href={APP_URL}
+              href={INVITE_URL}
               className="block btn-primary text-center text-sm py-2.5"
               onClick={() => setIsOpen(false)}
             >
-              Gratis proberen
+              Vraag toegang aan
             </a>
           </div>
         </div>

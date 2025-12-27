@@ -137,7 +137,7 @@ serve(async (req) => {
     // ===============================================
     const { data: projects, error: projectsError } = await supabase
       .from('projects')
-      .select('id, project_name, work_start_time, work_end_time, status, assigned_painters')
+      .select('id, project_name, work_start_time, work_end_time, status, assigned_painters, start_date, expected_end_date')
       .eq('status', 'in_uitvoering')
       .not('assigned_painters', 'is', null)
 
@@ -338,6 +338,23 @@ serve(async (req) => {
       const assignedEmails = project.assigned_painters || []
       
       if (!startTime || assignedEmails.length === 0) continue
+
+      // Check if today is within project duration (start_date to expected_end_date)
+      if (project.start_date && project.expected_end_date) {
+        const startDate = new Date(project.start_date)
+        const endDate = new Date(project.expected_end_date)
+        const todayDate = new Date(today)
+        
+        // Set time to 00:00:00 for accurate date comparison
+        startDate.setHours(0, 0, 0, 0)
+        endDate.setHours(0, 0, 0, 0)
+        todayDate.setHours(0, 0, 0, 0)
+        
+        if (todayDate < startDate || todayDate > endDate) {
+          log(`[Project: ${project.project_name}] Today (${today}) is outside project duration (${project.start_date} to ${project.expected_end_date}), skipping`)
+          continue
+        }
+      }
 
       // Check if it's 15 minutes after start time
       const [startHour, startMin] = startTime.split(':').map(Number)

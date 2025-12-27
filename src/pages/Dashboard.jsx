@@ -99,6 +99,7 @@ export default function Dashboard() {
   const [allMessages, setAllMessages] = useState([]);
   const [company, setCompany] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [dailyUpdates, setDailyUpdates] = useState([]);
   const [statsCardsExpanded, setStatsCardsExpanded] = useState(false);
   const [showOnboardingGuide, setShowOnboardingGuide] = useState(false);
   const [showOnboardingChecklist, setShowOnboardingChecklist] = useState(false);

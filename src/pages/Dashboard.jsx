@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Briefcase, Package, AlertTriangle, Calendar, MessageCircle, ArrowRight, Trophy, Star,
   RefreshCw, LogIn, Plus, Zap, Building, X, Loader2, Clock, Users, BarChart,
-  ClipboardList, Crown, Bell, Mic
+  ClipboardList, Crown, Bell
 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl, formatDateTime } from "@/components/utils";
@@ -1092,8 +1092,7 @@ export default function Dashboard() {
                     { label: "Vraag Materiaal Aan", icon: Package, action: () => setShowMaterialForm(true), show: true, badge: "schilder" },
                     { label: "Project Update", icon: BarChart, action: handleQuickUpdateClick, show: true, badge: "schilder" },
                     { label: "Project toevoegen", icon: Plus, action: () => setShowProjectForm(true), show: isAdmin, badge: "admin" },
-                    { label: "Materialen toevoegen", icon: Package, action: () => navigate(createPageUrl('MateriaalBeheer')), show: isAdmin, badge: "admin" },
-                    { label: "🎙️ Offerte Agent", icon: Mic, action: () => navigate(createPageUrl('OfferteOpmeting')), show: currentUser?.role === 'admin' }
+                    { label: "Materialen toevoegen", icon: Package, action: () => navigate(createPageUrl('MateriaalBeheer')), show: isAdmin, badge: "admin" }
                   ].filter(item => item.show).map((item, index) => (
                     <Button key={index} variant="ghost" className="bg-white/10 hover:bg-white/20 p-2 h-auto justify-start text-left w-full" onClick={item.action}>
                       <item.icon className="w-4 h-4 text-emerald-200 mr-2 flex-shrink-0" />

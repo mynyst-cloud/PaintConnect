@@ -19,12 +19,14 @@ const corsHeaders = (origin: string | null) => ({
 
 serve(async (req) => {
   const origin = req.headers.get('origin')
-  const responseHeaders = corsHeaders(origin)
   
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { status: 200, headers: responseHeaders })
+    const responseHeaders = corsHeaders(origin)
+    return new Response(null, { status: 204, headers: responseHeaders })
   }
+  
+  const responseHeaders = corsHeaders(origin)
 
   try {
     const { email, company_name, name } = await req.json()

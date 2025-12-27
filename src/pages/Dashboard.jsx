@@ -569,8 +569,8 @@ export default function Dashboard() {
         const dailyUpdatesPromise = fetchData(`daily_updates_${companyId}`, () => DailyUpdate.filter({ company_id: companyId }), 60000, forceRefresh);
 
         let [companyDetails, projectsData, materialsData, damagesData, usersData, messagesData, notificationsData, referralPointsData, dailyUpdatesData] = await Promise.all([
-        companyPromise, projectsPromise, materialsPromise, damagesPromise, usersPromise, messagesPromise, notificationsPromise, referralPointsPromise
-      ]);
+          companyPromise, projectsPromise, materialsPromise, damagesPromise, usersPromise, messagesPromise, notificationsPromise, referralPointsPromise, dailyUpdatesPromise
+        ]);
 
       let filteredProjects = projectsData || [];
       try {

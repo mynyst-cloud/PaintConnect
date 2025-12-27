@@ -53,34 +53,34 @@ export default function InvitePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[var(--color-gray-50)]">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
       <Navigation />
       
       <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-[var(--color-emerald-100)] rounded-full mb-6">
-              <Mail className="w-10 h-10 text-[var(--color-emerald-600)]" />
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/20 border border-emerald-500/30 rounded-full mb-6">
+              <Mail className="w-10 h-10 text-emerald-400" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-[var(--color-gray-900)] mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
               Schrijf je in voor PaintConnect
             </h1>
-            <p className="text-lg text-[var(--color-gray-600)] max-w-xl mx-auto">
+            <p className="text-lg text-gray-300 max-w-xl mx-auto">
               PaintConnect is momenteel invite-only. Vul hieronder je gegevens in en wij nemen binnenkort contact met je op.
             </p>
           </div>
 
           {/* Success Message */}
           {status === "success" && (
-            <div className="mb-8 p-6 bg-[var(--color-emerald-50)] border border-[var(--color-emerald-200)] rounded-xl">
+            <div className="mb-8 p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
               <div className="flex items-start gap-4">
-                <CheckCircle className="w-6 h-6 text-[var(--color-emerald-600)] mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-6 h-6 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-[var(--color-emerald-900)] mb-1">
+                  <h3 className="font-semibold text-emerald-300 mb-1">
                     Bedankt voor uw interesse!
                   </h3>
-                  <p className="text-[var(--color-emerald-700)]">
+                  <p className="text-emerald-200">
                     We hebben uw verzoek ontvangen en nemen binnenkort contact met u op via e-mail.
                   </p>
                 </div>
@@ -90,14 +90,14 @@ export default function InvitePage() {
 
           {/* Error Message */}
           {status === "error" && (
-            <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl">
+            <div className="mb-8 p-6 bg-red-500/10 border border-red-500/30 rounded-xl">
               <div className="flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-red-600 mt-0.5 flex-shrink-0" />
+                <AlertCircle className="w-6 h-6 text-red-400 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-red-900 mb-1">
+                  <h3 className="font-semibold text-red-300 mb-1">
                     Er ging iets mis
                   </h3>
-                  <p className="text-red-700">
+                  <p className="text-red-200">
                     {errorMessage}
                   </p>
                 </div>
@@ -106,16 +106,16 @@ export default function InvitePage() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg border border-[var(--color-gray-200)] p-8 md:p-10">
+          <form onSubmit={handleSubmit} className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-8 md:p-10">
             <div className="space-y-6">
               {/* Email */}
               <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-[var(--color-gray-900)] mb-2">
-                  E-mailadres <span className="text-red-500">*</span>
+                <label htmlFor="email" className="block text-sm font-semibold text-white mb-2">
+                  E-mailadres <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="w-5 h-5 text-[var(--color-gray-400)]" />
+                    <Mail className="w-5 h-5 text-gray-400" />
                   </div>
                   <input
                     type="email"
@@ -123,7 +123,7 @@ export default function InvitePage() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:ring-2 focus:ring-[var(--color-emerald-500)] focus:border-[var(--color-emerald-500)] outline-none transition-colors"
+                    className="w-full pl-12 pr-4 py-3 bg-gray-900/50 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
                     placeholder="jouw@emailadres.nl"
                     disabled={status === "submitting"}
                   />
@@ -132,19 +132,19 @@ export default function InvitePage() {
 
               {/* Name */}
               <div>
-                <label htmlFor="name" className="block text-sm font-semibold text-[var(--color-gray-900)] mb-2">
+                <label htmlFor="name" className="block text-sm font-semibold text-white mb-2">
                   Naam
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="w-5 h-5 text-[var(--color-gray-400)]" />
+                    <User className="w-5 h-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:ring-2 focus:ring-[var(--color-emerald-500)] focus:border-[var(--color-emerald-500)] outline-none transition-colors"
+                    className="w-full pl-12 pr-4 py-3 bg-gray-900/50 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
                     placeholder="Jouw naam"
                     disabled={status === "submitting"}
                   />
@@ -153,19 +153,19 @@ export default function InvitePage() {
 
               {/* Company Name */}
               <div>
-                <label htmlFor="company_name" className="block text-sm font-semibold text-[var(--color-gray-900)] mb-2">
+                <label htmlFor="company_name" className="block text-sm font-semibold text-white mb-2">
                   Bedrijfsnaam
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Building2 className="w-5 h-5 text-[var(--color-gray-400)]" />
+                    <Building2 className="w-5 h-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
                     id="company_name"
                     value={formData.company_name}
                     onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3 border border-[var(--color-gray-300)] rounded-lg focus:ring-2 focus:ring-[var(--color-emerald-500)] focus:border-[var(--color-emerald-500)] outline-none transition-colors"
+                    className="w-full pl-12 pr-4 py-3 bg-gray-900/50 border border-gray-600 text-white placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
                     placeholder="Naam van je schildersbedrijf"
                     disabled={status === "submitting"}
                   />
@@ -176,7 +176,7 @@ export default function InvitePage() {
               <button
                 type="submit"
                 disabled={status === "submitting" || status === "success"}
-                className="w-full btn-primary flex items-center justify-center gap-2 py-4 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 text-lg shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-emerald-600 disabled:hover:to-emerald-500"
               >
                 {status === "submitting" ? (
                   <>
@@ -199,18 +199,18 @@ export default function InvitePage() {
                 )}
               </button>
 
-              <p className="text-sm text-center text-[var(--color-gray-500)]">
+              <p className="text-sm text-center text-gray-400">
                 Door te verzenden geef je toestemming om contact met je op te nemen via e-mail.
               </p>
             </div>
           </form>
 
           {/* Info Box */}
-          <div className="mt-8 p-6 bg-[var(--color-emerald-50)] border border-[var(--color-emerald-200)] rounded-xl">
-            <h3 className="font-semibold text-[var(--color-emerald-900)] mb-2">
+          <div className="mt-8 p-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+            <h3 className="font-semibold text-emerald-300 mb-2">
               Wat gebeurt er na je aanmelding?
             </h3>
-            <ul className="space-y-2 text-sm text-[var(--color-emerald-700)]">
+            <ul className="space-y-2 text-sm text-emerald-200">
               <li className="flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
                 <span>We beoordelen je aanmelding</span>

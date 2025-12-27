@@ -223,3 +223,4 @@ supabase functions deploy checkExpiredTrials --project-ref hhnbxutsmnkypbwydebo
 - Monitor upgrade conversions na trial expiration
 
 
+

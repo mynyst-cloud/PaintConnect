@@ -1,16 +1,29 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+// CORS whitelist for allowed origins
+const ALLOWED_ORIGINS = [
+  'https://paintconnect.be',
+  'https://www.paintconnect.be',
+  'https://paintcon.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'
+]
+
+const corsHeaders = (origin: string | null) => ({
+  'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+  'Access-Control-Max-Age': '86400',
+})
 
 serve(async (req) => {
+  const origin = req.headers.get('origin')
+  const responseHeaders = corsHeaders(origin)
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { status: 200, headers: responseHeaders })
   }
 
   try {
@@ -20,7 +33,7 @@ serve(async (req) => {
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return new Response(
         JSON.stringify({ error: 'Geldig e-mailadres is verplicht' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -42,7 +55,7 @@ serve(async (req) => {
           success: true, 
           message: 'Uw verzoek is al geregistreerd. We nemen binnenkort contact met u op.' 
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -63,7 +76,7 @@ serve(async (req) => {
       console.error('Error inserting invite request:', error)
       return new Response(
         JSON.stringify({ error: 'Er ging iets mis. Probeer het later opnieuw.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -159,13 +172,13 @@ serve(async (req) => {
         success: true, 
         message: 'Bedankt voor uw interesse! We nemen binnenkort contact met u op.' 
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
     console.error('Error in submitInviteRequest:', error)
     return new Response(
       JSON.stringify({ error: 'Er ging iets mis. Probeer het later opnieuw.' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: { ...responseHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })

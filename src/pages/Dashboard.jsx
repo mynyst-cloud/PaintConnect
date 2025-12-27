@@ -46,6 +46,36 @@ import TeamActivityFeed from '@/components/checkin/TeamActivityFeed';
 import PushNotificationPrompt from '@/components/notifications/PushNotificationPrompt';
 import { useTeamChat } from '@/contexts/TeamChatContext';
 
+// Helper functie om dummy/demo notificaties te genereren
+const generateDummyNotifications = () => {
+  const now = new Date();
+  return [
+    {
+      id: 'dummy-material-1',
+      message: 'Materiaal aanvraag - Verf wit 10L - Project: Villa Renovatie',
+      type: 'material_requested',
+      created_date: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(), // 2 uur geleden
+      read: false,
+      isDummy: true
+    },
+    {
+      id: 'dummy-project-1',
+      message: 'Project update - Voortgang: 65% - Penthouse Amsterdam',
+      type: 'project_update',
+      created_date: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(), // 5 uur geleden
+      read: false,
+      isDummy: true
+    },
+    {
+      id: 'dummy-damage-1',
+      message: 'Schademelding - Beschadiging gemeld - Boutique Hotel Lobby',
+      type: 'damage_reported',
+      created_date: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 dag geleden
+      read: true,
+      isDummy: true
+    }
+  ];
+};
 
 export default function Dashboard() {
   // Get TeamChat props from context instead of props

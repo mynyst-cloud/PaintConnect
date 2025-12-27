@@ -320,6 +320,17 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
                 </span>
               </motion.div>
             )}
+            {/* Rood bolletje wanneer er demo meldingen zijn */}
+            {!hasRealNotifications && displayNotifications.length > 0 && realUnreadCount === 0 && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-0.5 -right-0.5"
+              >
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 shadow-lg"></span>
+              </motion.div>
+            )}
           </AnimatePresence>
         </Button>
       </DropdownMenuTrigger>

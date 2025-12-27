@@ -222,17 +222,30 @@ export default function NotificationDropdown({ notifications = [], unreadCount =
   
   // Bepaal welke notificaties te tonen (echt of dummy)
   const realNotifications = useMemo(() => {
-    return (notifications || []).filter(n => !n.isDummy);
+    const filtered = (notifications || []).filter(n => !n.isDummy);
+    console.log('[NotificationDropdown] Received notifications:', notifications?.length || 0);
+    console.log('[NotificationDropdown] Real notifications (filtered):', filtered.length);
+    return filtered;
   }, [notifications]);
   
   const hasRealNotifications = realNotifications.length > 0;
+  
   const displayNotifications = useMemo(() => {
-    return hasRealNotifications ? realNotifications : generateDummyNotifications();
+    if (hasRealNotifications) {
+      console.log('[NotificationDropdown] Showing real notifications:', realNotifications.length);
+      return realNotifications;
+    } else {
+      const dummy = generateDummyNotifications();
+      console.log('[NotificationDropdown] No real notifications, showing dummy notifications:', dummy.length);
+      return dummy;
+    }
   }, [hasRealNotifications, realNotifications]);
   
   const realUnreadCount = useMemo(() => {
     return realNotifications.filter(n => !n.read && !n.is_read).length;
   }, [realNotifications]);
+  
+  console.log('[NotificationDropdown] Render - hasRealNotifications:', hasRealNotifications, 'displayNotifications.length:', displayNotifications.length);
 
   const handleNotificationClick = async (notification) => {
     // Dummy notificaties zijn niet klikbaar
